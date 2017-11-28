@@ -4,7 +4,7 @@
 \alias{plot.imdanovaFilt}
 \title{plot.imdanovaFilt}
 \usage{
-\method{plot}{imdanovaFilt}(filter_object, min_nonmiss_anova = NULL,
+plot.imdanovaFilt(filter_object, min_nonmiss_anova = NULL,
   min_nonmiss_gtest = NULL, ...)
 }
 \arguments{
@@ -26,4 +26,3 @@
 \description{
 For plotting an S3 object of type 'imdanovaFilt':
 }
-

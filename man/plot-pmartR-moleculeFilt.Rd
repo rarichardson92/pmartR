@@ -4,7 +4,7 @@
 \alias{plot.moleculeFilt}
 \title{plot.moleculeFilt}
 \usage{
-\method{plot}{moleculeFilt}(filter_object, min_num = NULL, ...)
+plot.moleculeFilt(filter_object, min_num = NULL, ...)
 }
 \arguments{
 \item{min_num}{an integer value specifying the minimum number of times each feature must be observed across all samples.
@@ -24,4 +24,3 @@
 \description{
 For plotting an S3 object of type 'moleculeFilt':
 }
-

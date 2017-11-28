@@ -5,7 +5,7 @@
 \title{Calculate Normalization Parameters}
 \usage{
 normalize(omicsData, subset_fn, norm_fn, params = NULL, apply_norm = FALSE,
-  backtransform = FALSE, check.names = TRUE)
+  backtransform = FALSE)
 }
 \arguments{
 \item{omicsData}{an object of the class 'pepData', 'proData', 'metabData', or 'lipidData', created by \code{\link{as.pepData}}, \code{\link{as.proData}}, \code{\link{as.metabData}}, or \code{\link{as.lipidData}}, respectively. The function \code{\link{group_designation}} must have been run on omicsData to use several of the subset functions (i.e. rip and ppp_rip).}
@@ -70,6 +70,7 @@ The purpose of back transforming data is to ensure values are on a scale similar
 \cr
 }
 }
+
 \examples{
 dontrun{
 library(pmartRdata)
@@ -82,10 +83,9 @@ norm_data <- normalize(omicsData = lipid_object, subset_fn = "all", norm_fn = "m
 }
 
 }
-\author{
-Lisa Bramer
-}
 \references{
 
 }
-
+\author{
+Lisa Bramer
+}

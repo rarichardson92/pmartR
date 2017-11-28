@@ -4,7 +4,7 @@
 \alias{plot.dimRes}
 \title{plot.dimRes}
 \usage{
-\method{plot}{dimRes}(dimRes_object, ...)
+plot.dimRes(dimRes_object, ...)
 }
 \description{
 For plotting an S3 object of type 'dimRes':
@@ -22,4 +22,3 @@ For plotting an S3 object of type 'dimRes':
 \code{legend_position} \tab character string specifying one of "right", "left", "top", or "bottom" for the location of the legend. Defaults to "right". \cr
 }
 }
-

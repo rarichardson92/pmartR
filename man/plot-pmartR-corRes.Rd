@@ -4,7 +4,7 @@
 \alias{plot.corRes}
 \title{plot.corRes}
 \usage{
-\method{plot}{corRes}(corRes_object, ...)
+plot.corRes(corRes_object, ...)
 }
 \arguments{
 \item{interactive}{default value is FALSE. If TRUE, an interactive d3heatmap will be rendered, allowing you to zoom in on sections of the heatmap.}
@@ -23,4 +23,3 @@
 \description{
 For plotting an S3 object of type 'corRes':
 }
-

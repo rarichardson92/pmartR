@@ -4,8 +4,8 @@
 \alias{plot.proteomicsFilt}
 \title{plot.proteomicsFilt}
 \usage{
-\method{plot}{proteomicsFilt}(filter_object, min_num_peps = NULL,
-  degen_peps = FALSE, ...)
+plot.proteomicsFilt(filter_object, min_num_peps = NULL, degen_peps = FALSE,
+  ...)
 }
 \arguments{
 \item{min_num_peps}{an optional integer value between 1 and the maximum number of peptides that map to a protein in the data. The value specifies the minimum number of peptides that must map to a protein. Any protein with less than \code{min_num_peps} mapping to it will be returned as a protein that should be filtered. Default value is NULL.}
@@ -27,4 +27,3 @@
 \description{
 For plotting an S3 object of type 'proteomicsFilt':
 }
-

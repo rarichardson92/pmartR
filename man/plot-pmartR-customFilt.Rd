@@ -4,9 +4,8 @@
 \alias{plot.customFilt}
 \title{plot.customFilt}
 \usage{
-\method{plot}{customFilt}(filter_object, ...)
+plot.customFilt(filter_object, ...)
 }
 \description{
 For plotting an s3 object of type 'customFilt'
 }
-

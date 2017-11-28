@@ -4,7 +4,7 @@
 \alias{plot.naRes}
 \title{Plots an object of class naRes}
 \usage{
-\method{plot}{naRes}(naRes_object, type, x_lab = NULL, ...)
+plot.naRes(naRes_object, type, x_lab = NULL, ...)
 }
 \arguments{
 \item{naRes_object}{a list of two data frames, one contains NA values by sample, the second contains NA values by molecule}

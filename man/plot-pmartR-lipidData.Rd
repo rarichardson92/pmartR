@@ -4,7 +4,7 @@
 \alias{plot.lipidData}
 \title{plot.lipidData}
 \usage{
-\method{plot}{lipidData}(omicsData, order_by = NULL, color_by = NULL,
+plot.lipidData(omicsData, order_by = NULL, color_by = NULL,
   facet_by = NULL, facet_cols = NULL, ...)
 }
 \description{
@@ -28,4 +28,3 @@ For plotting an S3 object of type 'lipidData'
 \code{ylimit} \tab numeric vector of length 2 specifying y axis lower and upper limits. \cr
 }
 }
-

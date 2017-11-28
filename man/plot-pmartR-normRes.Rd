@@ -4,9 +4,8 @@
 \alias{plot.normRes}
 \title{plot.normRes}
 \usage{
-\method{plot}{normRes}(normData, order_by = NULL, color_by = NULL, ...)
+plot.normRes(normData, order_by = NULL, color_by = NULL, ...)
 }
 \description{
 For plotting an S3 object of type 'normRes'
 }
-

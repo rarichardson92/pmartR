@@ -4,7 +4,7 @@
 \alias{plot.cvFilt}
 \title{plot.cvFilt}
 \usage{
-\method{plot}{cvFilt}(filter_object, cv_threshold = NULL, ...)
+plot.cvFilt(filter_object, cv_threshold = NULL, ...)
 }
 \arguments{
 \item{cv_threshold}{shades the area on the histogram below the given threshold. Default value is NULL.
@@ -24,4 +24,3 @@
 \description{
 For plotting an S3 object of type 'cvFilt':
 }
-
