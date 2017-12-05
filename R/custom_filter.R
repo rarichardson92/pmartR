@@ -125,5 +125,7 @@ custom_filter <- function(omicsData, e_data_remove = NULL, f_data_remove = NULL,
   attr(filter_object, "cnames")$emeta_cname = emeta_id
   attr(filter_object, "cnames")$fdata_cname = samp_id
   
+  attr(filter_object, "omicsData") = omicsData # added 12/5/2017 by KS #
+  
   return(filter_object)
 }

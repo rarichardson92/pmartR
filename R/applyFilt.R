@@ -867,11 +867,21 @@ MSomics_filter_worker <- function(filter_object, omicsData){
       temp.emeta <- temp.emeta[inds, ]
       
       # keep the union of the edata_molecules in both e_data and e_meta, in case more were kept in one than the other #
-      mols <- union(temp.edata[, which(names(temp.edata) == edata_cname)], temp.emeta[, which(names(temp.emeta) == edata_cname)])
-      inds <- which(temp.edata[, which(names(temp.edata) == edata_cname)] %in% mols)
-      temp.edata <- temp.edata[inds, ]
-      inds <- which(temp.emeta[, which(names(temp.emeta) == edata_cname)] %in% mols)
-      temp.emeta <- temp.emeta[inds, ]
+      if(is.null(filter_object$edata_keep)){
+        # use intersection here, since nothing was explicitly specified to keep from edata, and if we use the union, then edata doesn't actually get filtered at all #
+        mols <- intersect(temp.edata[, which(names(temp.edata) == edata_cname)], temp.emeta[, which(names(temp.emeta) == edata_cname)])
+        inds <- which(temp.edata[, which(names(temp.edata) == edata_cname)] %in% mols)
+        temp.edata <- temp.edata[inds, ]
+        inds <- which(temp.emeta[, which(names(temp.emeta) == edata_cname)] %in% mols)
+        temp.emeta <- temp.emeta[inds, ]
+      }else{
+        # use union here, since there WERE things explicitly specified to keep from edata #
+        mols <- union(temp.edata[, which(names(temp.edata) == edata_cname)], temp.emeta[, which(names(temp.emeta) == edata_cname)])
+        inds <- which(temp.edata[, which(names(temp.edata) == edata_cname)] %in% mols)
+        temp.edata <- temp.edata[inds, ]
+        inds <- which(temp.emeta[, which(names(temp.emeta) == edata_cname)] %in% mols)
+        temp.emeta <- temp.emeta[inds, ]
+      }
     }
   }
   
