@@ -4,10 +4,18 @@
 \alias{plot_comps}
 \title{Plot pairwise comparisons of omicsPlotter}
 \usage{
-plot_comps(omicsPlotter)
+plot_comps(omicsPlotter, ...)
 }
 \arguments{
 \item{omicsPlotter}{An object of class "omicsPlotter" generated from \code{\link{as.omicsPlotter}}.}
+
+\item{y_limits}{Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
+
+\item{y_range}{Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
+
+\item{y_max}{Sets the maximum y-value for the y-axis.}
+
+\item{y_min}{Sets the minimum y-value for the y-axis.}
 }
 \description{
 Plot pairwise comparisons of omicsPlotter. Plots differently depending on statistical tests ran, located in attributes.

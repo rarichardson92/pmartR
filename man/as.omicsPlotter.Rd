@@ -9,7 +9,7 @@ as.omicsPlotter(omicsData, omicsStats, ...)
 \arguments{
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
 
-\item{omicsStats}{A statistical results object produced by running \code{\link{imd_anova}} on omicsData.}
+\item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData.}
 
 \item{...}{further arguments}
 }
