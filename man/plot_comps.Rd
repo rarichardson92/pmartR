@@ -2,7 +2,7 @@
 % Please edit documentation in R/as.omicsPlotter.R
 \name{plot_comps}
 \alias{plot_comps}
-\title{Plot pairwise comparisons of omicsPlotter}
+\title{Plot pairwise comparisons of omicsPlotter object}
 \usage{
 plot_comps(omicsPlotter, ...)
 }
@@ -16,6 +16,14 @@ plot_comps(omicsPlotter, ...)
 \item{y_max}{Sets the maximum y-value for the y-axis.}
 
 \item{y_min}{Sets the minimum y-value for the y-axis.}
+
+\item{p_val}{Specifies p-value for setting graph border colors}
+
+\item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in omicsPlotter. Defaults to cnames$edata_cname of omicsPlotter.}
+
+\item{panel_x_axis}{Specifies what column should be on the x-axis, must be a column in omicsPlotter. Defaults setting plots pairwise comparisons along x-axis.}
+
+\item{panel_y_axis}{Specifies what column should be on the y-axis, must be a column in omicsPlotter and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
 }
 \description{
 Plot pairwise comparisons of omicsPlotter. Plots differently depending on statistical tests ran, located in attributes.

@@ -48,98 +48,126 @@
 #'
 #' @export
 #' 
-as.omicsPlotter <- function(omicsData, omicsStats, ...){
-  .as.omicsPlotter(omicsData, omicsStats, ...)
+as.omicsPlotter <- function(...){
+  .as.omicsPlotter(...)
 }
 
-.as.omicsPlotter <- function(omicsData, omicsStats, check.names = TRUE){
+.as.omicsPlotter <- function(omicsData = NULL, omicsStats = NULL, check.names = TRUE){
   
   ## Moniker Variables ##
-  
   uniqedatId <- attributes(omicsData)$cnames$edata_cname
+  if(is.null(uniqedatId)){
+    uniqedatId <- attributes(omicsStats)$cnames$edata_cname
+  }
   sampID <- attributes(omicsData)$cnames$fdata_cname
+  if(is.null(sampID)){
+    sampID <- attributes(omicsStats)$cnames$fdata_cname
+  }
   stats <- omicsStats$Full_results
   
   ## Initial Checks ##
-  
   # Check that omicsData and omicsStats are the correct classes #
-  if (!inherits(omicsData, c("proData", "pepData", "metabData", "lipidData"))) stop("omicsData must be of class 'proData', 'pepData', 'metabData', or 'lipidData'")
-  if(!inherits(omicsStats, "statRes")) stop("omicsStats must be of the class 'statRes'")
-  
+  if (!is.null(omicsData) & !inherits(omicsData, c("proData", "pepData", "metabData", "lipidData"))) stop("omicsData must be of class 'proData', 'pepData', 'metabData', or 'lipidData'")
+  if(!is.null(omicsStats) & !inherits(omicsStats, "statRes")) stop("omicsStats must be of the class 'statRes'")
   # Check if omicsData and omicsStats have the same cname attributes. #
-  if(!(identical(attributes(omicsData)$cnames, attributes(omicsStats)$cnames))) stop("Non-matching cname attributes in omicsStats and omicsData. Check that omicsStats is correctly derived from omicsData.")
+  if(!is.null(omicsStats) & !is.null(omicsData)){
+    # Check if omicsData and omicsStats have the same cname attributes. #
+    if (!(identical(attributes(omicsData)$cnames, attributes(omicsStats)$cnames))) stop("Non-matching cname attributes in omicsStats and omicsData. Check that omicsStats is correctly derived from omicsData.")
+    # Check that the biomolecule unique ID column exists in omicsData and omicsStats #
+    if(!(uniqedatId %in% names(omicsStats$Full_results))) stop(paste("Column ", uniqedatId," not found in omicsStats. Requires compatible identifiers.", sep = ""))
+    # Check if stats biomolecules are (at least) a subset of omicsData biomolecules. #
+    if(!all(omicsStats$Full_results[[uniqedatId]] %in% omicsData$e_data[[uniqedatId]])) stop(paste("Biomolecules in omicsStats do not match biomolecules in omicsData.", sep = ""))
+    # Check if stats sampleIDs are (at least) a subset of omicsData f_data sample IDs. #
+    if(!all(attributes(omicsStats)$group_DF[[sampID]] %in% omicsData$f_data[[sampID]])) stop(paste(sampID, "column does not match between omicsData and omicsStats.", sep = ""))
+  } 
+  # Make sure at least one of omicsData or omicsStats is present #
+  if(is.null(omicsStats) & is.null(omicsData)) stop ("as.omicsPlotter() requires at least one of the following: omicsStats, omicsData")
   
-  # Check that the biomolecule unique ID column exists in omicsData and omicsStats #
-  if(!(uniqedatId %in% names(omicsStats$Full_results))) stop(paste("Column ", uniqedatId," not found in omicsStats. Requires compatible identifiers.", sep = ""))
+  if (!is.null(omicsData)){
+    ## Manipulate Dataframes ##
+    # Original data values from omicsData #
+    # 1) Melt to assign e_data values to each sample ID
+    # 2) Combine with groups in f_data
+    # 3) Save attributes to be used
+    data_values <- suppressWarnings(
+      reshape2::melt(omicsData$e_data, 
+                     id.vars = uniqedatId,
+                     value.name = paste(attr(omicsData, "data_info")$data_scale,
+                                        "_abundance", sep = ""),
+                     variable.name = sampID) %>%
+        dplyr::left_join(omicsData$f_data, by = sampID))
+    
+    inheritDatAtt <- attributes(omicsData)[grep("filters|^names|group_DF", 
+                                                names(attributes(omicsData)), 
+                                                invert = T)]
+  } else {
+    data_values <- NULL
+    inheritDatAtt <- NULL
+  }
   
-  # Check if stats biomolecules are (at least) a subset of omicsData biomolecules. #
-  if(!all(omicsStats$Full_results[[uniqedatId]] %in% omicsData$e_data[[uniqedatId]])) stop(paste("Biomolecules in omicsStats do not match biomolecules in omicsData.", sep = ""))
-  
-  # Check if stats sampleIDs are (at least) a subset of omicsData f_data sample IDs. #
-  if(!all(attributes(omicsStats)$group_DF[[sampID]] %in% omicsData$f_data[[sampID]])) stop(paste(sampID, "column does not match between omicsData and omicsStats.", sep = ""))
-  
-  #### Group check??
-  
-  ## Manipulate Dataframes ##
-
-  # Original data values from omicsData #
-  # 1) Melt to assign e_data values to each sample ID
-  # 2) Combine with groups in f_data
-  data_values <- suppressWarnings(reshape2::melt(omicsData$e_data, 
-                      id.vars = uniqedatId, 
-                      value.name = paste(attr(omicsData, "data_info")$data_scale,
-                                          "abundance"),
-                      variable.name = sampID) %>%
-                        dplyr::left_join(omicsData$f_data, by = sampID))
-  
-  # Comparison statistics by pairwise comparison from omicsStats #
-  # 1) For each comparison, extract comparison relevant columns from omicsStats
-  #  2) Bind extracted with unique IDs from omicsStats and a comparison column
-  #  3) Rename columns by removing comparison designation
-  # 4) Bind rows from each comparison into one dataframe 
-  comp_stats <- suppressWarnings(dplyr::bind_rows(attributes(omicsStats)$comparisons %>% 
-    purrr::map(function(paircomp) {
-      df <- cbind(
-        stats[[uniqedatId]], 
-        rep(paircomp, nrow(stats)),
-        stats[stringr::str_detect(names(stats), 
-                         pattern = paste(paircomp, "$", sep = ""))]
-      )
-      trimname <- stringr::str_remove_all(colnames(df)[3:ncol(df)], 
-                                 paste("_", paircomp, sep = ""))
-      colnames(df) <- c(uniqedatId, "Comparison", trimname)
-      return(df)
-      }
-    )))
-
-  # Comparison statistics by groups from omicsStats #
-  # 1) Extract all rows w/o comparison information in the column names
-  summary_stats <- stats[,!stringr::str_detect(names(stats), 
-                    paste(attributes(omicsStats)$comparisons, 
-                    collapse = '|'))]
-  
-  # Re-sort for any grouping variables #
-  # 1) If there is a group_DF specified,
-  # 2) Extract unique groups in group_DF, and for each group
-  #  3) Bind extracted with unique IDs from omicsStats and a Group column
-  #  4) Rename columns by removing group designation
-  # 5) Bind rows from each group into one dataframe 
-  if (!is.null(attributes(omicsStats)$group_DF)){
-    groups <-  unique(attributes(omicsStats)$group_DF$Group)
-    summary_stats <- suppressWarnings(dplyr::bind_rows(purrr::map(groups, function(group){
-  
-      df <- cbind(summary_stats[[uniqedatId]], 
-                  rep(group, nrow(summary_stats)),
-                  summary_stats[,stringr::str_detect(names(summary_stats), 
-                    paste(group, "$", sep = ""))])
-      trimname <- stringr::str_remove_all(colnames(df)[3:ncol(df)], 
-                                 paste("_", group, sep = ""))
-      colnames(df) <- c(uniqedatId, "Group", trimname)
-      
-      return(df)
-      }
-    )))
+  if (!is.null(omicsStats)){
+    # Comparison statistics by pairwise comparison from omicsStats #
+    # 1) For each comparison, extract comparison relevant columns from omicsStats
+    #  2) Bind extracted with unique IDs from omicsStats and a comparison column
+    #  3) Rename columns by removing comparison designation
+    # 4) Bind rows from each comparison into one dataframe 
+    comp_stats <- suppressWarnings(
+      dplyr::bind_rows(
+        attributes(omicsStats)$comparisons %>%
+          purrr::map(function(paircomp) {
+            df <- cbind(
+              stats[[uniqedatId]], 
+              rep(paircomp, nrow(stats)),
+              stats[stringr::str_detect(names(stats),
+                                        pattern = paste(paircomp, 
+                                                        "$", 
+                                                        sep = ""))])
+            trimname <- stringr::str_remove_all(colnames(df)[3:ncol(df)],
+                                                paste("_", paircomp, sep = ""))
+            colnames(df) <- c(uniqedatId, "Comparison", trimname)
+            return(df)
+            }
+            )))
+    
+    # Comparison statistics by groups from omicsStats #
+    # 1) Extract all rows w/o comparison information in the column names
+    summary_stats <- stats[,!stringr::str_detect(
+      names(stats),
+      paste(attributes(omicsStats)$comparisons, collapse = '|')
+      )]
+    
+    # Re-sort for any grouping variables #
+    # 1) If there is a group_DF specified,
+    # 2) Extract unique groups in group_DF, and for each group
+    #  3) Bind extracted with unique IDs from omicsStats and a Group column
+    #  4) Rename columns by removing group designation
+    # 5) Bind rows from each group into one dataframe 
+    if (!is.null(attributes(omicsStats)$group_DF)){
+      groups <-  unique(attributes(omicsStats)$group_DF$Group)
+      summary_stats <- suppressWarnings(
+        dplyr::bind_rows(purrr::map(groups, function(group){
+          df <- cbind(summary_stats[[uniqedatId]],
+                      rep(group, nrow(summary_stats)),
+                      summary_stats[,stringr::str_detect(
+                        names(summary_stats), 
+                        paste(group, "$", sep = ""))])
+          trimname <- stringr::str_remove_all(colnames(df)[3:ncol(df)],
+                                              paste("_", group, sep = ""))
+          colnames(df) <- c(uniqedatId, "Group", trimname)
+          return(df)
+          }
+        )))
     }
+    
+    # Save attributes to be used #
+    inheritStatAtt <- attributes(omicsStats)[grep("^names", 
+                                                  names(attributes(omicsStats)), 
+                                                  invert = T)]
+  } else {
+    comp_stats <- NULL
+    summary_stats <- NULL
+    inheritStatAtt <- NULL
+  }
 
   ## Store Results ##
   # Create object res from generated dataframes and inherited attributes
@@ -151,19 +179,89 @@ as.omicsPlotter <- function(omicsData, omicsStats, ...){
               summary_stats = summary_stats,
               comp_stats = comp_stats)
   
-  inheritDatAtt <- attributes(omicsData)[grep("filters|^names|group_DF", 
-                              names(attributes(omicsData)), 
-                              invert = T)]
-  inheritStatAtt <- attributes(omicsStats)[grep("^names", 
-                                              names(attributes(omicsStats)), 
-                                              invert = T)]
+  # inheritDatAtt <- attributes(omicsData)[grep("filters|^names|group_DF", 
+  #                             names(attributes(omicsData)), 
+  #                             invert = T)]
+  # inheritStatAtt <- attributes(omicsStats)[grep("^names", 
+  #                                             names(attributes(omicsStats)), 
+  #                                             invert = T)]
+  
   attributes(res) <- c(attributes(res), inheritDatAtt, inheritStatAtt)
+  class(res) <- "omicsPlotter" 
   
-  class(res) <- "omicsPlotter"
-  
+  if (!is.null(omicsData) & !is.null(omicsStats)){
+    attr(res, "parent_class") <- c(class(omicsStats), class(omicsData))
+  } else if (!is.null(omicsData)){
+    attr(res, "parent_class") <- class(omicsData)
+  } else {
+    attr(res, "parent_class") <- class(omicsStats)
+  }
+
   return(res)
 }
 
+
+#' print.omicsPlotter
+#' 
+#' For printing an S3 object of type 'omicsPlotter':
+#' 
+#'@rdname print-omicsPlotter
+#'@export
+#'
+print.omicsPlotter<- function(omicsPlotter){
+  if(!inherits(omicsPlotter, "omicsPlotter")) stop("omicsPlotter object must be of the class 'omicsPlotter'")
+  
+  data_values <- as.data.frame(lapply(omicsPlotter$data_values, as.character), stringsAsFactors = FALSE, check.names = attr(omicsPlotter, "check.names"))
+  summary_stats <- as.data.frame(lapply(omicsPlotter$summary_stats, as.character), stringsAsFactors = FALSE, check.names = attr(omicsPlotter, "check.names"))
+  comp_stats <- as.data.frame(lapply(omicsPlotter$comp_stats, as.character), stringsAsFactors = FALSE, check.names = attr(omicsPlotter, "check.names"))
+  data_values_ncols <- ncol(data_values)
+  summary_stats_ncols <- ncol(summary_stats)
+  comp_stats_ncols <- ncol(comp_stats)
+  blank_row = rep("----", 5)
+    
+  ## Truncate visualization for many rows, columns ##
+  if(nrow(data_values) >= 9){
+    data_values_head = head(data_values, 4)[, 1:min(data_values_ncols, 5)]
+    data_values_tail = tail(data_values, 4)[, 1:min(data_values_ncols, 5)]
+    data_values = rbind(data_values_head, blank_row, data_values_tail)
+  }else if (nrow(data_values) > 0) {
+    data_values = data_values[, 1:min(data_values_ncols, 5)]
+  }
+  if(nrow(summary_stats) >= 9){
+    summary_stats_head = head(summary_stats, 4)[, 1:min(summary_stats_ncols, 5)]
+    summary_stats_tail = tail(summary_stats, 4)[, 1:min(summary_stats_ncols, 5)]
+    summary_stats = rbind(summary_stats_head, blank_row, summary_stats_tail)
+  }else if (nrow(summary_stats) > 0){
+    summary_stats = summary_stats[, 1:min(summary_stats_ncols, 5)]
+  }
+  if(nrow(comp_stats) >= 9){
+    comp_stats_head = head(comp_stats, 4)[, 1:min(comp_stats_ncols, 5)]
+    comp_stats_tail = tail(comp_stats, 4)[, 1:min(comp_stats_ncols, 5)]
+    comp_stats = rbind(comp_stats_head, blank_row, comp_stats_tail)
+  }else if (nrow(comp_stats) > 0){
+    comp_stats = comp_stats[, 1:min(comp_stats_ncols, 5)]
+  }
+  
+  ## Print applicable results ##  
+  if(nrow(data_values) > 0){
+    if(data_values_ncols > 5) message("only first 5 columns are shown")
+    cat("data_values\n")
+    cat(capture.output(data_values), sep = "\n")
+    cat("\n")
+  }
+  if(nrow(summary_stats) > 0){
+    if(summary_stats_ncols > 5) message("only first 5 columns are shown")
+    cat("summary_stats\n")
+    cat(capture.output(summary_stats), sep = "\n")
+    cat("\n")
+  }
+  if(nrow(comp_stats) > 0){
+    if(comp_stats_ncols > 5) message("only first 5 columns are shown")
+    cat("comp_stats\n")
+    cat(capture.output(comp_stats), sep = "\n")
+    cat("\n")
+  }
+}
 
 #' @name set_increment
 #' @rdname set_increment
@@ -183,18 +281,19 @@ set_increment <- function(yvalues, testtype){
 
 .set_increment <- function(yvalues, testtype){
   ## Initial Checks and Replacement ##
+  # Catch NAs, replace with 0 #
+  if (any(is.na(yvalues))){
+    yvalues[is.na(yvalues)] <- 0
+  }
   # Check for numeric data #
   if(!inherits(yvalues, "numeric")) stop("yvalues must be of the class 'numeric'")
   # Check if a vector #
   if(!is.vector(yvalues)) stop("yvalues must be a numeric vector")
   # Check if test type is correct #
   if(!(testtype %in% c("anova", "gtest", "combined"))) stop("testtype must be 'anova', 'gtest', or 'combined'")
-  # Catch NAs, replace with 0 #
-  if (any(is.na(yvalues))){
-    yvalues[is.na(yvalues)] <- 0
-  }
-  
-  if (testtype == "combined" | testtype == "anova"){
+
+  ## Set increment based on test type ##
+  if (testtype != "gtest"){
     if(length(yvalues)==1){
       increment <- abs(yvalues)/20
     } else {
@@ -240,7 +339,6 @@ set_ylimits <- function(yvalues, increment, ...){
   }
   
   ## Set Limits ##
-  
   # Catch for pre-set y-limits and y_range #
   if (!is.null(y_min) & !is.null(y_max)){
     maxi <- y_max
@@ -261,16 +359,15 @@ set_ylimits <- function(yvalues, increment, ...){
   }
   
   # Set maxi and mini based on difference between max and min values #
-  maxi <- max(yvalues) + 5*increment
-  mini <- min(yvalues) - 5*increment
-  
+  maxi <- max(yvalues) + 4*increment
+  mini <- min(yvalues) - 4*increment
   
   # Adjust for maximums below 0 and minimums above 0 #
   if (max(yvalues) < 0){
-    maxi <- 5*increment
+    maxi <- 4*increment
   }
   if (min(yvalues) > 0){
-    mini <- -5*increment
+    mini <- -4*increment
   }
   
   # Adjust for specified y_min and y_max #
@@ -289,7 +386,7 @@ set_ylimits <- function(yvalues, increment, ...){
 
 #' @name plot_comps
 #' @rdname plot_comps
-#' @title Plot pairwise comparisons of omicsPlotter
+#' @title Plot pairwise comparisons of omicsPlotter object
 #'
 #' @description Plot pairwise comparisons of omicsPlotter. Plots differently depending on statistical tests ran, located in attributes.
 #'
@@ -298,6 +395,10 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @param y_range Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param y_max Sets the maximum y-value for the y-axis.
 #' @param y_min Sets the minimum y-value for the y-axis.
+#' @param p_val Specifies p-value for setting graph border colors
+#' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in omicsPlotter. Defaults to cnames$edata_cname of omicsPlotter.
+#' @param panel_x_axis Specifies what column should be on the x-axis, must be a column in omicsPlotter. Defaults setting plots pairwise comparisons along x-axis.
+#' @param panel_y_axis Specifies what column should be on the y-axis, must be a column in omicsPlotter and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.
 #'
 #' @author Rachel Richardson
 #' @export
@@ -305,14 +406,21 @@ plot_comps <- function(omicsPlotter, ...) {
    .plot_comps(omicsPlotter,  ...)
 }
 
-.plot_comps <- function(omicsPlotter, y_limits = NULL, y_range = NULL, y_max = NULL, y_min = NULL) {
+.plot_comps <- function(omicsPlotter, 
+                        y_limits = NULL, y_range = NULL, 
+                        y_max = NULL, y_min = NULL, p_val = 0.05, 
+                        panel_variable = NULL, 
+                        panel_x_axis = NULL, panel_y_axis = NULL ) {
 
   ## Initial Checks ##
-  
-  # Check check if class is correct #
-  if(!inherits(omicsPlotter, "omicsPlotter")) stop("omicsPlotter must be of the class 'omicsPlotter'")  
+  # Check if class is correct #
+  if(!inherits(omicsPlotter, "omicsPlotter")) stop("omicsPlotter must be of the class 'omicsPlotter'")
+  # Check if comp_stats is in omicsPlotter #
+  if(is.null(omicsPlotter$comp_stats)) stop("No comparisons in omicsPlotter to plot")
   # Check if stats statistical test attribute is valid #
   if(!(attributes(omicsPlotter)$statistical_test %in% c("combined", "gtest", "anova"))) stop(paste("Non-applicable statistical_test attribute in omicsPlotter object."))
+  # Check check if p_val is numeric of length 1 #
+  if(!is.numeric(p_val) | (length(p_val) != 1)) stop("p_val must be a numeric of length 1")  
   
   # Check if y_limits or y_range have been selected correctly #
   if(!is.null(y_limits) & !is.null(y_range)) stop("Input either y_limits or y_range parameters, but not both.")
@@ -341,12 +449,61 @@ plot_comps <- function(omicsPlotter, ...) {
   }
   
   ## Moniker Variables ##
-  omicsPlotterCname <- attributes(omicsPlotter)$cnames$edata_cname
   option <- attributes(omicsPlotter)$statistical_test
-  uniqedatId <- attributes(omicsPlotter)$cnames$edata_cname
-  colors <- c("red", "green4", "purple")
+  colors <- c("NA", "darkgrey", "black")
+  if(is.null(panel_variable)){
+    panel_variable <- attributes(omicsPlotter)$cnames$edata_cname
+  } else {
+    panel_variable <- panel_variable
+  }
+  if(is.null(panel_x_axis)){
+    panel_x_axis <- "Comparison"
+  } else {
+    panel_x_axis <- panel_x_axis
+  }
+  if(is.null(panel_y_axis) & (option == "gtest")){
+    panel_y_axis <- "Count"
+  } else if (is.null(panel_y_axis)){
+    panel_y_axis <- "Fold_change"
+  } else {
+    panel_y_axis <- panel_y_axis
+  }
+  
+  ## Check Monikers ##
+  # Ensure panel, x/y parameters are not matching #
+  if (!((panel_x_axis != panel_variable) & (panel_y_axis != panel_variable))){
+    stop("Parameter panel_y_axis, panel_x_axis cannot match panel_variable. Refer to ?plot_comps for default settings or try setting all of these parameters individually.")
+  }
+  if(panel_x_axis == panel_y_axis){
+    print("Parameter panel_y_axis and panel_x_axis are identical. Refer to ?plot_comps for default settings or try setting parameters individually for different axis labels.")
+  }
+  # Ensure panel,x, and y parameters are in comp_stats, include summary stats if option == gtest #
+  if (!(panel_x_axis %in% colnames(omicsPlotter$comp_stats))){
+    if((option == "gtest") & (!(panel_x_axis %in% colnames(omicsPlotter$summary_stats)))){
+      stop("Parameter panel_x_axis must be in column names of omicsPlotter comp_stats or summary_stats.")
+    } else if (option != "gtest"){
+      stop("Parameter panel_x_axis must be in column names of omicsPlotter comp_stats.")
+    }
+  }
+  if (!(panel_y_axis %in% colnames(omicsPlotter$comp_stats))){
+    if((option == "gtest") & (!(panel_y_axis %in% colnames(omicsPlotter$summary_stats)))){
+      stop("Parameter panel_y_axis must be in column names of omicsPlotter comp_stats or summary_stats.")
+    } else if (option != "gtest"){
+      stop("Parameter panel_y_axis must be in column names of omicsPlotter comp_stats.")
+    }
+  }
+  if (!(panel_variable %in% colnames(omicsPlotter$comp_stats))){
+    if((option == "gtest") & (!(panel_variable %in% colnames(omicsPlotter$summary_stats)))){
+      stop("Parameter panel_variable must be in column names of omicsPlotter comp_stats or summary_stats.")
+    } else if (option != "gtest"){
+      stop("Parameter panel_variable must be in column names of omicsPlotter comp_stats.")
+    }
+  }
+  
+  # Ensure summary_stats are present for gtest plotting #
+  if(option == "gtest" & is.null(omicsPlotter$summary_stats)) stop("G test plotting requires summary statistics in omicsPlotter. Accesed via omicsPlotter$summary_stats.")
 
-  ## Input y limits messages ##
+  ## Input y limits messages, tells user the plot limit parameters ##
   if (is.null(y_limits) & is.null(y_range) & is.null(y_max) & is.null(y_min)){
     print("No specified y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
     y_limits <- "free"
@@ -377,134 +534,279 @@ plot_comps <- function(omicsPlotter, ...) {
     } 
   
   ## Combined ##           ##########################################################
-  
-  if(is.null(y_limits)){
-    increment <- set_increment(omicsPlotter$comp_stats$Fold_change, option)
-    ylims <- set_ylimits(omicsPlotter$comp_stats$Fold_change, 
-                         increment = increment, y_min = y_min, 
-                         y_max = y_max, y_range = y_range)
-  } else if (y_limits == "fixed"){
-    increment <- set_increment(omicsPlotter$comp_stats$Fold_change, option)
-    ylims <- set_ylimits(omicsPlotter$comp_stats$Fold_change, 
-                         increment = increment, y_min = y_min, y_max = y_max)
-  }
-  
-  # Nest data #
   if (option == "combined"){
-    
-    nestplotter <- omicsPlotter$comp_stats %>% tidyr::nest(-omicsPlotterCname)
-    
-  # Generate plots from nested data #
-    # 1) Generate an increment for adjusting y limits and text label position
-    # 2) Define border colors
-    # 3) Generate ggplot of data
-    # 4) Pipe ggplot to plotly
-    nestplotter <- nestplotter[1:10,] %>% 
-      mutate(panel = trelliscopejs::map_plot(data, function(nestedCompStats) {
-    #nestplotter$data[1:10] %>% purrr::map(function(nestedCompStats) { ################
-      
-      # Generate increment based on difference between maximum and minimum y #
-      # 1) Extract non-na y values from the data
-      # 2) Where there is only one value, the increment is 1/20th of that value
-      # 3) Else, the increment is 1/20th the difference betweeen max and min y
-      
-      if (!is.null(y_limits)){
-        if (y_limits == 'free'){
-          increment <-set_increment(nestedCompStats$Fold_change, option)
-          ylims <- set_ylimits(nestedCompStats$Fold_change, 
-                               increment = increment,
-                               y_min = y_min, y_max = y_max)
-        }
+    # Generate increment and y limits based on parameters and y-values #
+    if (!is.null(y_limits)){
+      if (y_limits == 'fixed'){
+        increment <- set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+        ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]], 
+                             increment = increment,
+                             y_min = y_min, y_max = y_max)
       }
-      
-      text_increment <-set_increment(ylims, option)
-      
-      # Make ggplot #
-      # 1) Define variables, with text passed on to plotly and labels above data
-      # 2) Adjust border color for significance based on flag and color vector
-      # 3) Add columns and line at 0
-      # 4) Update label names
-      # 5) Adjust label position to be above/below data as appropriate
-      # 6) Adjust label angle
-      # 7) Adjust y limits to account for label positions
-      plot22 <- ggplot2::ggplot(data = nestedCompStats, 
-                  ggplot2::aes(x = Comparison, 
-                           y = Fold_change,
-                           color = Comparison,
-                           fill = Comparison,
-                           label = paste(
-                             paste("p-value T:",signif(P_value_T, 3)),
-                             paste("p-value G:",signif(P_value_G, 3)),
-                             sep = "\n"),
-                           text = paste(
-                             paste("Fold change:",round(Fold_change, 6)),
-                             paste("T-test p-value:",signif(P_value_T, 6)),
-                             paste("G-test p-value:",signif(P_value_G, 6)),
-                             sep = "\n")
-                           )
-                  ) +
-        ggplot2::scale_color_manual(values = colors[abs(nestedCompStats$Flag)+1]) +
-        ggplot2::geom_col() + 
-        ggplot2::geom_hline(yintercept = 0) +
-        ggplot2::xlab("Pairwise Comparisons") + 
-        ggplot2::ylab("Fold Change") +
-        ggplot2::labs(fill = "", color = "") +
-        ggplot2::geom_text(y = nestedCompStats$Fold_change +
-                    sign(nestedCompStats$Fold_change)*text_increment*3) +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, 
-                                                  hjust = 1, 
-                                                  vjust = 0.5)) +
-        ggplot2::coord_cartesian(ylim=ylims)
-        #ggplot2::ylim(ylims)
-      
-      # Make and return plotly #
-      plotly::ggplotly(plot22, tooltip = c("text")) 
-    }
-  )
-  )
-    return(nestplotter)
-
-  ## ANOVA ##        
-  } else if (option == "anova") {       #########################################
-    
-    if(is.null(y_limits)){
-      increment <- set_increment(omicsPlotter$comp_stats$Fold_change, option)
-      ylims <- set_ylimits(omicsPlotter$comp_stats$Fold_change, 
-                           increment = increment, y_min = y_min, 
-                           y_max = y_max, y_range = y_range)
-    } else if (y_limits == "fixed"){
-      increment <- set_increment(omicsPlotter$comp_stats$Fold_change, option)
-      ylims <- set_ylimits(omicsPlotter$comp_stats$Fold_change, 
-                           increment = increment, y_min = y_min, y_max = y_max)
+    } else if (is.null(y_limits) & is.null(y_range)){
+      increment <- set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+      ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]], 
+                           increment = increment,
+                           y_min = y_min, y_max = y_max)
     }
     
     # Nest data #
-    nestplotter <- omicsPlotter$comp_stats %>% tidyr::nest(-omicsPlotterCname)
+    plotter <- tidyr::separate(omicsPlotter$comp_stats, Comparison, 
+                               c("comp1", "comp2"), sep = "_vs_", remove = FALSE) %>%
+      reshape2::melt(id.vars = names(omicsPlotter$comp_stats), 
+                     value.name = "Group") %>%
+      merge(omicsPlotter$summary_stats)
+    nestplotter <- plotter %>% tidyr::nest(-panel_variable)
+    
+    ##nestplotter <- omicsPlotter$comp_stats %>% tidyr::nest(-panel_variable)
+    #Subset large groups ########### Take out later ######################################
+    if (nrow(nestplotter) > 10){
+      nestplotter <- nestplotter[1:10,]
+    }
+    # Generate plots from nested data #
+    # 1) Generate an increment for adjusting y limits and text label position
+    # 2) Genreate y limits and text position
+    # 3) Define border colors
+    # 4) Generate ggplot of data
+    # 5) Pipe ggplot to plotly
+    nestplotter <- nestplotter %>% 
+      mutate(panel = trelliscopejs::map_plot(data, function(nestedCompStats) {
+      
+      # Generate increment and y limits based on parameters and y-values #
+      if (!is.null(y_limits)){
+        if (y_limits == 'free'){
+          increment <-set_increment(nestedCompStats[[panel_y_axis]], option)
+          ylims <- set_ylimits(nestedCompStats[[panel_y_axis]], 
+                               increment = increment,
+                               y_min = y_min, y_max = y_max)
+        }
+      } else if (!is.null(y_range)){
+        increment <- set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+        ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]],
+                             increment = increment, y_min = y_min, 
+                             y_max = y_max, y_range = y_range)
+      }
+      
+      # Set text spacing above/below barplot #
+      text_increment <-set_increment(ylims, option)
+      if (any(is.na(nestedCompStats[[panel_y_axis]]))){
+        tempfold <- nestedCompStats[[panel_y_axis]]
+        tempfold[is.na(tempfold)] <- 0
+        textadj <- tempfold + sign(tempfold)*text_increment*2
+      } else {
+        textadj <- nestedCompStats[[panel_y_axis]] + 
+          sign(nestedCompStats[[panel_y_axis]])*text_increment*2
+      }
+      
+      # Set border colors based on significance #
+      bord <- rep(colors[1], length(nestedCompStats$P_value_T))
+      bord[nestedCompStats$P_value_G < p_val & !is.na(nestedCompStats$P_value_G)] <-  colors[2]
+      bord[nestedCompStats$P_value_T < p_val & !is.na(nestedCompStats$P_value_T)] <- colors[3]
+      nestedCompStats <- data.frame(nestedCompStats, bord)
+      
+      # Set hover/labels excluding the panel_variable #
+      hover_want <- c( attributes(omicsPlotter)$cnames$edata_cname,
+                       "Group", "Count", "Comparison",
+                       "P_value_G", "P_value_T", "Fold_change") 
+      if (!(panel_y_axis %in% hover_want)){
+        hover_want <- c(hover_want, panel_y_axis)
+      }
+      if (panel_variable %in% hover_want){
+        hover_want <- hover_want[!(hover_want %in% panel_variable)]
+      }
+      hover_labs <- hover_want[hover_want %in% colnames(nestedCompStats)]
+      text_labs <- c()
+      label_labs <- c()
+      
+      for (row in 1:nrow(nestedCompStats)){
+        row_text <- c()
+        row_label <- c()
+        for (label in hover_labs){
+          if (label %in% c("P_value_G", "P_value_T")){
+            row_label <- c(row_label, 
+                           paste(paste(label, ":", sep = ""), 
+                                 signif(nestedCompStats[row,][[label]], 3)))
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                signif(nestedCompStats[row,][[label]])))
+          } else if (label %in% c("Fold_change", panel_y_axis)) {
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                signif(nestedCompStats[row,][[label]])))
+          } else {
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                nestedCompStats[row,][[label]]))
+          }
+        }
+        text_labs[row] <- capture.output(cat(row_text, sep = ", "))
+        label_labs[row] <- capture.output(cat(row_label, sep = ", "))
+      }
+      nestedCompStats <- data.frame(nestedCompStats, 
+                                    text = text_labs, 
+                                    labels = label_labs)
+      
+      # Make ggplot #
+      plot22 <- ggplot2::ggplot(data = nestedCompStats,
+                  ggplot2::aes(x = as.character(nestedCompStats[[panel_x_axis]]), 
+                           y = nestedCompStats[[panel_y_axis]],
+                           color = bord,
+                           fill = Group,
+                           text = gsub(", ", "\n", text),
+                           label = gsub(", ", "\n", labels)
+                           )
+                  ) +
+        ggplot2::scale_color_manual(values = levels(nestedCompStats$bord)) +
+        ggplot2::geom_col(position = "dodge", size = 1) + 
+        ggplot2::geom_hline(yintercept = 0) +
+        ggplot2::xlab(panel_x_axis) + 
+        ggplot2::ylab(panel_y_axis) +
+        ggplot2::labs(fill = "", color = "") +
+        ggplot2::geom_text(aes(y = textadj, group = textadj), color = "black", 
+                           position = ggplot2::position_dodge(width = 0.9)) +
+        ggplot2::theme_bw() +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, 
+                                                           hjust = 1, 
+                                                           vjust = 0.5)) +
+        ggplot2::guides(color = FALSE) +
+        ggplot2::coord_cartesian(ylim=ylims)
+      
+      # Make and return plotly for map_plot #
+      plotly <- plotly::ggplotly(plot22, tooltip = c("text")) 
+      for (plotter in 1:length(plotly$x$data)){
+        if (plotly$x$data[[plotter]]$type != "bar"){
+          plotly$x$data[[plotter]]$showlegend <- FALSE
+          plotly$x$data[[plotter]]$hoveron <- "none"
+          plotly$x$data[[plotter]]$hoverinfo <- "none"
+        }
+        name <- plotly$x$data[[plotter]]$name
+        groups <- unique(nestedCompStats$Group)
+        name <- groups[unlist(map(groups, 
+                                  function(group) grepl(group, name)))]
+        plotly$x$data[[plotter]]$name <- name
+        print(plotly$x$data[[plotter]]$name)
+      }
+      return(plotly)
+    }
+  )
+  )
+    # Return nested table #
+    return(nestplotter)
+    fruits <- c("one apple", "two pears", "three bananas")
+
+  ## ANOVA ##        
+  } else if (option == "anova") {       #########################################
+    # Generate increment and y limits based on parameters and y-values #
+    if (!is.null(y_limits)){
+      if (y_limits == 'fixed'){
+        increment <-set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+        ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]], 
+                             increment = increment,
+                             y_min = y_min, y_max = y_max)
+      }
+    } else if (is.null(y_limits) & is.null(y_range)){
+      increment <- set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+      ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]], 
+                           increment = increment,
+                           y_min = y_min, y_max = y_max)
+    }
+    
+    # Nest data #
+    # nestplotter <- omicsPlotter$comp_stats %>% tidyr::nest(-panel_variable) ###########
+    plotter <- tidyr::separate(omicsPlotter$comp_stats, Comparison, 
+                               c("comp1", "comp2"), sep = "_vs_", remove = FALSE) %>%
+      reshape2::melt(id.vars = names(omicsPlotter$comp_stats), 
+                     value.name = "Group") %>%
+      merge(omicsPlotter$summary_stats)
+
+    nestplotter <- plotter %>% tidyr::nest(-panel_variable)
+    
+    ###################### Subset ###################3 to be removed ####### #######
+    if (nrow(nestplotter) > 10){
+      nestplotter <- nestplotter[1:10,]
+    }
     
     # Generate plots from nested data #
     # 1) Generate an increment for adjusting y limits and text label position
     # 2) Define border colors
     # 3) Generate ggplot of data
     # 4) Pipe ggplot to plotly
-    #nestplotter$data[1:10] %>% purrr::map(function(nestedCompStats) {  ################
-    nestplotter <- nestplotter[1:10,] %>% 
-      mutate(panel = trelliscopejs::map_plot(data, function(nestedCompStats) {  ################
-      
-      # Generate increment based on difference between maximum and minimum y #
-      # 1) Extract non-na y values from the data
-      # 2) Where there is only one value, the increment is 1/20th of that value
-      # 3) Else, the increment is 1/20th the difference betweeen max and min y
-      
+    nestplotter <- nestplotter %>% 
+      mutate(panel = trelliscopejs::map_plot(data, function(nestedCompStats) { 
+        
+      # Generate increment and y limits based on parameters and y-values #
       if (!is.null(y_limits)){
         if (y_limits == 'free'){
-          increment <-set_increment(nestedCompStats$Fold_change, option)
-          ylims <- set_ylimits(nestedCompStats$Fold_change, 
+          increment <- set_increment(nestedCompStats[[panel_y_axis]], option)
+          ylims <- set_ylimits(nestedCompStats[[panel_y_axis]], 
                                increment = increment,
                                y_min = y_min, y_max = y_max)
         }
+      } else if (!is.null(y_range)){
+        increment <- set_increment(nestedCompStats[[panel_y_axis]], option)
+        ylims <- set_ylimits(nestedCompStats[[panel_y_axis]],
+                             increment = increment, y_min = y_min, 
+                             y_max = y_max, y_range = y_range)
+      }
+        
+      # Set text spacing #
+      text_increment <-set_increment(ylims, option)
+      if (any(is.na(nestedCompStats[[panel_y_axis]]))){
+        tempfold <- nestedCompStats[[panel_y_axis]]
+        tempfold[is.na(tempfold)] <- 0
+        textadj <- tempfold + sign(tempfold)*text_increment*2
+      } else {
+        textadj <- nestedCompStats[[panel_y_axis]] + 
+          sign(nestedCompStats[[panel_y_axis]])*text_increment*2
       }
       
-      text_increment <-set_increment(ylims, option)
+      # Set border colors based on significance #
+      bord <- rep(colors[1], length(nestedCompStats$P_value_T))
+      bord[nestedCompStats$P_value_G < p_val & !is.na(nestedCompStats$P_value_G)] <-  colors[2]
+      bord[nestedCompStats$P_value_T < p_val & !is.na(nestedCompStats$P_value_T)] <- colors[3]
+      nestedCompStats <- data.frame(nestedCompStats, bord)
+      
+      # Set hover/labels excluding the panel_variable #
+      hover_want <- c( attributes(omicsPlotter)$cnames$edata_cname,
+                       "Group", "Count", "Comparison",
+                       "P_value_G", "P_value_T", "Fold_change") 
+      if (!(panel_y_axis %in% hover_want)){
+        hover_want <- c(hover_want, panel_y_axis)
+      }
+      if (panel_variable %in% hover_want){
+        hover_want <- hover_want[!(hover_want %in% panel_variable)]
+      }
+      hover_labs <- hover_want[hover_want %in% colnames(nestedCompStats)]
+      text_labs <- c()
+      label_labs <- c()
+      
+      for (row in 1:nrow(nestedCompStats)){
+        row_text <- c()
+        row_label <- c()
+        for (label in hover_labs){
+          if (label %in% c("P_value_G", "P_value_T")){
+            row_label <- c(row_label, 
+                           paste(paste(label, ":", sep = ""), 
+                                 signif(nestedCompStats[row,][[label]], 3)))
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                signif(nestedCompStats[row,][[label]])))
+          } else if (label %in% c("Fold_change", panel_y_axis)) {
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                signif(nestedCompStats[row,][[label]])))
+          } else {
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                nestedCompStats[row,][[label]]))
+          }
+        }
+        text_labs[row] <- capture.output(cat(row_text, sep = ", "))
+        label_labs[row] <- capture.output(cat(row_label, sep = ", "))
+      }
+      nestedCompStats <- data.frame(nestedCompStats, 
+                                    text = text_labs, 
+                                    labels = label_labs)
       
       # Make ggplot #
       # 1) Define variables, with text passed on to plotly and labels above data
@@ -515,51 +817,77 @@ plot_comps <- function(omicsPlotter, ...) {
       # 6) Adjust label angle
       # 7) Adjust y limits to account for label positions      
       plot22 <- ggplot2::ggplot(data = nestedCompStats, 
-              ggplot2::aes(x = Comparison, 
-                           y = Fold_change,
-                           color = Comparison,
-                           fill = Comparison,
-                           label = paste("p-value T:",signif(P_value_T, 3)),
-                           text = paste(
-                             paste("Fold change:",round(Fold_change, 6)),
-                             paste("T-test p-value:",signif(P_value_T, 6)),
-                             sep = "\n")
+              ggplot2::aes(x = as.character(nestedCompStats[[panel_x_axis]]), 
+                           y = nestedCompStats[[panel_y_axis]],
+                           color = bord,
+                           fill = Group,
+                           # color = as.factor(nestedCompStats[[panel_x_axis]]),
+                           # fill = as.factor(nestedCompStats[[panel_x_axis]]),
+                           # label = paste("p-value T:",signif(P_value_T, 3)),
+                           text = gsub(", ", "\n", text),
+                           label = gsub(", ", "\n", labels)
+                             # paste(
+                             # paste("Group:", Group),
+                             # paste("Count:", Count),
+                             # paste("Comparison:", Comparison),
+                             # paste(paste(panel_y_axis,":", sep = ""),
+                             #       round(nestedCompStats[[panel_y_axis]], 6)),
+                             # paste("T-test p-value:",signif(P_value_T, 6)),
+                             # sep = "\n")
                            )
               ) +
-        ggplot2::scale_color_manual(values = colors[abs(nestedCompStats$Flag)+1]) +
-        ggplot2::geom_col() + 
+        ggplot2::scale_color_manual(values = levels(nestedCompStats$bord)) +
+        ggplot2::geom_col(position = "dodge", size = 1) + 
         ggplot2::geom_hline(yintercept = 0) +
-        ggplot2::xlab("Pairwise Comparisons") + 
-        ggplot2::ylab("Fold Change") +
+        ggplot2::xlab(panel_x_axis) + 
+        ggplot2::ylab(panel_y_axis) +
         ggplot2::labs(fill = "", color = "") +
-        ggplot2::geom_text(y = nestedCompStats$Fold_change +
-                    sign(nestedCompStats$Fold_change)*text_increment*3) +
+        ggplot2::geom_text(aes(y = textadj, group = textadj), color = "black", 
+                           position = ggplot2::position_dodge(width = 0.9)) +
+        ggplot2::theme_bw() +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, 
-                                                  hjust = 1, 
-                                                  vjust = 0.5)) +
-        ggplot2::coord_cartesian(ylim=ylims)
-        #ggplot2::ylim(ylims)
+                                                           hjust = 1, 
+                                                           vjust = 0.5)) +
+        ggplot2::guides(color = FALSE) +
+        ggplot2::coord_cartesian(ylim=ylims) 
       
       # Make and return plotly #
-      plotly::ggplotly(plot22, tooltip = c("text")) 
+      plotly <- plotly::ggplotly(plot22, tooltip = c("text")) 
+      for (plotter in 1:length(plotly$x$data)){
+        if (plotly$x$data[[plotter]]$type != "bar"){
+          plotly$x$data[[plotter]]$showlegend <- FALSE
+          plotly$x$data[[plotter]]$hoveron <- "none"
+          plotly$x$data[[plotter]]$hoverinfo <- "none"
+        }
+        name <- plotly$x$data[[plotter]]$name
+        groups <- unique(nestedCompStats$Group)
+        name <- groups[unlist(map(groups, 
+                                  function(group) grepl(group, name)))]
+        plotly$x$data[[plotter]]$name <- name
+        print(plotly$x$data[[plotter]]$name)
+      }
+      return(plotly)
     }
     )
     )
-    
+
     return(nestplotter)
     
-  ## G test ##  
+  ## G test ##                                              ######################
   } else if (option == "gtest") {
     
-    if(is.null(y_limits)){
-      increment <- set_increment(omicsPlotter$comp_stats$Count, option)
-      ylims <- set_ylimits(omicsPlotter$comp_stats$Count, 
-                           increment = increment, y_min = y_min, 
-                           y_max = y_max, y_range = y_range)
-    } else if (y_limits == "fixed"){
-      increment <- set_increment(omicsPlotter$comp_stats$Count, option)
-      ylims <- set_ylimits(omicsPlotter$comp_stats$Count, 
-                           increment = increment, y_min = y_min, y_max = y_max)
+    if (!is.null(y_limits)){
+      if (y_limits == 'fixed'){
+        increment <-set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+        ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]], 
+                             increment = increment,
+                             y_min = y_min, y_max = y_max)
+      }
+    } else if (is.null(y_limits) & is.null(y_range)){
+      increment <- set_increment(omicsPlotter$comp_stats[[panel_y_axis]], option)
+      ylims <- set_ylimits(omicsPlotter$comp_stats[[panel_y_axis]], 
+                           increment = increment,
+                           y_min = y_min, y_max = y_max)
     }
     
     # Generate combined and nested data for plotting #
@@ -571,17 +899,19 @@ plot_comps <- function(omicsPlotter, ...) {
                         c("comp1", "comp2"), sep = "_vs_", remove = FALSE) %>%
       reshape2::melt(id.vars = names(omicsPlotter$comp_stats), 
                      value.name = "Group") %>%
-      merge(omicsPlotter$summary_stats, by = c(uniqedatId, "Group"))
-    nestplotter <- plotter %>% tidyr::nest(-uniqedatId)
+      merge(omicsPlotter$summary_stats)
+    nestplotter <- plotter %>% tidyr::nest(-panel_variable)
     
     # Generate plots from nested data #
     # 1) Generate an increment for adjusting y limits and text label position
     # 2) Define border colors
     # 3) Generate ggplot of data
     # 4) Pipe ggplot to plotly
-    nestplotter <- nestplotter[1:10,] %>% 
+    if (nrow(nestplotter) > 10){
+      nestplotter <- nestplotter[1:10,]
+    }
+    nestplotter <- nestplotter %>% 
       mutate(panel = trelliscopejs::map_plot(data, function(nestedCompStats) { 
-    #nestplotter$data[1:10] %>% purrr::map(function(nestedCompStats) { ################
       
       # Generate increment based on maximum y (no negative counts) #
       # 1) Extract non-na y values from the data
@@ -589,14 +919,75 @@ plot_comps <- function(omicsPlotter, ...) {
       
       if (!is.null(y_limits)){
         if (y_limits == 'free'){
-          increment <-set_increment(nestedCompStats$Count, option)
-          ylims <- set_ylimits(nestedCompStats$Count, 
+          increment <-set_increment(nestedCompStats[[panel_y_axis]], option)
+          ylims <- set_ylimits(nestedCompStats[[panel_y_axis]], 
                                increment = increment,
                                y_min = y_min, y_max = y_max)
         }
+      } else if (!is.null(y_range)){
+        increment <- set_increment(nestedCompStats[[panel_y_axis]], option)
+        ylims <- set_ylimits(nestedCompStats[[panel_y_axis]],
+                             increment = increment, y_min = y_min, 
+                             y_max = y_max, y_range = y_range)
       }
       
+      ## Set text spacing ##
       text_increment <-set_increment(ylims, option)
+      if (any(is.na(nestedCompStats[[panel_y_axis]]))){
+        tempfold <- nestedCompStats[[panel_y_axis]]
+        tempfold[is.na(tempfold)] <- 0
+        textadj <- max(tempfold) + sign(max(tempfold))*text_increment*2
+      } else {
+        textadj <- max(nestedCompStats[[panel_y_axis]]) + text_increment*2
+      }
+      
+      ## Set border colors based on significance ##
+      bord <- rep(colors[1], length(nestedCompStats$P_value_T))
+      bord[nestedCompStats$P_value_G < p_val & !is.na(nestedCompStats$P_value_G)] <-  colors[2]
+      bord[nestedCompStats$P_value_T < p_val & !is.na(nestedCompStats$P_value_T)] <- colors[3]
+      nestedCompStats <- data.frame(nestedCompStats, bord)
+      
+      # Set hover/labels excluding the panel_variable #
+      hover_want <- c( attributes(omicsPlotter)$cnames$edata_cname,
+                       "Group", "Count", "Comparison",
+                       "P_value_G", "P_value_T", "Fold_change") 
+      if (!(panel_y_axis %in% hover_want)){
+        hover_want <- c(hover_want, panel_y_axis)
+      }
+      if (panel_variable %in% hover_want){
+        hover_want <- hover_want[!(hover_want %in% panel_variable)]
+      }
+      hover_labs <- hover_want[hover_want %in% colnames(nestedCompStats)]
+      text_labs <- c()
+      label_labs <- c()
+      
+      for (row in 1:nrow(nestedCompStats)){
+        row_text <- c()
+        row_label <- c()
+        for (label in hover_labs){
+          if (label %in% c("P_value_G", "P_value_T")){
+            row_label <- c(row_label, 
+                           paste(paste(label, ":", sep = ""), 
+                                 signif(nestedCompStats[row,][[label]], 3)))
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                signif(nestedCompStats[row,][[label]])))
+          } else if (label %in% c("Fold_change", panel_y_axis)) {
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                signif(nestedCompStats[row,][[label]])))
+          } else {
+            row_text <- c(row_text,
+                          paste(paste(label, ":", sep = ""), 
+                                nestedCompStats[row,][[label]]))
+          }
+        }
+        text_labs[row] <- capture.output(cat(row_text, sep = ", "))
+        label_labs[row] <- capture.output(cat(row_label, sep = ", "))
+      }
+      nestedCompStats <- data.frame(nestedCompStats, 
+                                    text = text_labs, 
+                                    labels = label_labs)
       
       # Make ggplot #
       # 1) Define variables, with text passed on to plotly and labels above data
@@ -606,35 +997,46 @@ plot_comps <- function(omicsPlotter, ...) {
       # 5) Adjust label position to be above data
       # 6) Adjust label angle
       # 7) Adjust y limits to account for label positions  
-      plot22 <- ggplot2::ggplot(data = nestedCompStats, 
-              ggplot2::aes(x = Comparison, 
-                           y = Count,
-                           color = Group,
+      plot22 <- ggplot2::ggplot(data = nestedCompStats,
+              ggplot2::aes(x = as.character(nestedCompStats[[panel_x_axis]]), 
+                           y = nestedCompStats[[panel_y_axis]],
                            fill = Group,
-                           label = paste(
-                             paste("p-value G:",signif(P_value_G, 3)),
-                             sep = "\n"),
-                           text = paste("Count for Group", 
-                                        paste(Group, ":", sep = ""), 
-                                        Count)
+                           text = gsub(", ", "\n", text),
+                           label = gsub(", ", "\n", labels)
                            )
               ) +
-        ggplot2::scale_color_manual(values = colors[abs(nestedCompStats$Flag)+1]) +
-        ggplot2::geom_col(position = "dodge") +
+        ggplot2::scale_color_manual(values = levels(nestedCompStats$bord))  +
+        ggplot2::geom_col(position = "dodge", size = 1) +
         ggplot2::geom_hline(yintercept = 0) +
-        ggplot2::xlab("Pairwise Comparisons") + 
-        ggplot2::ylab("Count") +
+        ggplot2::xlab(panel_x_axis) + 
+        ggplot2::ylab(panel_y_axis) +
         ggplot2::labs(fill = "", color = "") +
-        ggplot2::geom_text(y = max(nestedCompStats$Count) + text_increment*3) +
+        ggplot2::geom_text(aes(y = textadj, group = textadj), color = "black", 
+                           position = "dodge") +
+        ggplot2::theme_bw() +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, 
-                                                  hjust = 1, 
-                                                  vjust = 0.5)) +
+                                                           hjust = 1, 
+                                                           vjust = 0.5)) +
+        ggplot2::guides(color = FALSE) +
         ggplot2::coord_cartesian(ylim=ylims)
-        #ggplot2::ylim(ylims)
       
       # Make and return plotly #
-      plotly::ggplotly(plot22, tooltip = c("text")) 
-    }
+      plotly <- plotly::ggplotly(plot22, tooltip = c("text"))
+      for (plotter in 1:length(plotly$x$data)){
+        if (plotly$x$data[[plotter]]$type != "bar"){
+          plotly$x$data[[plotter]]$showlegend <- FALSE
+          plotly$x$data[[plotter]]$hoveron <- "none"
+          plotly$x$data[[plotter]]$hoverinfo <- "none"
+        }
+        name <- plotly$x$data[[plotter]]$name
+        groups <- unique(nestedCompStats$Group)
+        name <- groups[unlist(map(groups, 
+                                  function(group) grepl(group, name)))]
+        plotly$x$data[[plotter]]$name <- name
+        print(plotly$x$data[[plotter]]$name)
+      }
+      return(plotly)
+      }
     )
     )
     return(nestplotter)

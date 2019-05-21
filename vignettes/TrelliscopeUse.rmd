@@ -157,6 +157,7 @@ x <- proteomics_filter(objects[1][[1]])
 summary(x)
 plot(x)
 
+rm(x)
 ```
 
 ### All omicsData
@@ -183,31 +184,6 @@ filterpipe <- function(omicsData, min_num = 1, cv_threshold = 150,
 # Metab, lipid, pro summary group count not showing up?
 # due to use of levels() in calls for metab, lipid, and pro, but unique() for peps
 
-summary(objects[1][[1]])
-summary(filterpipe(objects[1][[1]], cv_threshold = 120, min_num = 3,
-           min_nonmiss_gtest = NULL, min_nonmiss_anova = 2))
-
-summary(objects[2][[1]])
-summary(filterpipe(objects[2][[1]], cv_threshold = 120, min_num = 3,
-           min_nonmiss_gtest = 3, min_nonmiss_anova = 2))
-
-summary(objects[3][[1]])
-summary(filterpipe(objects[3][[1]], cv_threshold = 120, min_num = 3,
-           min_nonmiss_gtest = 3, min_nonmiss_anova = 2))
-
-summary(objects[4][[1]])
-summary(filterpipe(objects[4][[1]], cv_threshold = 120, min_num = 3,
-           min_nonmiss_gtest = 3, min_nonmiss_anova = 2))
-
-summary(objects[5][[1]])
-summary(filterpipe(objects[5][[1]], cv_threshold = 120, min_num = 3,
-           min_nonmiss_gtest = 3, min_nonmiss_anova = 2))
-
-summary(objects[6][[1]])
-summary(filterpipe(objects[6][[1]], cv_threshold = 120, min_num = 3,
-           min_nonmiss_gtest = 3, min_nonmiss_anova = 2))
-
-
 # Assign as filter objects
 objects[1][[1]] <- filterpipe(objects[1][[1]], cv_threshold = 120, min_num = 3,
                               min_nonmiss_gtest = NULL, min_nonmiss_anova = 2) # isobaric_object
@@ -216,7 +192,7 @@ objects[2][[1]] <- filterpipe(objects[2][[1]], cv_threshold = 120, min_num = 3,
 objects[3][[1]] <- filterpipe(objects[3][[1]], cv_threshold = 120, min_num = 3,
                               min_nonmiss_gtest = 3, min_nonmiss_anova = 2)    # metab_object
 objects[4][[1]] <- filterpipe(objects[4][[1]], cv_threshold = 120, min_num = 3,
-                              min_nonmiss_gtest = 3, min_nonmiss_anova = 2)    # pep_object
+                              min_nonmiss_gtest = 3)    # pep_object
 objects[5][[1]] <- filterpipe(objects[5][[1]], cv_threshold = 120, min_num = 3,
                               min_nonmiss_gtest = 3, min_nonmiss_anova = 2)    # pro_object
 objects[6][[1]] <- filterpipe(objects[6][[1]], cv_threshold = 120, min_num = 3,
@@ -295,12 +271,7 @@ norm_stats <- map(norm_objects, function (omicsData) {
 #   invalid 'labels'; length 4 should be 1 or 0
 #When colnames are not correct
 
-
-### cnames only updates for "combined" right now, needs to be added to other tests??
-## or not?? NULL returns
-attributes(imd_anova(norm_objects[6][[1]], test_method = "combined"))$cnames
-attributes(imd_anova(norm_objects[6][[1]], test_method = "anova"))$cnames
-attributes(imd_anova(norm_objects[6][[1]], test_method = "gtest"))$cnames
+#Work around for attributes
 
 ##?map2
 for (item in 1:length(norm_objects)){
@@ -318,45 +289,26 @@ pep <- as.omicsPlotter(norm_objects[4][[1]], norm_stats[4][[1]])
 pro <- as.omicsPlotter(norm_objects[5][[1]], norm_stats[5][[1]])
 techrep <- as.omicsPlotter(norm_objects[6][[1]], norm_stats[6][[1]])
 
-isobar$data_values
-isobar$summary_stats
-isobar$comp_stats
 plot_comps(isobar, y_range = 2) %>% 
   trelliscope(name = "isobar_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
 
-lip$data_values
-lip$summary_stats
-lip$comp_stats
 plot_comps(lip, y_range = 10, y_min = -2) %>% 
   trelliscope(name = "lipid_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
 
-metab$data_values
-metab$summary_stats
-metab$comp_stats
 plot_comps(metab, y_min = -2, y_max = 6) %>% 
   trelliscope(name = "metab_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
 
-pep$data_values
-pep$summary_stats
-pep$comp_stats
-plot_comps(pep)
-plot_comps(pep, y_limits = "free") %>% 
+plot_comps(pep, y_limits = "free")$panel %>% 
   trelliscope(name = "Pep_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
 
-pro$data_values
-pro$summary_stats
-pro$comp_stats
 plot_comps(pro, y_limits = "fixed") %>% 
   trelliscope(name = "Pro_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
 
-techrep$data_values
-techrep$summary_stats
-techrep$comp_stats
 plot_comps(techrep, y_limits = "fixed", y_min = -3) %>% 
   trelliscope(name = "techrep_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
@@ -365,9 +317,161 @@ plot_comps(techrep) %>%
   trelliscope(name = "techrep_unfixed_test", nrow = 1, ncol = 2,
                   path = "../../../Displaytest", thumb = TRUE)
 
-boxplot(techrep$comp_stats$Fold_change[!is.na(techrep$comp_stats$Fold_change)])
+plot_comps(isobar)$panel
+plot_comps(pep)$panel
+plot_comps(pro)$panel ###??
+x <- plot_comps(pep, panel_x_axis = "Flag", panel_variable = "Fold_change")$panel
+attr(pep, "statistical_test")
+x[2][[1]]$x$data
+pro$summary_stats
+x
+```
+
+
+```{r}
+
+#################################
+##Add protein cognostics for trelliscope
+
+?as.omicsPlotter
+
+## Stats for sorting ##
+omicsData <- norm_objects[1][[1]]
+omicsStats <- norm_stats[1][[1]]
+omicsPlotter <- isobar
+
+datacogs <- function(omicsPlotter, omicsData, omicsStats, p_val = 0.05, pep_pro_emeta = FALSE, pep_pro_cols = NULL, panel_variable = NULL){
+  
+  if (is.null(omicsPlotter)){
+    omicsPlotter = omicsPlotter(omicsData, omicsStats)
+  }
+  
+  ##Check for same between plotter, data, stats classes
+  e_data <- omicsData$e_data[1:10,]
+  f_data <- omicsData$f_data[1:10,]
+  e_meta <- omicsData$e_meta[1:10,]
+  stats <- omicsStats$Full_results[1:10,]
+  
+  # Assign unique ID, then panel variable
+
+  uniqueID <- attributes(omicsPlotter)$cnames$edata_cname
+  if(is.null(panel_variable) & !is.null(e_meta)){
+    panel_variable <- attributes(omicsPlotter)$cnames$emeta_cname
+  } else if (is.null(panel_variable)){
+    panel_variable <- uniqueID
+    }
+  
+  plotcomp <- plot_comps(omicsPlotter)
+  
+    addstatcogs <- merge(omicsStats, omicsData) %>% 
+      nest(-panel_variable, -uniqueID, .key = "Original stats/values")
+  plotcomp2 <- merge(plotcomp, addstatcogs)
+  
+  omicsStats <- NULL
+  # %>%
+  trelliscope(name = "isobar_test2", nrow = 1, ncol = 2,
+                  path = "../../../Displaytest", thumb = TRUE)
+  
+  return(addstatcogs)
+}
+
+datacogs(plot_comps(isobar), 
+         norm_objects[1][[1]]$e_data[1:10,],  
+         norm_stats[1][[1]]$Full_results[1:10,])  
+
+
+%>%
+  trelliscope(name = "isobar_test", nrow = 1, ncol = 2,
+                  path = "../../../Displaytest", thumb = TRUE)
 
 ```
+
+```{r}
+
+precogpro <- function(pro_stats, joinpep, uniqidpro, uniqidpep){
+  
+  prolist <- pro_stats[[uniqidpro]]
+  pvalg <- data.frame(t(pro_stats[str_detect(names(pro_stats), "P_value_G")]))
+  pvalt <- data.frame(t(pro_stats[str_detect(names(pro_stats), "P_value_T")]))
+  colnames(pvalg) <- prolist
+  colnames(pvalt) <- prolist
+  
+  Sig_G_p_value <- as.factor(prolist %in% names(
+    select_if(pvalg, function(x) any(x < 0.05) && all(!is.na(x)))
+    ))
+  Sig_T_p_value <- as.factor(prolist %in% names(
+    select_if(pvalt, function(x) any(x < 0.05) && all(!is.na(x)))
+    ))
+  n_Peptides <- data.frame(table(joinpep[[uniqidpro]]))
+  colnames(n_Peptides) <- c(uniqidpro, "n_Peptides")
+  
+  degenpep <- joinpep[[uniqidpep]][which(
+                                    duplicated(joinpep[[uniqidpep]])==TRUE)]
+  Is_degenerate <- as.factor(joinpep[[uniqidpep]] %in% degenpep)
+  
+  n_degenerate_peps <- data.frame(table(
+    joinpep[Is_degenerate == "TRUE",][[uniqidpro]]))
+  
+  colnames(n_degenerate_peps) <- c(uniqidpro, "n_degenerate_peps")
+  
+  propeps <- joinpep[,c(uniqidpep, uniqidpro)] %>% 
+  nest(uniqidpep) %>% 
+  mutate(data = unlist(map(data, function(peplist) {
+    toString(unlist(lapply(peplist, as.character)), sep = ", ")
+    }
+    )))
+  propeps <- data.frame(propeps[match(prolist, propeps$RazorProtein),])
+  
+  pronest <- pro_stats %>% nest(-uniqidpro) %>%
+  mutate(
+    Sig_G_p_value = cog(Sig_G_p_value, 
+                        desc = "Boolean for significant G test p-values, where TRUE indicates that the p-value is < 0.05 and is grounds for rejecting the null hypothesis (independence of missing data)."),
+    Sig_T_p_value = cog(Sig_T_p_value,
+                        desc = "Boolean for significant T test p-values, where TRUE indicates that the p-value is < 0.05 and is grounds for rejecting the null hypothesis (no significant difference between groups)."),
+    n_Peptides = cog(n_Peptides[prolist,]$n_Peptides, desc = "Number of peptides mapping to the selected protein"),
+    n_degenerate = cog(n_degenerate_peps[prolist,]$n_degenerate_peps,
+                        desc = "Number of degenerate peptides that map to the selected protein; degenerate peptides also match to other proteins."),
+    Peptide_list = cog(propeps$data, desc = "Peptides that match to the selected protein"))
+  
+  return(pronest)
+}
+#################################
+##Add peptide cognostics for trelliscope
+precogpep <- function(joinpep, uniqidpep){
+  
+  peplist <- joinpep[[uniqidpep]]
+  pvalg <- data.frame(t(joinpep[str_detect(names(joinpep), "P_value_G")]))
+  pvalt <- data.frame(t(joinpep[str_detect(names(joinpep), "P_value_T")]))
+  colnames(pvalg) <- substring(colnames(pvalg), 2)
+  colnames(pvalt) <- substring(colnames(pvalt), 2)
+  Sig_G_p_value <- as.factor(peplist %in% joinpep[[uniqidpep]][as.numeric(names(
+    select_if(pvalg, function(x) any(x < 0.05) && all(!is.na(x)))
+    ))])
+  Sig_T_p_value <- as.factor(peplist %in% joinpep[[uniqidpep]][as.numeric(names(
+    select_if(pvalt, function(x) any(x < 0.05) && all(!is.na(x)))
+    ))])
+  
+  degenpep <- peplist[which(duplicated(peplist)==TRUE)]
+  Is_degenerate <- as.factor(peplist %in% degenpep)
+  
+  nestedpep <-joinpep %>% nest(-uniqidpep, -uniqidpro) %>%
+  mutate(
+    Sig_G_p_value = cog(Sig_G_p_value, 
+                        desc = "Boolean for significant G test p-values, where TRUE indicates that the p-value is < 0.05 and is grounds for rejecting the null hypothesis (independence of missing data)."),
+    Sig_T_p_value = cog(Sig_T_p_value,
+                        desc = "Boolean for significant T test p-values, where TRUE indicates that the p-value is < 0.05 and is grounds for rejecting the null hypothesis (no significant difference between groups)."),
+    Is_degenerate = cog(Is_degenerate,
+                        desc = "Boolean for degenerate peptides, where TRUE indicates that this peptide maps to multiple proteins."))
+  return(nestedpep)
+}
+
+
+pepnest <- joinpep %>% precogpep(uniqidpep = uniqidpep)
+pronest <- precogpro(pro_stats, joinpep, uniqidpro, uniqidpep)
+
+```
+
+
 
 
 
