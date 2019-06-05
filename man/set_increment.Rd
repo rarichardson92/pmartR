@@ -4,7 +4,7 @@
 \alias{set_increment}
 \title{Sets y-axis increment for Omicsplotter labels plotting}
 \usage{
-set_increment(yvalues, testtype)
+set_increment(yvalues, ...)
 }
 \arguments{
 \item{yvalues}{y-values for plotting}
