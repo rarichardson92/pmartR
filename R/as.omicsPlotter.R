@@ -658,6 +658,7 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @param value_plot For values: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.
 #' @param comps_plot For comparisons: In the presence of summary_stats and comp_stats in omicsPlotter, should the plot be rendered? Default is TRUE.
 #' @param comps_text For comparisons only: TRUE/FALSE for p-value text above data
+#' @param plotly Should the plots be rendered as plotly objects?
 #' @param ... further arguments
 #'
 #' @author Rachel Richardson
@@ -682,7 +683,7 @@ format_plot <- function(omicsPlotter, ...) {
                         value_panel_y_axis = NULL,
                         value_plot_type = "boxpoint", comps_plot_type = "col",
                         value_plot = TRUE, comps_plot = TRUE, 
-                        comps_text = TRUE) {
+                        comps_text = TRUE, plotly = TRUE) {
 
   ## Initial Checks ##
   
@@ -1103,9 +1104,9 @@ format_plot <- function(omicsPlotter, ...) {
   nestplotter <- plotter %>% tidyr::nest(-panel_variable)
   
   # #Subset large groups ########### Take out later ######################################
-  # if (nrow(nestplotter) > 10){
-  #   nestplotter <- nestplotter[1:10,]
-  # }
+ if (nrow(nestplotter) > 10){
+   nestplotter <- nestplotter[1:10,]
+ }
 
   # Generate plots from nested data #
   # 1) Generate an increment for adjusting y limits and text label position
@@ -1137,24 +1138,6 @@ format_plot <- function(omicsPlotter, ...) {
                                y_max = comps_y_max, y_range = comps_y_range,
                                include_zero = comps_include_zero)
         }
-      
-      # # Set text spacing above/below barplot #
-      # if (any(is.na(nestedData[[comps_panel_y_axis]]))){
-      #   tempfold <- nestedData[[comps_panel_y_axis]]
-      #   tempfold[is.na(tempfold)] <- 0
-      #   if (option == "gtest"){
-      #     textadj <- max(tempfold) + sign(max(tempfold))*comps_increment*3
-      #   } else {
-      #     textadj <- tempfold + sign(tempfold)*comps_increment*3
-      #   }
-      # } else {
-      #   if (option == "gtest"){
-      #     textadj <- max(nestedData[[comps_panel_y_axis]]) + comps_increment*3
-      #   } else {
-      #     textadj <- nestedData[[comps_panel_y_axis]] + 
-      #       sign(nestedData[[comps_panel_y_axis]])*comps_increment*3
-      #   }
-      # }
       
       # Set border colors based on significance #
       bord <- rep(colors[1], length(nestedData$P_value_T))
@@ -1205,8 +1188,8 @@ format_plot <- function(omicsPlotter, ...) {
                                     labels = label_labs_comps)
       
       # Make ggplots #
-      plot_comps_all <- list()
-      for (typenum in 1:length(comps_plot_type)){
+      plot_comps_all <- map(1:length(comps_plot_type), function (typenum){
+      #for (typenum in 1:length(comps_plot_type)){
         type <- comps_plot_type[typenum]
         
         plot_comps <- ggplot2::ggplot(
@@ -1223,12 +1206,11 @@ format_plot <- function(omicsPlotter, ...) {
           ggplot2::xlab(comps_panel_x_axis) + 
           ggplot2::ylab(comps_panel_y_axis) +
           ggplot2::labs(fill = "", color = "") +
-          # ggplot2::geom_text(aes(y = textadj, group = textadj), color = "black", 
-          #                    position = ggplot2::position_dodge(width = 0.9)) +
           ggplot2::theme_bw() +
           ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, 
                                                              hjust = 1, 
-                                                             vjust = 0.5)) +
+                                                             vjust = 0.5), 
+                         legend.position='none') +
           ggplot2::guides(color = FALSE) +
           ggplot2::coord_cartesian(ylim=comps_ylims)
 
@@ -1238,16 +1220,16 @@ format_plot <- function(omicsPlotter, ...) {
             tempfold <- nestedData[[comps_panel_y_axis]]
             tempfold[is.na(tempfold)] <- 0
             if (option == "gtest"){
-              textadj <- max(tempfold) + sign(max(tempfold))*comps_increment*3
+              textadj <- max(tempfold) + sign(max(tempfold))*comps_increment*4
             } else {
-              textadj <- tempfold + sign(tempfold)*comps_increment*3
+              textadj <- tempfold + sign(tempfold)*comps_increment*4
             }
           } else {
             if (option == "gtest"){
-              textadj <- max(nestedData[[comps_panel_y_axis]]) + comps_increment*3
+              textadj <- max(nestedData[[comps_panel_y_axis]]) + comps_increment*4
             } else {
               textadj <- nestedData[[comps_panel_y_axis]] + 
-                sign(nestedData[[comps_panel_y_axis]])*comps_increment*3
+                sign(nestedData[[comps_panel_y_axis]])*comps_increment*4
             }
           }
           
@@ -1269,15 +1251,17 @@ format_plot <- function(omicsPlotter, ...) {
         }
         if (stringr::str_detect(type, pattern = "point|scatter")){
           typelist <- c(typelist, "scatter")
-          plot_comps <- plot_comps + ggplot2::geom_point(position = position_jitterdodge(), 
-                                                         size = 3) +
+          plot_comps <- plot_comps + ggplot2::geom_point(position = position_dodge(), 
+                                                         size = 2) +
               scale_color_manual(values = levels(nestedData_comps$bord))
         }
         if (stringr::str_detect(type, pattern = "box")){
           if(!is.na(var(na.omit(nestedData_comps[[comps_panel_y_axis]]))) && 
              var(na.omit(nestedData_comps[[comps_panel_y_axis]])) != 0 ){
             typelist <- c(typelist, "box")
-            plot_comps <- plot_comps +  ggplot2::geom_boxplot(alpha = 0.2, position = "dodge2")
+            plot_comps <- plot_comps +  
+              ggplot2::geom_boxplot(alpha = 0.2, 
+                                    position = "dodge2")
           } else {
             print("Varience of y_value is zero, boxplot is not applicable. Plotting y-value as a line (geom_crossbar).")
             typelist <- c(typelist, "line")
@@ -1287,28 +1271,38 @@ format_plot <- function(omicsPlotter, ...) {
                 ymax = nestedData_comps[[comps_panel_y_axis]]), color = "black")
           }
         }
-
-        # Make and return plotly for map_plot #
-        comps_plotly <- plotly::ggplotly(plot_comps, tooltip = c("text"))
-        for (plotter in 1:length(comps_plotly$x$data)){
-          if (!(comps_plotly$x$data[[plotter]]$type %in% typelist)){
-            comps_plotly$x$data[[plotter]]$showlegend <- FALSE
-            comps_plotly$x$data[[plotter]]$hovertext <- str_remove(
-              comps_plotly$x$data[[plotter]]$hovertext,
-              "Group: .+\nCount: .+\n")
+        
+        if (plotly == TRUE){
+          # Make and return plotly for map_plot #
+          comps_plotly <- plotly::ggplotly(plot_comps, tooltip = c("text"))
+          for (plotter in 1:length(comps_plotly$x$data)){
+            if (!(comps_plotly$x$data[[plotter]]$type %in% typelist)){
+              # comps_plotly$x$data[[plotter]]$showlegend <- FALSE
+              comps_plotly$x$data[[plotter]]$hovertext <- str_remove(
+                comps_plotly$x$data[[plotter]]$hovertext,
+                "Group: .+\nCount: .+\n")
             }
-          name <- comps_plotly$x$data[[plotter]]$name
-          groups <- unique(nestedData_comps[[comps_color_variable]])
-          name <- groups[unlist(map(groups,
-                                    function(group) grepl(group, name)))]
-          comps_plotly$x$data[[plotter]]$name <- name
+            # name <- comps_plotly$x$data[[plotter]]$name
+            # groups <- unique(nestedData_comps[[comps_color_variable]])
+            # name <- groups[unlist(map(groups,
+            #                           function(group) grepl(group, name)))]
+            # comps_plotly$x$data[[plotter]]$name <- name
           }
-
-         plot_comps_all[typenum] <- comps_plotly
-      }
+          
+          #plot_comps_all[typenum] <- comps_plotly
+          return(comps_plotly)
+        } else {
+          # plot_comps_all[typenum] <- capture.output(plot(plot_comps))
+          return(plot_comps)
+        }
+      })
       
-      arr_comps_plotly <- subplot(plot_comps_all, shareY = TRUE,
-                        margin = 0.02)
+      if (plotly == TRUE){
+        arr_comps_plot <- plotly::subplot(plot_comps_all, shareY = TRUE,
+                                    margin = 0.02)
+      } else {
+        arr_comps_plot <- ggpubr::ggarrange(plotlist = plot_comps_all)
+        }
       }
       
       if(!is.null(omicsPlotter$data_values) & 
@@ -1366,8 +1360,9 @@ format_plot <- function(omicsPlotter, ...) {
         nestedData_value <- data.frame(nestedData, text = text_labs)
         
         # Make ggplots #
-        plot_value_all <- list()
-        for (typenum in 1:length(value_plot_type)){
+        # plot_value_all <- list()
+        plot_value_all <- map(1:length(value_plot_type), function (typenum){
+        #for (typenum in 1:length(value_plot_type)){
           type <- value_plot_type[typenum]
           
           plot_value <- ggplot2::ggplot(data = nestedData_value,
@@ -1380,7 +1375,8 @@ format_plot <- function(omicsPlotter, ...) {
             ggplot2::theme_bw() +
             ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, 
                                                                hjust = 1, 
-                                                               vjust = 0.5)) +
+                                                               vjust = 0.5),
+                           legend.position='none') +
             ggplot2::xlab(value_panel_x_axis) + 
             ggplot2::ylab(value_panel_y_axis) +
             ggplot2::labs(color = "", fill = "") +
@@ -1394,15 +1390,29 @@ format_plot <- function(omicsPlotter, ...) {
           }
           if (stringr::str_detect(type, pattern = "point|scatter")){
             typelist <- c(typelist, "scatter")
-            plot_value <- plot_value + ggplot2::geom_point(position = position_jitterdodge(), 
-                                                           size = 3, 
-                                                           color = "black")
+            if(plotly == TRUE){
+              plot_value <- plot_value + ggplot2::geom_point(position = position_dodge(), 
+                                                             size = 2, 
+                                                             color = "black")
+            } else {
+              plot_value <- plot_value + 
+                ggplot2::geom_point(position = position_dodge(),
+                                    size = 2, 
+                                    aes(colour = nestedData_value[[value_color_variable]]))
+            }
           }
           if (stringr::str_detect(type, pattern = "box")){
-            if(!is.na(var(na.omit(nestedData_value[[value_panel_y_axis]]))) && var(na.omit(nestedData_value[[value_panel_y_axis]])) != 0 ){
+            if(!is.na(var(na.omit(nestedData_value[[value_panel_y_axis]]))) &&
+               var(na.omit(nestedData_value[[value_panel_y_axis]])) != 0 ){
               typelist <- c(typelist, "box")
-              plot_value <- plot_value +  ggplot2::geom_boxplot(alpha = 0.2, 
-                                                                position = "dodge2")
+              omitna <- nestedData_value[!is.na(nestedData_value[[value_panel_y_axis]]),]
+              plot_value <- plot_value +  ggplot2::geom_boxplot(data = omitna, alpha = 0.2, 
+                                                                position = "dodge", aes(
+                                                                  y = omitna[[value_panel_y_axis]],
+                                                                  x = omitna[[value_panel_x_axis]],
+                                                                  fill = omitna[[value_color_variable]],
+                                                                  text = NA)
+                                                                )
             } else {
               typelist <- c(typelist, "line")
               plot_value <- plot_value +  
@@ -1413,25 +1423,48 @@ format_plot <- function(omicsPlotter, ...) {
             }
           }
           
-          value_plotly <- plotly::ggplotly(plot_value, tooltip = c("text"))
-          plot_value_all[typenum] <- value_plotly
-          }
-        arr_value_plotly <- subplot(plot_value_all, shareY = TRUE,
-                                    margin = 0.02)
-      }
+          if (plotly == TRUE){
+            value_plotly <- plotly::ggplotly(plot_value, tooltip = c("text"))
+            return(value_plotly)
+            #plot_value_all[typenum] <- value_plotly
+          } else {
+              #plot_value_all[[typenum]] <- plot(plot_value)
+            return(plot_value)
+            }
+        })
         
-      if(!is.null(omicsPlotter$data_values) & !is.null(omicsPlotter$comp_stats)){
-        plotly <- subplot(list(arr_value_plotly, arr_comps_plotly), nrows = 2, 
-                          titleX = TRUE, titleY = TRUE,
-                          margin = 0.1)
-      } else if (!is.null(omicsPlotter$data_values)) {
-        plotly <- subplot(list(arr_value_plotly), titleX = TRUE, titleY = TRUE, 
-                          margin = 0.1)
-      } else {
-        plotly <- subplot(list(arr_comps_plotly), titleX = TRUE, titleY = TRUE, 
-                          margin = 0.1)
+        if (plotly == TRUE){
+          arr_value_plot <- plotly::subplot(plot_value_all, shareY = TRUE,
+                                    margin = 0.02)
+        } else {
+          arr_value_plot <- ggpubr::ggarrange(plotlist = plot_value_all)
+        }
       }
-      return(plotly)
+      
+      if(plotly == TRUE){
+        if(!is.null(omicsPlotter$data_values) & !is.null(omicsPlotter$comp_stats)){
+          all_plotly <- subplot(list(arr_value_plot, arr_comps_plot), nrows = 2, 
+                            titleX = TRUE, titleY = TRUE,
+                            margin = 0.1)
+        } else if (!is.null(omicsPlotter$data_values)) {
+          all_plotly <- subplot(list(arr_value_plot), titleX = TRUE, titleY = TRUE, 
+                            margin = 0.1)
+        } else {
+          all_plotly <- subplot(list(arr_comps_plot), titleX = TRUE, titleY = TRUE, 
+                            margin = 0.1)
+        }
+        return(all_plotly)
+      } else {
+        if(!is.null(omicsPlotter$data_values) & !is.null(omicsPlotter$comp_stats)){
+
+          all_ggplot <- ggpubr::ggarrange(plotlist = list(arr_value_plot, arr_comps_plot), nrow = 2)
+        } else if (!is.null(omicsPlotter$data_values)) {
+          all_ggplot <- arr_value_plot
+        } else {
+          all_ggplot <- arr_comps_plot
+        }
+        return(all_ggplot)
+      }
 
     }
   )
@@ -1551,22 +1584,17 @@ data_cogs <- function(...) {
   if(is.null(uniqueID)){
     uniqueID <- attributes(omicsStats)$cnames$edata_cname
   }
-  if(is.null(panel_variable) & !is.null(e_meta)){
-    panel_variable <- attributes(omicsPlotter)$cnames$emeta_cname
-  } else if (is.null(panel_variable)){
-    panel_variable <- uniqueID
-  }
-  
-  ## Add cognostics from original data ##
+  panel_variable <- names(nested_plot[1])
+
   if (!is.null(omicsStats) & !is.null(omicsData)){
-    addOrigCogs <- merge(stats, e_data) %>% 
-      nest(-uniqueID, .key = "Original_stats_values")
+    addOrigCogs <- merge(stats, e_data) # %>% 
+      # nest(-panel_variable, .key = "Original_stats_values")
   } else if (!is.null(omicsStats)){
-    addOrigCogs <- stats %>% 
-      nest(-uniqueID, .key = "Original_stats")
+    addOrigCogs <- stats # %>% 
+      # nest(-panel_variable, .key = "Original_stats")
   } else {
-    addOrigCogs <- e_data %>% 
-      nest(-uniqueID, .key = "Original_values")
+    addOrigCogs <- e_data # %>% 
+      # nest(-panel_variable, .key = "Original_values")
   }
   
   ## Stats Data Cogs ##
@@ -1593,10 +1621,10 @@ data_cogs <- function(...) {
     
     addcogs <- data.frame(
       uniqlist,
-      cog(Sig_G_p_value, desc = "Boolean for significant G test p-values,
+      trelliscopejs::cog(Sig_G_p_value, desc = "Boolean for significant G test p-values,
       where TRUE indicates that the p-value is < 0.05 and is grounds for 
       rejecting the null hypothesis (independence of missing data)."),
-      cog(Sig_T_p_value, desc = "Boolean for significant T test p-values,
+      trelliscopejs::cog(Sig_T_p_value, desc = "Boolean for significant T test p-values,
       where TRUE indicates that the p-value is < 0.05 and is grounds for 
       rejecting the null hypothesis (no significant 
       difference between groups)."))
@@ -1650,7 +1678,7 @@ data_cogs <- function(...) {
       # Add to dataframe #
       addcogs <- data.frame(
         addcogs,
-        Is_degenerate = cog(Is_degenerate, desc = "Boolean for degenerate 
+        Is_degenerate = trelliscopejs::cog(Is_degenerate, desc = "Boolean for degenerate 
       peptides, where TRUE indicates that this peptide maps to multiple 
       proteins."))
       
@@ -1668,7 +1696,7 @@ data_cogs <- function(...) {
         }
         addcogs <- data.frame(
           addcogs,
-          Protein_URL = cog_href(searchlink, 
+          Protein_URL = trelliscopejs::cog_href(searchlink, 
                                  desc = "UniProt lookup using PRIDE ID 
                                or Entry name (XXXX_XXXX)"))
       }
@@ -1695,7 +1723,7 @@ data_cogs <- function(...) {
       }
       addcogs <- data.frame(
         addcogs,
-        Protein_URL = cog_href(searchlink, 
+        Protein_URL = trelliscopejs::cog_href(searchlink, 
                                desc = "UniProt lookup using PRIDE ID 
                                  or Entry name (XXXX_XXXX)"))
     }
@@ -1716,7 +1744,7 @@ data_cogs <- function(...) {
       
       addcogs <- data.frame(
         addcogs,
-        Lipid_Map_Hits = cog_href(searchlink, 
+        Lipid_Map_Hits = trelliscopejs::cog_href(searchlink, 
                                   desc = "Lipid Maps hits for uniqueID name"))
     }
     
@@ -1731,30 +1759,57 @@ data_cogs <- function(...) {
         sep = "")
       addcogs <- data.frame(
         addcogs,
-        PubChem_URL = cog_href(searchlink,
+        PubChem_URL = trelliscopejs::cog_href(searchlink,
                                desc = "PubChem page for uniqueID name"))
     }
   }
-  allcogs <- dplyr::left_join(addcogs, addOrigCogs) %>% nest(-panel_variable)
-  allcogs <- mutate(allcogs, cogs = map(data, function(panel_data){
-    datalist <-  list()
-    for (colnum in 1:ncol(panel_data)){
-      if (is.numeric(panel_data[colnum])){
-        datalist[colnum] <- mean(panel_data[colnum])
-      } else if (is.logical(panel_data[colnum])){
-        datalist[colnum] <- any(panel_data[colnum])
-      } else {
-        datalist[colnum] <- capture.output(
-          cat(panel_data[colnum], sep = ", "))
+
+  allcogs <- dplyr::left_join(addcogs, addOrigCogs) %>% tidyr::nest(-panel_variable)
+  
+  transcogs <- list(map(allcogs$data, function(panel_data){
+    # if (nrow(panel_data) >1 ){
+      datalist <-  list()
+      changecol <- c(rep(FALSE, ncol(panel_data)))
+      for (colnum in 1:ncol(panel_data)){
+        panel_dat <- unlist(panel_data[colnum])
+        
+        # Cat of factor columns that are not T/F #
+        if (is.factor(panel_dat) && 
+            !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")){
+          datalist[colnum] <- capture.output(
+            cat(levels(panel_dat), sep = ", "))
+          # Takes mean of numeric columns, includes numeric strings not in cnames #
+        } else if (#!all(is.na(panel_dat)) && 
+                   (is.numeric(panel_dat) != FALSE | 
+                    !any(is.na(as.numeric(stats::na.omit(panel_dat))))) &&
+                   !(names(panel_dat) %in% attr(omicsStats, "cnames")) && 
+                   !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")){
+          changecol[colnum] <- TRUE
+          datalist[colnum] <- mean(as.numeric(panel_dat))
+          
+          # Takes logicals, returns TRUE if any TRUE #
+        } else if (!any(is.na(as.logical(panel_dat)))){
+          datalist[colnum] <- as.character(
+            any(as.logical(panel_dat)))
+        } else {
+          # Cats characters, other #
+          datalist[colnum] <- capture.output(
+            cat(panel_dat, sep = ", "))
+        }
       }
-    }
-    panelcogs <- data.frame(datalist)
-    colnames(panelcogs) <- colnames(panel_data)
-    return(panelcogs)
+      panelcogs <- data.frame(lapply(rbind(datalist), unlist))
+      colnames(panelcogs) <- colnames(panel_data)
+      colnames(panelcogs[changecol]) <- paste(colnames(panelcogs[changecol]), "_mean")
+      return(panelcogs)
+
+    
   }
+ 
   ))
   
-  
+  transcogs <- do.call(dplyr::bind_rows, transcogs)
+  allcogs$data <- NULL
+  allcogs <- cbind(allcogs, transcogs)
   nested_plot <- dplyr::left_join(nested_plot, allcogs)
   return(nested_plot)
 }
@@ -1794,6 +1849,7 @@ data_cogs <- function(...) {
 #' @param value_plot_type For omicsData: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
 #' @param value_include_zero For omicsData: Should plots show y = 0?
 #' @param value_plot For omicsData: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.
+#' @param plotly Should the plots be rendered as plotly objects?
 #'
 #'
 #' @author Rachel Richardson
@@ -1817,7 +1873,8 @@ trelliVis <- function(...) {
                        comps_panel_y_axis = NULL, value_color_variable = NULL, 
                        value_panel_x_axis = NULL, value_panel_y_axis = NULL, 
                        value_plot_type = "boxpoint", comps_plot_type = "col", 
-                       value_plot = TRUE, comps_plot = TRUE, comps_text = TRUE) {
+                       value_plot = TRUE, comps_plot = TRUE, comps_text = TRUE,
+                       plotly = TRUE) {
   
   #store_object, custom_cog_df, interactive = t/f, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
   
@@ -1919,10 +1976,9 @@ trelliVis <- function(...) {
                   comps_plot_type = comps_plot_type,
                   value_plot = value_plot,
                   comps_plot = comps_plot,
-                  comps_text = comps_text)
+                  comps_text = comps_text,
+                  plotly = plotly)
       })
-    
-    print(nested_plot)
     
     # Generate default cognostics #
     nest_plot_cog_list <- pmap(
@@ -1938,12 +1994,13 @@ trelliVis <- function(...) {
                   try_URL = try_URL)
         })
     
-    print(nest_plot_cog_list)
-    
     # Generate trelliscope display #
-    map2(nest_plot_cog_list, trelli_name, function(display, name){
+    map2(nest_plot_cog_list, 
+              trelli_name, function(display, name){
       trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                  path = as.character(trelli_path_out), thumb = TRUE)
+                  path = as.character(trelli_path_out), thumb = TRUE, state = list(
+                    sort = list(sort_spec(names(display[1]), dir = desc)), 
+                    labels = list(names(display[1]))))
     })
     
   # Where not a pep/pro pair: #
@@ -1983,7 +2040,8 @@ trelliVis <- function(...) {
                                comps_plot_type = comps_plot_type,
                                value_plot = value_plot,
                                comps_plot = comps_plot,
-                               comps_text = comps_text)
+                               comps_text = comps_text,
+                               plotly = plotly)
     
     # Generate default cognostics #
     nest_plot_cog <- data_cogs(nested_plot, omicsData, omicsStats, 
@@ -1992,11 +2050,12 @@ trelliVis <- function(...) {
                                panel_variable = panel_variable, 
                                try_URL = try_URL)
     
-    print(trelli_name)
-    print(trelli_path_out)
     # Generate trelliscope display #
     nest_plot_cog %>%
       trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
-                  path = as.character(trelli_path_out), thumb = TRUE)
+                  path = as.character(trelli_path_out), thumb = TRUE,
+                  state = list(
+                    sort = list(sort_spec(names(nest_plot_cog[1]), dir = desc)), 
+                    labels = list(names(nest_plot_cog[1]))))
   }
 }

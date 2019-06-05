@@ -64,6 +64,8 @@ trelliVis(...)
 \item{value_include_zero}{For omicsData: Should plots show y = 0?}
 
 \item{value_plot}{For omicsData: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.}
+
+\item{plotly}{Should the plots be rendered as plotly objects?}
 }
 \description{
 Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
