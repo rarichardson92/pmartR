@@ -1103,10 +1103,10 @@ format_plot <- function(omicsPlotter, ...) {
   }
   nestplotter <- plotter %>% tidyr::nest(-panel_variable)
   
-  # #Subset large groups ########### Take out later ######################################
- if (nrow(nestplotter) > 10){
-   nestplotter <- nestplotter[1:10,]
- }
+ #  # #Subset large groups ########### Take out later ######################################
+ # if (nrow(nestplotter) > 10){
+ #   nestplotter <- nestplotter[1:10,]
+ # }
 
   # Generate plots from nested data #
   # 1) Generate an increment for adjusting y limits and text label position
@@ -1587,16 +1587,18 @@ data_cogs <- function(...) {
   panel_variable <- names(nested_plot[1])
 
   if (!is.null(omicsStats) & !is.null(omicsData)){
-    addOrigCogs <- merge(stats, e_data) # %>% 
-      # nest(-panel_variable, .key = "Original_stats_values")
+    addOrigCogs <- left_join(stats, e_data)
+    if(!is.null(e_meta)){
+      addOrigCogs <- left_join(addOrigCogs, e_meta)
+    }
   } else if (!is.null(omicsStats)){
-    addOrigCogs <- stats # %>% 
-      # nest(-panel_variable, .key = "Original_stats")
+    addOrigCogs <- stats
   } else {
-    addOrigCogs <- e_data # %>% 
-      # nest(-panel_variable, .key = "Original_values")
+    addOrigCogs <- e_data
+    if(!is.null(e_meta)){
+      addOrigCogs <- left_join(addOrigCogs, e_meta)
+    }
   }
-  
   ## Stats Data Cogs ##
   if (!is.null(stats)){
     uniqlist <- stats[[uniqueID]]
@@ -1767,7 +1769,7 @@ data_cogs <- function(...) {
   allcogs <- dplyr::left_join(addcogs, addOrigCogs) %>% tidyr::nest(-panel_variable)
   
   transcogs <- list(map(allcogs$data, function(panel_data){
-    # if (nrow(panel_data) >1 ){
+    if (nrow(panel_data) >1 ){
       datalist <-  list()
       changecol <- c(rep(FALSE, ncol(panel_data)))
       for (colnum in 1:ncol(panel_data)){
@@ -1777,7 +1779,7 @@ data_cogs <- function(...) {
         if (is.factor(panel_dat) && 
             !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")){
           datalist[colnum] <- capture.output(
-            cat(levels(panel_dat), sep = ", "))
+            cat(unique(levels(panel_dat)[panel_dat]), sep = ", "))
           # Takes mean of numeric columns, includes numeric strings not in cnames #
         } else if (#!all(is.na(panel_dat)) && 
                    (is.numeric(panel_dat) != FALSE | 
@@ -1794,9 +1796,12 @@ data_cogs <- function(...) {
         } else {
           # Cats characters, other #
           datalist[colnum] <- capture.output(
-            cat(panel_dat, sep = ", "))
+            cat(unique(panel_dat), sep = ", "))
         }
       }
+    } else {
+      return(panel_data)
+    }
       panelcogs <- data.frame(lapply(rbind(datalist), unlist))
       colnames(panelcogs) <- colnames(panel_data)
       colnames(panelcogs[changecol]) <- paste(colnames(panelcogs[changecol]), "_mean")
@@ -1862,7 +1867,7 @@ trelliVis <- function(...) {
                        p_val = 0.05, 
                        pep_pro_col = NULL, panel_variable = NULL, 
                        try_URL = FALSE, trelli_name = NULL,
-                       trelli_path_out = "./TrelliDisplay", 
+                       trelli_path_out = "TrelliDisplay", 
                        comps_y_limits = NULL, comps_y_range = NULL, 
                        comps_y_max = NULL, comps_y_min = NULL, 
                        comps_include_zero = TRUE, value_y_limits = NULL, 
@@ -1949,6 +1954,14 @@ trelliVis <- function(...) {
     }
     if (is.null(panel_variable)){
       panel_variable <- rep(list(NULL), length(omicsPlotter))
+    }
+    
+    if(class(omicsData) == "list" &&
+       length(omicsData) != 1){
+      vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
+                     inherits(omicsData[2][[1]], "proData"))
+      omicsData[vectorpro][[1]]$e_meta <- left_join(omicsData[vectorpro][[1]]$e_meta,
+                                                    omicsData[!vectorpro][[1]]$e_meta)
     }
     
     # Nest data and generate trelliscope plots #
