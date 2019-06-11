@@ -1486,9 +1486,9 @@ format_plot <- function(omicsPlotter, ...) {
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
-#' @param pep_pro_col String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.
+#' @param mapping_col String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
-#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified pep_pro_col for peptide data. Default is FALSE.
+#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #'
 #'
 #' @author Rachel Richardson
@@ -1500,7 +1500,7 @@ data_cogs <- function(...) {
 .data_cogs <- function(nested_plot = NULL, omicsData = NULL, 
                        omicsStats = NULL,
                       p_val = 0.05,
-                      pep_pro_col = NULL, panel_variable = NULL, 
+                      mapping_col = NULL, panel_variable = NULL, 
                       try_URL = FALSE){
   
   
@@ -1544,25 +1544,25 @@ data_cogs <- function(...) {
   if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
     "try_URL must be a TRUE/FALSE of length 1")  
   
-  # Ensure pep_pro_col is length one #
-  if(!is.null(pep_pro_col) && length(pep_pro_col) != 1) stop(
-    "pep_pro_col must be a string of length 1")  
+  # Ensure mapping_col is length one #
+  if(!is.null(mapping_col) && length(mapping_col) != 1) stop(
+    "mapping_col must be a string of length 1")  
   
-  # Ensure pep_pro_col is only called where e_meta exists #
-  if(!is.null(pep_pro_col) && is.null(e_meta)) stop(
-    "No e_meta data for pep_pro_col to be called on. 
-    Using pep_pro_col requires e_meta in omicsData.")  
+  # Ensure mapping_col is only called where e_meta exists #
+  if(!is.null(mapping_col) && is.null(e_meta)) stop(
+    "No e_meta data for mapping_col to be called on. 
+    Using mapping_col requires e_meta in omicsData.")  
   
-  # Ensure pep_pro_col is in emeta #
-  if(!is.null(pep_pro_col) && 
+  # Ensure mapping_col is in emeta #
+  if(!is.null(mapping_col) && 
      inherits(omicsData, "pepData") && 
-     !(pep_pro_col %in% colnames(e_meta))) stop(
-    "Invalid entry: pep_pro_col must be in the column names of pepData e_meta.")  
+     !(mapping_col %in% colnames(e_meta))) stop(
+    "Invalid entry: mapping_col must be in the column names of pepData e_meta.")  
   
-  # Warn in pep_pro_col is used where data is not pro/pep #
-  if(!is.null(pep_pro_col) && 
+  # Warn in mapping_col is used where data is not pro/pep #
+  if(!is.null(mapping_col) && 
      !inherits(omicsData, c("pepData", "proData"))){
-    print(paste("Notice: pep_pro_col is not used for omicsData of class", class(omicsData)))
+    print(paste("Notice: mapping_col is not used for omicsData of class", class(omicsData)))
   }
 
   ## Fill null variables as needed ##
@@ -1665,29 +1665,29 @@ data_cogs <- function(...) {
   ## Type Specifc Cognostics ##
   
   ## pepData ##
-  if ("pepData" %in% attr(format_plot, "parent_class")){
+  if ("pepData" %in% attr(nested_plot, "parent_class")){
 
-    if (!is.null(e_meta) & !is.null(pep_pro_col)){
+    if (!is.null(e_meta) & !is.null(mapping_col)){
       
       # Degenerate Peptides #
-      ##### May need revision depending on emeta format
-      pepcol <- e_meta[omicsData$cnames$edata_cname]
-      if (any(duplicated(pepcol))){
-        degenpep <- pepcol[which(duplicated(pepcol)==TRUE)]
-        Is_degenerate <- as.factor(pepcol %in% degenpep)
-      }
-
-      # Add to dataframe #
+      pepcol <- attr(omicsData, "cnames")$edata_cname
+      mapcols <- e_meta[c(pepcol, mapping_col)]
+      mapcols <- unique(mapcols)
+      
+      peps <- mapcols[pepcol]
+      degenpep <- peps[which(duplicated(peps)==TRUE),]
+      Is_degenerate <- as.factor(
+        map(peps, function(pep) pep %in% degenpep)[[pepcol]])
+      
+        # Add to dataframe #
       addcogs <- data.frame(
         addcogs,
-        Is_degenerate = trelliscopejs::cog(Is_degenerate, desc = "Boolean for degenerate 
-      peptides, where TRUE indicates that this peptide maps to multiple 
-      proteins."))
+        as.data.frame(Is_degenerate))
+      }
       
       # Try to find Protein URL #
       if ((try_URL == TRUE)){
-        URLlist <- e_meta[[pep_pro_col]]
-        grep("[A-z0-9]+_[A-z0-9]+", URLlist, value = TRUE)
+        URLlist <- e_meta[[mapping_col]]
         searchname <- str_extract(URLlist, "[A-Z0-9]+_[A-Z]+")
         if (all(is.na(searchname))){
           searchname <- str_extract(URLlist, "[A-Z0-9]{6,}")
@@ -1702,19 +1702,36 @@ data_cogs <- function(...) {
                                  desc = "UniProt lookup using PRIDE ID 
                                or Entry name (XXXX_XXXX)"))
       }
-    }
-
     
     ## proData ##
-  } else if ("proData" %in% attr(format_plot, "parent_class")){
+  } else if ("proData" %in% attr(nested_plot, "parent_class")){
     
     # Degenerate peptides #
-    # degenpep <- peplist[which(duplicated(peplist)==TRUE)]
-    # Is_degenerate <- as.factor(peplist %in% degenpep)
+    if (!is.null(e_meta) & !is.null(mapping_col)){
+      
+      # Degenerate Peptides #
+      procol <- attr(omicsData, "cnames")$edata_cname
+      mapcols <- e_meta[c(procol, mapping_col)]
+      mapcols <- unique(mapcols)
+      
+      peps <- mapcols[mapping_col]
+      degenpep <- peps[which(duplicated(peps)==TRUE),]
+      mapcols[mapping_col] <- map(peps, function(pep) pep %in% degenpep)[[mapping_col]]
+      mapcols <- mapcols %>% nest(-procol)
+      mapcols <- mutate(mapcols, 
+                        n_degenerate = map_int(mapcols$data, function(propeps){
+                          sum(propeps[[mapping_col]])
+                          }))
+      mapcols$data <- NULL
+      
+      # Add to dataframe #
+      addcogs <- left_join(
+        addcogs,
+        mapcols)
+    }
     
     # Try to find Protein URL #
     if (try_URL == TRUE){
-      grep("[A-z0-9]+_[A-z0-9]+", uniqlist, value = TRUE)
       searchname <- str_extract(uniqlist, "[A-Z0-9]+_[A-Z]+")
       if (all(is.na(searchname))){
         searchname <- str_extract(uniqlist, "[A-Z0-9]{6,}")
@@ -1731,7 +1748,7 @@ data_cogs <- function(...) {
     }
     
     ## lipidData ##
-  } else if ("lipidData" %in% attr(format_plot, "parent_class")){
+  } else if ("lipidData" %in% attr(nested_plot, "parent_class")){
     
     # Search LipidMaps with the lipid name #
     if (try_URL == TRUE){
@@ -1751,7 +1768,7 @@ data_cogs <- function(...) {
     }
     
     ## metabData ##  
-  } else if ("metabData" %in% attr(format_plot, "parent_class")){
+  } else if ("metabData" %in% attr(nested_plot, "parent_class")){
     
     # PubChem URL #
     if (try_URL == TRUE){
@@ -1777,17 +1794,18 @@ data_cogs <- function(...) {
         
         # Cat of factor columns that are not T/F #
         if (is.factor(panel_dat) && 
-            !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")){
+            !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value") &&
+            !str_detect(names(panel_data[colnum]), "Is_degenerate")){
           datalist[colnum] <- capture.output(
             cat(unique(levels(panel_dat)[panel_dat]), sep = ", "))
           # Takes mean of numeric columns, includes numeric strings not in cnames #
-        } else if (#!all(is.na(panel_dat)) && 
-                   (is.numeric(panel_dat) != FALSE | 
+        } else if ((is.numeric(panel_dat) | 
                     !any(is.na(as.numeric(stats::na.omit(panel_dat))))) &&
                    !(names(panel_dat) %in% attr(omicsStats, "cnames")) && 
-                   !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")){
+                   !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")&&
+                   !str_detect(names(panel_data[colnum]), "Is_degenerate")){
           changecol[colnum] <- TRUE
-          datalist[colnum] <- mean(as.numeric(panel_dat))
+          datalist[colnum] <- mean(as.numeric(stats::na.omit(panel_dat)))
           
           # Takes logicals, returns TRUE if any TRUE #
         } else if (!any(is.na(as.logical(panel_dat)))){
@@ -1828,9 +1846,9 @@ data_cogs <- function(...) {
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.
 #' @param p_val Numeric that specifies p-value for significance calculations. Default is 0.05.
-#' @param pep_pro_col String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.
+#' @param mapping_col String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
-#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified pep_pro_col for peptide data. Default is FALSE.
+#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #' @param trelli_name String: name of display, or list of names where a list is provided for omicsData and omicsStats
 #' @param trelli_path_out String: path to where trelliscope is stored. Default is "./TrelliDisplay"
 #' @param comps_y_limits For omicsStats: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
@@ -1865,7 +1883,7 @@ trelliVis <- function(...) {
 
 .trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                        p_val = 0.05, 
-                       pep_pro_col = NULL, panel_variable = NULL, 
+                       mapping_col = NULL, panel_variable = NULL, 
                        try_URL = FALSE, trelli_name = NULL,
                        trelli_path_out = "TrelliDisplay", 
                        comps_y_limits = NULL, comps_y_range = NULL, 
@@ -1908,14 +1926,19 @@ trelliVis <- function(...) {
                                     length(omicsData))) stop(
                                       "Panel variable must be specified for each index in omicsStats/omicsData"
                                     )
+  # If lists of omicsData or omicsPlotter are used with mapping col, #
+  # make sure panel variables are specified for both #
+  if ((class(omicsData) == "list" | 
+       class(omicsStats) == "list") && 
+      !is.null(mapping_col) && 
+      length(mapping_col) != max(length(omicsStats), 
+                                    length(omicsData))) stop(
+                                      "mapping_col must be specified for each index in omicsStats/omicsData"
+                                    )
   
   # Check check if try_URL is boolean of length 1 #
   if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
     "try_URL must be a TRUE/FALSE of length 1")  
-  
-  # Ensure pep_pro_col is length one #
-  if(!is.null(pep_pro_col) && length(pep_pro_col) != 1) stop(
-    "pep_pro_col must be a string of length 1")  
   
   # Re-format objects for plotting #
   omicsPlotter <- format_data(omicsData, omicsStats)
@@ -1955,7 +1978,11 @@ trelliVis <- function(...) {
     if (is.null(panel_variable)){
       panel_variable <- rep(list(NULL), length(omicsPlotter))
     }
+    if (is.null(mapping_col)){
+      panel_variable <- rep(list(NULL), length(omicsPlotter))
+    }
     
+    #Adds e_meta of associated peptide data to associated protein data
     if(class(omicsData) == "list" &&
        length(omicsData) != 1){
       vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
@@ -1998,11 +2025,12 @@ trelliVis <- function(...) {
       list(nested_plot,
            omicsData,
            omicsStats, 
-           panel_variable),
-      function(nest, dat, stat, pan){
+           panel_variable,
+           mapping_col),
+      function(nest, dat, stat, pan, map){
         data_cogs(nest, dat, stat,
                   p_val = p_val,
-                  pep_pro_col = pep_pro_col, 
+                  mapping_col = map, 
                   panel_variable = pan, 
                   try_URL = try_URL)
         })
@@ -2059,7 +2087,7 @@ trelliVis <- function(...) {
     # Generate default cognostics #
     nest_plot_cog <- data_cogs(nested_plot, omicsData, omicsStats, 
                                p_val = p_val, 
-                               pep_pro_col = pep_pro_col, 
+                               mapping_col = mapping_col, 
                                panel_variable = panel_variable, 
                                try_URL = try_URL)
     
