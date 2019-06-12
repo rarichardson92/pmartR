@@ -9,7 +9,7 @@ data_cogs(...)
 \arguments{
 \item{omicsPlotter}{An object of class "omicsPlotter" generated from \code{\link{format_data()}}.}
 
-\item{format_plot}{A nested table generated from omicsPlotter using formatplot()}
+\item{nested_plot}{A nested table generated from omicsPlotter using formatplot()}
 
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
 
@@ -17,11 +17,11 @@ data_cogs(...)
 
 \item{p_val}{Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.}
 
-\item{pep_pro_col}{String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.}
+\item{mapping_col}{String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.}
 
 \item{panel_variable}{String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.}
 
-\item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified pep_pro_col for peptide data. Default is FALSE.}
+\item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.}
 }
 \description{
 Plot pairwise comparisons and data values in omicsPlotter object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

@@ -54,124 +54,10 @@ format_data <- function(...){
 
 .format_data <- function(omicsData = NULL, omicsStats = NULL){
   
-
-  ################################################################
   ## Checks and recursive for lists as input in format_data ##
- 
   if ((class(omicsData) == "list") | (class(omicsStats)) == "list"){
-    #--Both--#
-    if (!is.null(omicsData) & !is.null(omicsStats)) {
-      if(length(omicsData) != 1 & length(omicsStats) != 1) {
-        # Check that the list inputs are equal in length (1 and 1, or 2 and 2) #
-        if (length(omicsData) != length(omicsStats)) stop(
-          "List length does not match; lists for omicsData should contain
-          only the same protien set(s) and peptide set(s) (e.g., lists contain
-          Data, Stats, or Data and Stats).")
-        
-        # Check that omicsData input is a list() not a c() of omics data #
-        if (any(map(c(omicsData), is.data.frame))) stop(
-          "List/vector entry error, dataframes in input list. Possible solutions: 
-          1) use list() instead of c() to preverse integrity of omicsData 
-          and omicsStats lists, 2) If using both omicsData and omicsStats, 
-          both inputs must be lists.")
-        
-        # Check that omicsStats input is a list() not a c() #
-        if (any(map(c(omicsStats), is.data.frame))) stop(
-          "List/vector entry error, dataframes in input list. Possible solutions: 
-            1) use list() instead of c() to preverse integrity of omicsData 
-            and omicsStats lists, 2) If using both omicsData and omicsStats, 
-            both inputs must be lists.")
-        
-        #Generate cname lists #
-        listData <- omicsData %>% purrr::map(function(omics) attr(omics, which = "cname"))
-        listStats <- omicsStats %>% purrr::map(function(omics) attr(omics, which = "cname"))
-        
-        # Check if cnames match between lists #
-        if (!identical(listData, listStats)) stop(
-          "Lists in omicsData and omicsStats have mismatched cname attributes. 
-          Order matters; correct the associated data and stats to have the same 
-          index in each list.")
-        
-        # Generate class list and check for pro/pep classes #
-        classlist <- omicsData %>% map(function(omics) attr(omics, which = "class"))
-        classlgl <- classlist %>% 
-          map_lgl(function(class) all(stringr::str_detect(class, 
-                                                          pattern = "pepData|proData")))
-        if(!all(classlgl)) stop(
-          "Only pepData and proData are valid for lists in omicsData. 
-          For omicsStats, please use omics stats argument in this format: 
-          omicsStats = list(omicsStats1, omicsStats2)")
-        
-        plotterlist <- purrr::map2(omicsData, omicsStats, format_data)
-        
-      } else {
-        plotterlist <- format_data(omicsData[[1]], omicsStats[[1]])
-        return(plotterlist)
-      }
-      
-    #--omicsData--#
-    } else if(!is.null(omicsData)){
-      if (length(omicsData) != 1){
-        
-        # Check that input is a list() not a c() of omics data #
-        if (any(map(c(omicsData), is.data.frame))) stop(
-          "List/vector entry error, dataframes in input list. Possible solutions: 
-      1) use list() instead of c() to preverse integrity of omicsData 
-      and omicsStats lists, 2) If using both omicsData and omicsStats, 
-        both inputs must be lists.")
-        
-        # Check that list is length 2 #
-        if (length(omicsData) != 2) stop(
-          "List length != 2; list for omicsData should contain one 
-      protien set and one peptide set.")
-        
-        # Generate class list and check for pro/pep classes #
-        classlist <- omicsData %>% map(function(omics) attr(omics, which = "class"))
-        classlgl <- classlist %>% 
-          map_lgl(function(class) all(stringr::str_detect(class, 
-                                                          pattern = "pepData|proData")))
-        if(!all(classlgl)) stop(
-          "Only pepData and proData are valid for lists in omicsData.  
-          For omicsStats, please use omics stats argument in this format: 
-          omicsStats = list(omicsStats1, omicsStats2)")
-        
-        plotterlist <- purrr::map(omicsData, format_data)
-        
-      } else {
-        plotterlist <- format_data(omicsData[[1]])
-        return(plotterlist)
-      }
-    
-    #--omisStats--#
-    } else {
-      if (length(omicsStats) > 1){
-        
-        # Check that input is a list() not a c() #
-        if (any(map(c(omicsStats), is.data.frame))) stop(
-          "List/vector entry error, dataframes in input list. Possible solutions: 
-        1) use list() instead of c() to preverse integrity of omicsData 
-        and omicsStats lists, 2) If using both omicsData and omicsStats, 
-          both inputs must be lists.")
-        
-        # Check that list is length 2 #
-        if (length(omicsStats) != 2 ) stop(
-          "List length != 2; list for omicsStats should contain one 
-        protien set and one peptide set.")
-        
-        classlist <- "NA"                                #####################
-        plotterlist <- purrr::map(omicsStats, format_data)
-        
-      } else {
-        plotterlist <- format_data(omicsStats[[1]])
-        return(plotterlist)
-      }
-    }
-
-    # Assign attribute and return results #
-    attr(plotterlist, "data_types") <- classlist
-    return(plotterlist)
+    return(recursive_format(omicsData, omicsStats))
   }
-  ################################################################
   
   ## Switch Stats and Omics data as appropriate ##
   if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
@@ -480,6 +366,137 @@ print.omicsPlotter<- function(omicsPlotter){
     cat("\n")
   }
 }
+
+#' @name recursive_format
+#' @rdname recursive_format
+#' @title Recursive call of format_data and associated checks for list inputs
+#' 
+#' @description Checks for validity of list inputs and handles different list combinations as input.
+#'
+#' @param yvalues y-values for plotting
+#' @param testtype consideration for different statistical tests
+#'
+#' @author Rachel Richardson
+#'
+
+recursive_format <- function(...){
+  .recursive_format(...)
+}
+
+.recursive_format <- function(omicsData = NULL, omicsStats = NULL){
+
+  #--Both--#
+  if (!is.null(omicsData) & !is.null(omicsStats)) {
+    if(length(omicsData) != 1 & length(omicsStats) != 1) {
+      # Check that the list inputs are equal in length (1 and 1, or 2 and 2) #
+      if (length(omicsData) != length(omicsStats)) stop(
+        "List length does not match; lists for omicsData should contain
+          only the same protien set(s) and peptide set(s) (e.g., lists contain
+          Data, Stats, or Data and Stats).")
+      
+      # Check that omicsData input is a list() not a c() of omics data #
+      if (any(map(c(omicsData), is.data.frame))) stop(
+        "List/vector entry error, dataframes in input list. Possible solutions: 
+          1) use list() instead of c() to preverse integrity of omicsData 
+          and omicsStats lists, 2) If using both omicsData and omicsStats, 
+          both inputs must be lists.")
+      
+      # Check that omicsStats input is a list() not a c() #
+      if (any(map(c(omicsStats), is.data.frame))) stop(
+        "List/vector entry error, dataframes in input list. Possible solutions: 
+            1) use list() instead of c() to preverse integrity of omicsData 
+            and omicsStats lists, 2) If using both omicsData and omicsStats, 
+            both inputs must be lists.")
+      
+      #Generate cname lists #
+      listData <- omicsData %>% purrr::map(function(omics) attr(omics, which = "cname"))
+      listStats <- omicsStats %>% purrr::map(function(omics) attr(omics, which = "cname"))
+      
+      # Check if cnames match between lists #
+      if (!identical(listData, listStats)) stop(
+        "Lists in omicsData and omicsStats have mismatched cname attributes. 
+          Order matters; correct the associated data and stats to have the same 
+          index in each list.")
+      
+      # Generate class list and check for pro/pep classes #
+      classlist <- omicsData %>% map(function(omics) attr(omics, which = "class"))
+      classlgl <- classlist %>% 
+        map_lgl(function(class) all(stringr::str_detect(class, 
+                                                        pattern = "pepData|proData")))
+      if(!all(classlgl)) stop(
+        "Only pepData and proData are valid for lists in omicsData. 
+          For omicsStats, please use omics stats argument in this format: 
+          omicsStats = list(omicsStats1, omicsStats2)")
+      
+      plotterlist <- purrr::map2(omicsData, omicsStats, format_data)
+      
+    } else {
+      plotterlist <- format_data(omicsData[[1]], omicsStats[[1]])
+      return(plotterlist)
+    }
+    
+    #--omicsData--#
+  } else if(!is.null(omicsData)){
+    if (length(omicsData) != 1){
+      
+      # Check that input is a list() not a c() of omics data #
+      if (any(map(c(omicsData), is.data.frame))) stop(
+        "List/vector entry error, dataframes in input list. Possible solutions: 
+      1) use list() instead of c() to preverse integrity of omicsData 
+      and omicsStats lists, 2) If using both omicsData and omicsStats, 
+        both inputs must be lists.")
+      
+      # Check that list is length 2 #
+      if (length(omicsData) != 2) stop(
+        "List length != 2; list for omicsData should contain one 
+      protien set and one peptide set.")
+      
+      # Generate class list and check for pro/pep classes #
+      classlist <- omicsData %>% map(function(omics) attr(omics, which = "class"))
+      classlgl <- classlist %>% 
+        map_lgl(function(class) all(stringr::str_detect(class, 
+                                                        pattern = "pepData|proData")))
+      if(!all(classlgl)) stop(
+        "Only pepData and proData are valid for lists in omicsData.  
+          For omicsStats, please use omics stats argument in this format: 
+          omicsStats = list(omicsStats1, omicsStats2)")
+      
+      plotterlist <- purrr::map(omicsData, format_data)
+      
+    } else {
+      plotterlist <- format_data(omicsData[[1]])
+      return(plotterlist)
+    }
+    
+    #--omisStats--#
+  } else {
+    if (length(omicsStats) > 1){
+      
+      # Check that input is a list() not a c() #
+      if (any(map(c(omicsStats), is.data.frame))) stop(
+        "List/vector entry error, dataframes in input list. Possible solutions: 
+        1) use list() instead of c() to preverse integrity of omicsData 
+        and omicsStats lists, 2) If using both omicsData and omicsStats, 
+          both inputs must be lists.")
+      
+      # Check that list is length 2 #
+      if (length(omicsStats) != 2 ) stop(
+        "List length != 2; list for omicsStats should contain one 
+        protien set and one peptide set.")
+      
+      classlist <- "NA"                                #####################
+      plotterlist <- purrr::map(omicsStats, format_data)
+      
+    } else {
+      plotterlist <- format_data(omicsStats[[1]])
+      return(plotterlist)
+    }
+  }
+  attr(plotterlist, "data_types") <- classlist
+  return(plotterlist)
+}
+
+
 
 #' @name set_increment
 #' @rdname set_increment
@@ -1103,10 +1120,10 @@ format_plot <- function(omicsPlotter, ...) {
   }
   nestplotter <- plotter %>% tidyr::nest(-panel_variable)
   
- #  # #Subset large groups ########### Take out later ######################################
- # if (nrow(nestplotter) > 10){
- #   nestplotter <- nestplotter[1:10,]
- # }
+  # #Subset large groups ########### Take out later ######################################
+ if (nrow(nestplotter) > 10){
+   nestplotter <- nestplotter[1:10,]
+ }
 
   # Generate plots from nested data #
   # 1) Generate an increment for adjusting y limits and text label position
@@ -1482,7 +1499,7 @@ format_plot <- function(omicsPlotter, ...) {
 #' @description Plot pairwise comparisons and data values in omicsPlotter object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
 #' @param omicsPlotter An object of class "omicsPlotter" generated from \code{\link{format_data()}}.
-#' @param format_plot A nested table generated from omicsPlotter using formatplot()
+#' @param nested_plot A nested table generated from omicsPlotter using formatplot()
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
@@ -1979,7 +1996,7 @@ trelliVis <- function(...) {
       panel_variable <- rep(list(NULL), length(omicsPlotter))
     }
     if (is.null(mapping_col)){
-      panel_variable <- rep(list(NULL), length(omicsPlotter))
+      mapping_col <- rep(list(NULL), length(omicsPlotter))
     }
     
     #Adds e_meta of associated peptide data to associated protein data
@@ -2028,7 +2045,9 @@ trelliVis <- function(...) {
            panel_variable,
            mapping_col),
       function(nest, dat, stat, pan, map){
-        data_cogs(nest, dat, stat,
+        data_cogs(nested_plot = nest, 
+                  omicsData = dat,  
+                  omicsStats = stat,
                   p_val = p_val,
                   mapping_col = map, 
                   panel_variable = pan, 
@@ -2085,7 +2104,9 @@ trelliVis <- function(...) {
                                plotly = plotly)
     
     # Generate default cognostics #
-    nest_plot_cog <- data_cogs(nested_plot, omicsData, omicsStats, 
+    nest_plot_cog <- data_cogs(nested_plot = nested_plot, 
+                               omicsData = omicsData, 
+                               omicsStats = omicsStats, 
                                p_val = p_val, 
                                mapping_col = mapping_col, 
                                panel_variable = panel_variable, 
