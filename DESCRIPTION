@@ -35,9 +35,8 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
-    testthat, 
+    testthat (>= 2.1.0),
     pcaMethods,
     limma
 RoxygenNote: 6.1.1
 Encoding: UTF-8
-

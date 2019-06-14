@@ -52,10 +52,17 @@ format_data <- function(...){
   .format_data(...)
 }
 
-.format_data <- function(omicsData = NULL, omicsStats = NULL){
+.format_data <- suppressWarnings(function(omicsData = NULL, omicsStats = NULL){
   
   ## Checks and recursive for lists as input in format_data ##
-  if ((class(omicsData) == "list") | (class(omicsStats)) == "list"){
+  if ((class(omicsData) == "list") || (class(omicsStats) == "list")){
+    
+    # Check for empty lists #
+    if(((length(omicsData) == 0) && (class(omicsData) == "list")) || 
+       ((length(omicsStats) == 0) && (class(omicsStats) == "list"))) stop(
+      "Empty lists are not supported in omicsData or omicsStats input."
+    )
+    
     return(recursive_format(omicsData, omicsStats))
   }
   
@@ -63,6 +70,14 @@ format_data <- function(...){
   if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
     omicsStats <- omicsData
     omicsData <- NULL
+  }
+  
+  if (is.null(omicsData) && inherits(omicsStats, 
+                                     c("proData", "pepData",
+                                       "metabData", "lipidData"))){
+    warning("Input reordered: omicsStats inherits omicsData attributes, input object reassigned to omicsData.")
+    omicsData <- omicsStats
+    omicsStats <- NULL
   }
   
   if (!is.null(omicsStats) && 
@@ -75,24 +90,11 @@ format_data <- function(...){
     omicsData <- temp
     rm(temp)
   }
-  
-  ## Moniker Variables ##
-  
-  uniqedatId <- attributes(omicsData)$cnames$edata_cname
-  if(is.null(uniqedatId)){
-    uniqedatId <- attributes(omicsStats)$cnames$edata_cname
-  }
-  sampID <- attributes(omicsData)$cnames$fdata_cname
-  if(is.null(sampID)){
-    sampID <- attributes(omicsStats)$cnames$fdata_cname
-  }
-  stats <- omicsStats$Full_results
-  
-  
-  
+
+##############################################################################    
   ## Initial Checks ##
   # Make sure at least one of omicsData or omicsStats is present #
-  if(is.null(omicsStats) & is.null(omicsData)) stop (
+  if(is.null(omicsStats) & is.null(omicsData)) stop(
     "format_data() requires at least one of the following: 
     omicsStats, omicsData")
   
@@ -107,11 +109,23 @@ format_data <- function(...){
   if(!is.null(omicsStats) & !inherits(omicsStats, "statRes")) stop(
     "omicsStats must be of the class 'statRes'")
   
+  
+  # Moniker Variables #
+  uniqedatId <- attributes(omicsData)$cnames$edata_cname
+  if(is.null(uniqedatId)){
+    uniqedatId <- attributes(omicsStats)$cnames$edata_cname
+  }
+  sampID <- attributes(omicsData)$cnames$fdata_cname
+  if(is.null(sampID)){
+    sampID <- attributes(omicsStats)$cnames$fdata_cname
+  }
+  stats <- omicsStats$Full_results
+  
   # --omicsStats and omicsData--#
   if(!is.null(omicsStats) & !is.null(omicsData)){
     # Check if omicsData and omicsStats have the same cname attributes. #
-    if (!(identical(attributes(omicsData)$cnames, 
-                    attributes(omicsStats)$cnames))) stop(
+    if (!(identical(attr(omicsData, "cnames"), 
+                    attr(omicsStats, "cnames")))) stop(
                       "Non-matching cname attributes in omicsStats and omicsData. 
                       Check that omicsStats is correctly derived from omicsData.")
     
@@ -129,32 +143,159 @@ format_data <- function(...){
               sep = ""))
     
     # Check if group_designation has been run #
-    if(is.null(attributes(omicsStats)$group_DF) | 
-       is.null(attributes(omicsData)$group_DF)) stop(
+    if(is.null(attr(omicsStats, "group_DF")) | 
+       is.null(attr(omicsData, "group_DF"))) stop(
          "Function group_designation() has not been run on data, 
          please run group_designation().")
     
     # Check if stats sampleIDs are (at least) a subset of omicsData f_data sample IDs. #
     if(!all(
-      attributes(omicsStats)$group_DF[[sampID]] %in% omicsData$f_data[[sampID]])) stop(
-        paste(sampID, "column does not match between omicsData and omicsStats.", 
-              sep = ""))
+      attr(omicsStats, "group_DF")[[sampID]] %in% omicsData$f_data[[sampID]])) stop(
+        paste(sampID, "column does not match between omicsData and omicsStats."))
+    
+    # Check correct object length #
+    if(is.null(omicsStats$Full_results) || 
+       is.null(omicsStats$Flag) || 
+       is.null(omicsStats$P_value)) stop(
+         "OmicsStats should contain only and all of the following dataframes: Full_results, P_value, and Flags."
+       )
+    
+    # Check correct lengths of dataframes #
+    if(nrow(omicsStats$Full_results) != nrow(omicsStats$P_value) ||
+       nrow(omicsStats$Full_results) != nrow(omicsStats$Flags) ||
+       nrow(omicsStats$Flags) != nrow(omicsStats$P_value)) stop(
+         "Mismatched rows between omicsStats dataframes Full_results, P_value, and Flags. Check integrity of omicsStats object."
+       )
+    
+    # Check attribute statistical test is populated #
+    if(!(attr(omicsStats, "statistical_test") %in% c("combined", "anova", "gtest"))) stop(
+      "OmicsStats statistical_test attribute incorrect; must be combined, anova, or gtest."
+    )
+    
+    # Check cname e_data is in all columns #
+    if(!(uniqedatId %in% colnames(omicsStats$Flags) &&
+         uniqedatId %in% colnames(omicsStats$Full_results) &&
+         uniqedatId %in% colnames(omicsStats$P_values))) stop(
+           paste(uniqedatId, "column must be present in all omicsStats dataframes.")
+         )
+    
+    # Check correct column number #
+    n_comps <- length(attr(omicsStats, "comparisons"))
+    n_groups <- length(unique(attr(omicsStats, "group_DF")$Group))
+    if (attr(omicsStats, "statistical_test") == "combined"){
+      # identifier, count for each group, mean for each group, p-val g for each comp, 
+      # p-val t for each comp, fold change for each comp, flag for each comp
+      full_col <- 1 + 2*n_groups + 4*n_comps
+    } else {
+      # identifier, count for each group, mean for each group, test p-val for each comp, 
+      # fold change for each comp, flag for each comp
+      full_col <- 1 + 2*n_groups + 3*n_comps
+    }
+    if (!((ncol(omicsStats$Flags) == n_comps + 1) && 
+          (ncol(omicsStats$P_values) == n_comps + 1) &&
+          (ncol(omicsStats$Full_results) == full_col))) stop(
+            "Number of columns in omicsStats dataframes is different than expected based on group_DF and comparisons attributes. Some grouping and comparison statistics might be missing from input."
+          )
+    
+    # Check required data #
+    if(is.null(omicsData$e_data) || is.null(omicsData$f_data)) stop(
+      "Omicsdata requires both e_data and f_data."
+    )
+    
+    # Check cname e_data is in e_data, cname f_data is in f_data #
+    if(!(uniqedatId %in% colnames(omicsData$e_data) &&
+         sampID %in% colnames(omicsData$f_data))) stop(
+           paste(
+             paste(uniqedatId, "column must be present in omicsData e_data."),
+             paste(sampID, "column must be present in omicsData f_data.")
+           )
+         )
+    
+    # Check cname f_data is in columns of e_data #
+    if(!all(unlist(omicsData$f_data[sampID]) %in% colnames(omicsData$e_data))) stop(
+      paste(sampID, "column in f_data does not match column names in e_data")
+    )
     
     # --omicsStats--#
   } else if (!is.null(omicsStats)){
     # Check if group_designation has been run #
-    if(is.null(attributes(omicsStats)$group_DF)) stop(
+    if(is.null(attr(omicsStats, "group_DF"))) stop(
       "Function group_designation() has not been run on data, 
       please run group_designation().")
+    
+    # Check correct object length #
+    if(is.null(omicsStats$Full_results) || 
+       is.null(omicsStats$Flag) || 
+       is.null(omicsStats$P_value)) stop(
+      "OmicsStats should contain only and all of the following dataframes: Full_results, P_value, and Flags."
+    )
+    
+    # Check correct lengths of dataframes #
+    if(nrow(omicsStats$Full_results) != nrow(omicsStats$P_value) ||
+       nrow(omicsStats$Full_results) != nrow(omicsStats$Flags) ||
+       nrow(omicsStats$Flags) != nrow(omicsStats$P_value)) stop(
+         "Mismatched rows between omicsStats dataframes Full_results, P_value, and Flags. Check integrity of omicsStats object."
+       )
+    
+    # Check attribute statistical test is populated #
+    if(!(attr(omicsStats, "statistical_test") %in% c("combined", "anova", "gtest"))) stop(
+      "OmicsStats statistical_test attribute incorrect; must be combined, anova, or gtest."
+    )
+    
+    # Check cname e_data is in all columns #
+    if(!(uniqedatId %in% colnames(omicsStats$Flags) &&
+         uniqedatId %in% colnames(omicsStats$Full_results) &&
+         uniqedatId %in% colnames(omicsStats$P_values))) stop(
+      paste(uniqedatId, "column must be present in all omicsStats dataframes.")
+    )
+    
+    # Check correct column number #
+    n_comps <- length(attr(omicsStats, "comparisons"))
+    n_groups <- length(unique(attr(omicsStats, "group_DF")$Group))
+    if (attr(omicsStats, "statistical_test") == "combined"){
+      # identifier, count for each group, mean for each group, p-val g for each comp, 
+      # p-val t for each comp, fold change for each comp, flag for each comp
+      full_col <- 1 + 2*n_groups + 4*n_comps
+    } else {
+      # identifier, count for each group, mean for each group, test p-val for each comp, 
+      # fold change for each comp, flag for each comp
+      full_col <- 1 + 2*n_groups + 3*n_comps
+    }
+    if (!((ncol(omicsStats$Flags) == n_comps + 1) && 
+        (ncol(omicsStats$P_values) == n_comps + 1) &&
+        (ncol(omicsStats$Full_results) == full_col))) stop(
+          "Number of columns in omicsStats dataframes is different than expected based on group_DF and comparisons attributes. Some grouping and comparison statistics might be missing from input."
+        )
     
     # --omicsData--#
   } else {
     # Check if group_designation has been run #
-    if(is.null(attributes(omicsData)$group_DF)) stop(
+    if(is.null(attr(omicsData, "group_DF"))) stop(
       "Function group_designation() has not been run on data, 
       please run group_designation().")
-      }
+    
+    # Check required data #
+    if(is.null(omicsData$e_data) || is.null(omicsData$f_data)) stop(
+      "Omicsdata requires both e_data and f_data."
+    )
+    
+    # Check cname e_data is in e_data, cname f_data is in f_data #
+    if(!(uniqedatId %in% colnames(omicsData$e_data) &&
+         sampID %in% colnames(omicsData$f_data))) stop(
+           paste(
+             paste(uniqedatId, "column must be present in omicsData e_data."),
+             paste(sampID, "column must be present in omicsData f_data.")
+             )
+         )
+    
+    # Check cname f_data is in columns of e_data #
+    if(!all(unlist(omicsData$f_data[sampID]) %in% colnames(omicsData$e_data))) stop(
+      paste(sampID, "column in f_data does not match column names in e_data")
+         )
+    
+  }
   
+############################################################################## 
   # --omicsData--#
   if (!is.null(omicsData)){
     ## Manipulate Dataframes ##
@@ -162,16 +303,21 @@ format_data <- function(...){
     # 1) Melt to assign e_data values to each sample ID
     # 2) Combine with groups in f_data
     # 3) Save attributes to be used
+    if (get_data_scale(omicsData) != "abundance"){
+      value_name <- paste(get_data_scale(omicsData), "_abundance", sep = "")
+    } else {
+      value_name <- "abundance"
+    }
+    
     data_values <- suppressWarnings(
       reshape2::melt(omicsData$e_data, 
                      id.vars = uniqedatId,
-                     value.name = paste(attr(omicsData, "data_info")$data_scale,
-                                        "_abundance", sep = ""),
+                     value.name = value_name,
                      variable.name = sampID) %>%
         dplyr::left_join(omicsData$f_data, by = sampID))
     
     # Adjust for class differences when read in for group_DF and data values #
-    joingroupDF <- attributes(omicsData)$group_DF
+    joingroupDF <- attr(omicsData, "group_DF")
     fixclass <- data_values[colnames(data_values) %in% 
                               colnames(joingroupDF)]
     data_values[colnames(data_values) %in% 
@@ -187,12 +333,12 @@ format_data <- function(...){
     }
     
     # Join with group_DF
-    data_values <- left_join(data_values, joingroupDF)
+    data_values <- suppressWarnings(dplyr::left_join(data_values, joingroupDF))
     
     # Join with e_meta if present #
     if(!is.null(omicsData$e_meta)) {
-      data_values <- left_join(data_values, 
-                               omicsData$e_meta)
+      data_values <- suppressWarnings(dplyr::left_join(data_values, 
+                               omicsData$e_meta))
     }
   
     # Inherit attributes of omicsData
@@ -212,7 +358,7 @@ format_data <- function(...){
     # 4) Bind rows from each comparison into one dataframe 
     comp_stats <- suppressWarnings(
       dplyr::bind_rows(
-        attributes(omicsStats)$comparisons %>%
+        attr(omicsStats, "comparisons") %>%
           purrr::map(function(paircomp) {
             df <- cbind(
               stats[[uniqedatId]], 
@@ -232,7 +378,7 @@ format_data <- function(...){
     # 1) Extract all rows w/o comparison information in the column names
     summary_stats <- stats[,!stringr::str_detect(
       names(stats),
-      paste(attributes(omicsStats)$comparisons, collapse = '|')
+      paste(attr(omicsStats, "comparisons"), collapse = '|')
       )]
     
     # Re-sort for any grouping variables #
@@ -241,8 +387,8 @@ format_data <- function(...){
     #  3) Bind extracted with unique IDs from omicsStats and a Group column
     #  4) Rename columns by removing group designation
     # 5) Bind rows from each group into one dataframe 
-    if (!is.null(attributes(omicsStats)$group_DF)){
-      groups <-  unique(attributes(omicsStats)$group_DF$Group)
+    if (!is.null(attr(omicsStats, "group_DF"))){
+      groups <-  unique(attr(omicsStats, "group_DF")$Group)
       summary_stats <- suppressWarnings(
         dplyr::bind_rows(purrr::map(groups, function(group){
           df <- cbind(summary_stats[[uniqedatId]],
@@ -264,10 +410,10 @@ format_data <- function(...){
     
     # Join with e_meta if present #
     if(!is.null(omicsData$e_meta)) {
-      comp_stats <- left_join(comp_stats,
-                              omicsData$e_meta)
-      summary_stats <- left_join(summary_stats,
-                              omicsData$e_meta)
+      comp_stats <- suppressWarnings(dplyr::left_join(comp_stats,
+                              omicsData$e_meta))
+      summary_stats <- suppressWarnings(dplyr::left_join(summary_stats,
+                              omicsData$e_meta))
     }
     
     # Save attributes to be used #
@@ -302,7 +448,7 @@ format_data <- function(...){
   }
 
   return(res)
-}
+})
 
 
 #' print.omicsPlotter
@@ -395,14 +541,14 @@ recursive_format <- function(...){
           Data, Stats, or Data and Stats).")
       
       # Check that omicsData input is a list() not a c() of omics data #
-      if (any(map(c(omicsData), is.data.frame))) stop(
+      if (any(unlist(purrr::map(c(omicsData), is.data.frame)))) stop(
         "List/vector entry error, dataframes in input list. Possible solutions: 
           1) use list() instead of c() to preverse integrity of omicsData 
           and omicsStats lists, 2) If using both omicsData and omicsStats, 
           both inputs must be lists.")
       
       # Check that omicsStats input is a list() not a c() #
-      if (any(map(c(omicsStats), is.data.frame))) stop(
+      if (any(unlist(purrr::map(c(omicsStats), is.data.frame)))) stop(
         "List/vector entry error, dataframes in input list. Possible solutions: 
             1) use list() instead of c() to preverse integrity of omicsData 
             and omicsStats lists, 2) If using both omicsData and omicsStats, 
@@ -419,9 +565,9 @@ recursive_format <- function(...){
           index in each list.")
       
       # Generate class list and check for pro/pep classes #
-      classlist <- omicsData %>% map(function(omics) attr(omics, which = "class"))
+      classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
       classlgl <- classlist %>% 
-        map_lgl(function(class) all(stringr::str_detect(class, 
+        purrr::map_lgl(function(class) all(stringr::str_detect(class, 
                                                         pattern = "pepData|proData")))
       if(!all(classlgl)) stop(
         "Only pepData and proData are valid for lists in omicsData. 
@@ -440,7 +586,7 @@ recursive_format <- function(...){
     if (length(omicsData) != 1){
       
       # Check that input is a list() not a c() of omics data #
-      if (any(map(c(omicsData), is.data.frame))) stop(
+      if (any(unlist(purrr::map(c(omicsData), is.data.frame)))) stop(
         "List/vector entry error, dataframes in input list. Possible solutions: 
       1) use list() instead of c() to preverse integrity of omicsData 
       and omicsStats lists, 2) If using both omicsData and omicsStats, 
@@ -452,9 +598,9 @@ recursive_format <- function(...){
       protien set and one peptide set.")
       
       # Generate class list and check for pro/pep classes #
-      classlist <- omicsData %>% map(function(omics) attr(omics, which = "class"))
+      classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
       classlgl <- classlist %>% 
-        map_lgl(function(class) all(stringr::str_detect(class, 
+        purrr::map_lgl(function(class) all(stringr::str_detect(class, 
                                                         pattern = "pepData|proData")))
       if(!all(classlgl)) stop(
         "Only pepData and proData are valid for lists in omicsData.  
@@ -473,7 +619,7 @@ recursive_format <- function(...){
     if (length(omicsStats) > 1){
       
       # Check that input is a list() not a c() #
-      if (any(map(c(omicsStats), is.data.frame))) stop(
+      if (any(unlist(purrr::map(c(omicsStats), is.data.frame)))) stop(
         "List/vector entry error, dataframes in input list. Possible solutions: 
         1) use list() instead of c() to preverse integrity of omicsData 
         and omicsStats lists, 2) If using both omicsData and omicsStats, 
@@ -765,7 +911,7 @@ format_plot <- function(omicsPlotter, ...) {
   }
   
   # Check if comps_plot_type has one of the available options #
-  checkplot <- map(comps_plot_type, 
+  checkplot <- purrr::map(comps_plot_type, 
       function(plot) str_detect(plot, "box|col|point|scatter|bar"))
   if (any(!unlist(checkplot))) stop(
     "Invalid entry in comp_plot_type. Plot_type strings must contain 
@@ -815,7 +961,7 @@ format_plot <- function(omicsPlotter, ...) {
   }
   
   # Check if value_plot_type has one of the available options #
-  checkplot <- map(value_plot_type, 
+  checkplot <- purrr::map(value_plot_type, 
                    function(plot) str_detect(plot, "box|col|point|scatter|bar"))
   if (any(!unlist(checkplot))) stop(
     "Invalid entry in value_plot_type. Plot_type strings must contain 
@@ -868,7 +1014,7 @@ format_plot <- function(omicsPlotter, ...) {
     
     # Set default value_panel_y_axis #
     if (is.null(value_panel_y_axis)){
-      value_panel_y_axis  <-  grep("_abundance", 
+      value_panel_y_axis  <-  grep("abundance", 
                                    colnames(omicsPlotter$data_values), 
                                    value = TRUE)
     }
@@ -1108,12 +1254,11 @@ format_plot <- function(omicsPlotter, ...) {
                                remove = FALSE) %>%
       reshape2::melt(id.vars = names(omicsPlotter$comp_stats),
                      value.name = group_df_name) %>%
-      dplyr::left_join(omicsPlotter$summary_stats)
+      suppressWarnings(dplyr::left_join(omicsPlotter$summary_stats))
     
     if(!is.null(omicsPlotter$data_values)){
-      plotter <- dplyr::left_join(omicsPlotter$data_values, plotter)
+      plotter <- suppressWarnings(dplyr::left_join(omicsPlotter$data_values, plotter))
     }
-    
     
   } else {
     plotter <- omicsPlotter$data_values
@@ -1205,7 +1350,7 @@ format_plot <- function(omicsPlotter, ...) {
                                     labels = label_labs_comps)
       
       # Make ggplots #
-      plot_comps_all <- map(1:length(comps_plot_type), function (typenum){
+      plot_comps_all <- purrr::map(1:length(comps_plot_type), function (typenum){
       #for (typenum in 1:length(comps_plot_type)){
         type <- comps_plot_type[typenum]
         
@@ -1346,7 +1491,7 @@ format_plot <- function(omicsPlotter, ...) {
         # Set hover/labels excluding the panel_variable #
         hover_want <- c(attributes(omicsPlotter)$cnames$edata_cname, 
                         attributes(omicsPlotter)$cnames$fdata_cname,
-                        "Group", grep("_abundance",
+                        "Group", grep("abundance",
                                       colnames(omicsPlotter$data_values),
                                       value = TRUE)) 
         if (!(value_panel_y_axis %in% hover_want)){
@@ -1360,7 +1505,7 @@ format_plot <- function(omicsPlotter, ...) {
         for (row in 1:nrow(nestedData)){
           row_text <- c()
           for (label in hover_labs){
-            if (label %in% c(grep("_abundance", 
+            if (label %in% c(grep("abundance", 
                                   colnames(omicsPlotter$data_values), 
                                   value = TRUE), value_panel_y_axis)) {
               row_text <- c(row_text,
@@ -1378,7 +1523,7 @@ format_plot <- function(omicsPlotter, ...) {
         
         # Make ggplots #
         # plot_value_all <- list()
-        plot_value_all <- map(1:length(value_plot_type), function (typenum){
+        plot_value_all <- purrr::map(1:length(value_plot_type), function (typenum){
         #for (typenum in 1:length(value_plot_type)){
           type <- value_plot_type[typenum]
           
@@ -1588,14 +1733,14 @@ data_cogs <- function(...) {
     omicsPlotter = format_data(omicsData, omicsStats)
     # recursive for lists #
     if(class(omicsPlotter) == "list"){
-      nested_plot <- map(omicsPlotter, format_plot)
-      nestlist <- pmap(list(nested_plot, omicsData, omicsStats), data_cogs)
+      nested_plot <- purrr::map(omicsPlotter, format_plot)
+      nestlist <- purrr::pmap(list(nested_plot, omicsData, omicsStats), data_cogs)
       return(nestlist)
     } else {
       nested_plot <- format_plot(omicsPlotter)
     }
   }
-  
+
   ## Assign unique ID, then panel variable ##
   uniqueID <- attributes(omicsData)$cnames$edata_cname
   if(is.null(uniqueID)){
@@ -1604,16 +1749,16 @@ data_cogs <- function(...) {
   panel_variable <- names(nested_plot[1])
 
   if (!is.null(omicsStats) & !is.null(omicsData)){
-    addOrigCogs <- left_join(stats, e_data)
+    addOrigCogs <- suppressWarnings(dplyr::left_join(stats, e_data))
     if(!is.null(e_meta)){
-      addOrigCogs <- left_join(addOrigCogs, e_meta)
+      addOrigCogs <- suppressWarnings(dplyr::left_join(addOrigCogs, e_meta))
     }
   } else if (!is.null(omicsStats)){
     addOrigCogs <- stats
   } else {
     addOrigCogs <- e_data
     if(!is.null(e_meta)){
-      addOrigCogs <- left_join(addOrigCogs, e_meta)
+      addOrigCogs <- suppressWarnings(dplyr::left_join(addOrigCogs, e_meta))
     }
   }
   ## Stats Data Cogs ##
@@ -1694,7 +1839,7 @@ data_cogs <- function(...) {
       peps <- mapcols[pepcol]
       degenpep <- peps[which(duplicated(peps)==TRUE),]
       Is_degenerate <- as.factor(
-        map(peps, function(pep) pep %in% degenpep)[[pepcol]])
+        purrr::map(peps, function(pep) pep %in% degenpep)[[pepcol]])
       
         # Add to dataframe #
       addcogs <- data.frame(
@@ -1733,18 +1878,18 @@ data_cogs <- function(...) {
       
       peps <- mapcols[mapping_col]
       degenpep <- peps[which(duplicated(peps)==TRUE),]
-      mapcols[mapping_col] <- map(peps, function(pep) pep %in% degenpep)[[mapping_col]]
+      mapcols[mapping_col] <- purrr::map(peps, function(pep) pep %in% degenpep)[[mapping_col]]
       mapcols <- mapcols %>% nest(-procol)
       mapcols <- mutate(mapcols, 
-                        n_degenerate = map_int(mapcols$data, function(propeps){
+                        n_degenerate = purrr::map_int(mapcols$data, function(propeps){
                           sum(propeps[[mapping_col]])
                           }))
       mapcols$data <- NULL
       
       # Add to dataframe #
-      addcogs <- left_join(
+      addcogs <- suppressWarnings(dplyr::left_join(
         addcogs,
-        mapcols)
+        mapcols))
     }
     
     # Try to find Protein URL #
@@ -1800,9 +1945,9 @@ data_cogs <- function(...) {
     }
   }
 
-  allcogs <- dplyr::left_join(addcogs, addOrigCogs) %>% tidyr::nest(-panel_variable)
+  allcogs <- suppressWarnings(dplyr::left_join(addcogs, addOrigCogs) %>% tidyr::nest(-panel_variable))
   
-  transcogs <- list(map(allcogs$data, function(panel_data){
+  transcogs <- list(purrr::map(allcogs$data, function(panel_data){
     if (nrow(panel_data) >1 ){
       datalist <-  list()
       changecol <- c(rep(FALSE, ncol(panel_data)))
@@ -1850,7 +1995,7 @@ data_cogs <- function(...) {
   transcogs <- do.call(dplyr::bind_rows, transcogs)
   allcogs$data <- NULL
   allcogs <- cbind(allcogs, transcogs)
-  nested_plot <- dplyr::left_join(nested_plot, allcogs)
+  nested_plot <- suppressWarnings(dplyr::left_join(nested_plot, allcogs))
   return(nested_plot)
 }
 
@@ -2004,12 +2149,12 @@ trelliVis <- function(...) {
        length(omicsData) != 1){
       vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
                      inherits(omicsData[2][[1]], "proData"))
-      omicsData[vectorpro][[1]]$e_meta <- left_join(omicsData[vectorpro][[1]]$e_meta,
-                                                    omicsData[!vectorpro][[1]]$e_meta)
+      omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
+                                                    omicsData[!vectorpro][[1]]$e_meta))
     }
     
     # Nest data and generate trelliscope plots #
-    nested_plot <- map2(omicsPlotter, panel_variable, function(pairedplotter, pan){
+    nested_plot <- purrr::map2(omicsPlotter, panel_variable, function(pairedplotter, pan){
       format_plot(pairedplotter, 
                   comps_y_limits = comps_y_limits, 
                   comps_y_range = comps_y_range, 
@@ -2038,7 +2183,7 @@ trelliVis <- function(...) {
       })
     
     # Generate default cognostics #
-    nest_plot_cog_list <- pmap(
+    nest_plot_cog_list <- purrr::pmap(
       list(nested_plot,
            omicsData,
            omicsStats, 
@@ -2055,7 +2200,7 @@ trelliVis <- function(...) {
         })
     
     # Generate trelliscope display #
-    map2(nest_plot_cog_list, 
+    purrr::map2(nest_plot_cog_list, 
               trelli_name, function(display, name){
       trelliscope(display, as.character(name), nrow = 1, ncol = 2,
                   path = as.character(trelli_path_out), thumb = TRUE, state = list(
