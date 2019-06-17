@@ -170,9 +170,58 @@ testthat::test_that("Correct format_data() error throwing for arguments omicsDat
   
 })
 
+
+## Invalid until errors are resolved
+# testthat::test_that("Subfunction recursive_format correctly throws errors", {
+#   
+# })
+
 ################################################################################
 
 ## Generate function outputs from test data ##
+
+isobaric_object
+format_isoobject$data_values
+
+get_edata_cname(isobaric_object)
+get_emeta_cname(isobaric_object)
+get_fdata_cname(isobaric_object)
+
+dim(format_isoobject$data_values)
+
+nrow(
+  unique(
+    format_isoobject$data_values[c(
+      get_edata_cname(isobaric_object),
+      get_emeta_cname(isobaric_object))])) * 
+  nrow(unique(
+    format_isoobject$data_values[get_fdata_cname(isobaric_object)]))
+
+
+dim(format_qpro4$data_values)
+
+nrow(
+  unique(
+    format_qpro4$data_values[c(
+      get_edata_cname(qpro4),
+      get_emeta_cname(qpro4))])) * 
+  nrow(unique(
+    format_qpro4$data_values[get_fdata_cname(qpro4)]))
+
+
+
+dim(format_lipobject$data_values)
+
+nrow(
+  unique(
+    format_lipobject$data_values[
+      get_edata_cname(lipid_object)])) * 
+  nrow(unique(
+    format_lipobject$data_values[get_fdata_cname(lipid_object)]))
+
+
+
+
 
 # Data only #
 format_isoobject   <- pmartR::format_data(isobaric_object)
@@ -240,7 +289,7 @@ forlist_qpro4dat  <- pmartR::format_data(omicsData = list(pep_object2,
 # forlist_qpro4stat  <- pmartR::format_data(omicsStats = list(qpro4_stats, #######
 #                                                           pep_stats))
 
-#Both                                                                                                                   qpro4))
+#Both     qpro4))
 
 # forlist_qpro1both <- pmartR::format_data(omicsStats = list(qpro1_stats,     #########
 #                                                            isobaric_stats),
@@ -265,12 +314,20 @@ forlist_qpro4dat  <- pmartR::format_data(omicsData = list(pep_object2,
 
 Valid_format_dat <- list(
   format_isoobject, format_lipobject, 
-  format_lipobject2, format_metobject,
-  format_metobject, format_metobject2,
-  format_pepobject, format_pepobject2,
-  format_proobject, format_tecobject,
-  format_qpro4
+  format_lipobject2, format_metobject, 
+  format_metobject2, format_pepobject, 
+  format_pepobject2, format_proobject, 
+  format_tecobject, format_qpro4
 )
+
+Vfd_obs <- list(
+  isobaric_object, lipid_object,
+  lipid_object2, metab_object,
+  metab_object2, pep_object,
+  pep_object2, pro_object,
+  techrep_pep_object, qpro4)
+
+##
 
 Valid_format_stat <- list(
   format_metstats 
@@ -278,49 +335,163 @@ Valid_format_stat <- list(
   # format_tecstats, format_qpro4stats
 )
 
+Vfs_obs <- list(
+  metab_stats
+)
+
+##
+
 Valid_format_both <- list(
   format_metboth2
   # format_pepboth2, format_proboth,
   # format_tecboth
 )
 
+Vfb_obs1 <- list(
+  metab_object2
+)
+
+Vfb_obs2 <- list(
+  metab_stats
+)
+
+#####
+
 Valid_forlist_dat <- list(
   forlist_qpro4dat
 )
+
+Vfld_list <- list(
+  list(pep_object2, qpro4)
+)
+
+##
 
 Valid_forlist_stat <- list(
   # forlist_qpro4stat
 )
 
+Vfls_list <- list(
+  # list(pro4_stat, pep_stat)
+)
+
+##
+
 Valid_forlist_both <- list(
   # forlist_qpro4both
 )
 
+Vflb_list1 <- list(
+  # list(pro4, pep_object2)
+)
+
+Vflb_list2 <- list(
+  # list(pro4_stat, pep_stat)
+)
+
+
 ################################################################################
 
 ## Test format_data outputs ##
-# Dimensions and correct columns in output #
+#### Dimensions and correct columns in output ####
 
-testthat::test_that("Correct dataframe population format data", {
+testthat::test_that("Correct dataframe population and dimensions", {
                       
-  purrr::map(Valid_format_dat, function(formDat){
+  purrr::map2(Valid_format_dat, Vfd_obs, function(formDat, parOb){
+    
+    # Data frame population #
     testthat::expect_length(formDat, 3)
     testthat::expect_null(formDat$comp_stats)
     testthat::expect_null(formDat$summary_stats)
     testthat::expect_false(is.null(formDat$data_value))
     testthat::expect_gt(nrow(formDat$data_value), 0)
+    
+    # Data value correct columns and number of rows #
+    form_cols <- colnames(formDat$data_values)
+    testthat::expect_match(toString(form_cols), get_edata_cname(parOb))
+    testthat::expect_match(toString(form_cols), get_fdata_cname(parOb))
+    testthat::expect_true(all(colnames(parOb$f_data) %in% form_cols))
+    form_cols <- form_cols[!(form_cols %in% colnames(parOb$f_data))]
+    testthat::expect_match(toString(form_cols), "abundance")
+    testthat::expect_match(toString(form_cols), "Group")
+    
+    if(!is.null(parOb$e_meta)){
+      testthat::expect_match(toString(form_cols), get_emeta_cname(parOb))
+      testthat::expect_true(all(colnames(parOb$e_meta) %in% form_cols))
+      mult_row <- nrow(unique(
+        parOb$e_meta[c(get_emeta_cname(parOb), get_edata_cname(parOb))]))
+    } else {
+      mult_row <- length(parOb$e_data[[get_edata_cname(parOb)]])
+    }
+    
+    testthat::expect_identical(mult_row * 
+                                 length(parOb$f_data[[get_fdata_cname(parOb)]]),
+                               nrow(formDat$data_values))
+    
   })
-
-  purrr::map(Valid_format_stat, function(formStat){
+  
+##
+  
+  purrr::map2(Valid_format_stat, Vfs_obs, function(formStat, parOb){
+    
+    # Data frame population #
     testthat::expect_length(formStat, 3)
     testthat::expect_null(formStat$data_value)
     testthat::expect_false(is.null(formStat$summary_stats))
     testthat::expect_false(is.null(formStat$comp_stats))
     testthat::expect_gt(nrow(formStat$summary_stats), 0)
     testthat::expect_gt(nrow(formStat$comp_stats), 0)
+    
+    # Comps and summary stats correct columns and number of rows #
+    
+    form_cols_summ <- colnames(formStat$summary_stats)
+    #expect_cols_summ <- c(get_edata_cname(parOb), "Group", "Count", "Mean")
+    expect_cols_summ <- c(attr(parOb, "cnames")$edata_cname, "Group", "Count", "Mean")
+    # expect_rows_summ <- length(parOb$Full_results[[get_edata_cname(parOb)]]) *
+    #   length(unique(attr(parOb, "group_DF")$Group))
+    expect_rows_summ <- length(parOb$Full_results[[attr(parOb, "cnames")$edata_cname]]) *
+      length(unique(attr(parOb, "group_DF")$Group))
+    testthat::expect_identical(form_cols_summ, expect_cols_summ)
+    testthat::expect_identical(nrow(formStat$summary_stats), expect_rows_summ)
+    
+    form_cols_comp <- colnames(formStat$comp_stats)
+    test <- attr(parOb, "statistical_test")
+    if (test == "gtest"){
+      # expect_cols_comp <- c(get_edata_cname(parOb), "Comparison",
+      #                       "P_value_G", "Fold_change", "Flag")
+      expect_cols_comp <- c(attr(parOb, "cnames")$edata_cname, "Comparison",
+                            "P_value_G", "Fold_change", "Flag")
+    } else if (test == "anova"){
+      # expect_cols_comp <- c(get_edata_cname(parOb), "Comparison",
+      #                       "P_value_T", "Fold_change", "Flag")
+      expect_cols_comp <- c(attr(parOb, "cnames")$edata_cname, "Comparison",
+                            "P_value_T", "Fold_change", "Flag")
+    } else {
+      # expect_cols_comp <- c(get_edata_cname(parOb), "Comparison", 
+      #                       "P_value_G", "P_value_T", 
+      #                       "Fold_change", "Flag")
+      expect_cols_comp <- c(attr(parOb, "cnames")$edata_cname, "Comparison", 
+                            "P_value_G", "P_value_T", 
+                            "Fold_change", "Flag")
+    }
+    # expect_rows_comp <- length(parOb$Full_Results[get_edata_cname(parOb)]) *
+    #   length(unique(get_group_info(par_Ob)$Group))
+    expect_rows_comp <- length(
+      parOb$Full_results[[attr(parOb, "cnames")$edata_cname]]) *
+      length(attr(parOb, "comparisons"))
+    
+    testthat::expect_identical(form_cols_comp, expect_cols_comp)
+    testthat::expect_identical(nrow(formStat$comp_stats), expect_rows_comp)
+    
   })
 
-  purrr::map(Valid_format_both, function(formBoth){
+##  
+  
+  purrr::pmap(list(Valid_format_both, 
+                   Vfb_obs1, 
+                   Vfb_obs2), 
+              function(formBoth, parDat, parStat){
+                
     testthat::expect_length(formBoth, 3)
     testthat::expect_false(is.null(formBoth$data_value))
     testthat::expect_false(is.null(formBoth$summary_stats))
@@ -328,16 +499,106 @@ testthat::test_that("Correct dataframe population format data", {
     testthat::expect_gt(nrow(formBoth$data_value), 0)
     testthat::expect_gt(nrow(formBoth$summary_stats), 0)
     testthat::expect_gt(nrow(formBoth$comp_stats), 0)
+    
+    # Data value correct columns and number of rows #
+    form_cols <- colnames(formBoth$data_values)
+    testthat::expect_match(toString(form_cols), get_edata_cname(parDat))
+    testthat::expect_match(toString(form_cols), get_fdata_cname(parDat))
+    testthat::expect_true(all(colnames(parDat$f_data) %in% form_cols))
+    form_cols <- form_cols[!(form_cols %in% colnames(parDat$f_data))]
+    testthat::expect_match(toString(form_cols), "abundance")
+    testthat::expect_match(toString(form_cols), "Group")
+    
+    if(!is.null(parDat$e_meta)){
+      testthat::expect_match(toString(form_cols), get_emeta_cname(parDat))
+      testthat::expect_true(all(colnames(parDat$e_meta) %in% form_cols))
+      mult_row <- nrow(unique(
+        parDat$e_meta[c(get_emeta_cname(parDat), get_edata_cname(parDat))]))
+    } else {
+      mult_row <- length(parDat$e_data[[get_edata_cname(parDat)]])
+    }
+    
+    testthat::expect_identical(mult_row * 
+                                 length(parDat$f_data[[get_fdata_cname(parDat)]]),
+                               nrow(formBoth$data_values))
+    
+    # Comps and summary stats correct columns and number of rows #
+    
+    form_cols_summ <- colnames(formBoth$summary_stats)
+    #expect_cols_summ <- c(get_edata_cname(parStat), "Group", "Count", "Mean")
+    expect_cols_summ <- c(attr(parStat, "cnames")$edata_cname, "Group", "Count", "Mean")
+    # expect_rows_summ <- length(parStat$Full_results[[get_edata_cname(parStat)]]) *
+    #   length(unique(attr(parStat, "group_DF")$Group))
+    expect_rows_summ <- length(parStat$Full_results[[attr(parStat, "cnames")$edata_cname]]) *
+      length(unique(attr(parStat, "group_DF")$Group))
+    testthat::expect_identical(form_cols_summ, expect_cols_summ)
+    testthat::expect_identical(nrow(formBoth$summary_stats), expect_rows_summ)
+    
+    form_cols_comp <- colnames(formBoth$comp_stats)
+    test <- attr(parStat, "statistical_test")
+    if (test == "gtest"){
+      # expect_cols_comp <- c(get_edata_cname(parStat), "Comparison",
+      #                       "P_value_G", "Fold_change", "Flag")
+      expect_cols_comp <- c(attr(parStat, "cnames")$edata_cname, "Comparison",
+                            "P_value_G", "Fold_change", "Flag")
+    } else if (test == "anova"){
+      # expect_cols_comp <- c(get_edata_cname(parStat), "Comparison",
+      #                       "P_value_T", "Fold_change", "Flag")
+      expect_cols_comp <- c(attr(parStat, "cnames")$edata_cname, "Comparison",
+                            "P_value_T", "Fold_change", "Flag")
+    } else {
+      # expect_cols_comp <- c(get_edata_cname(parStat), "Comparison", 
+      #                       "P_value_G", "P_value_T", 
+      #                       "Fold_change", "Flag")
+      expect_cols_comp <- c(attr(parStat, "cnames")$edata_cname, "Comparison", 
+                            "P_value_G", "P_value_T", 
+                            "Fold_change", "Flag")
+    }
+    # expect_rows_comp <- length(parStat$Full_Results[get_edata_cname(parStat)]) *
+    #   length(unique(get_group_info(par_Ob)$Group))
+    expect_rows_comp <- length(
+      parStat$Full_results[[attr(parStat, "cnames")$edata_cname]]) *
+      length(attr(parStat, "comparisons"))
+    
+    testthat::expect_identical(form_cols_comp, expect_cols_comp)
+    testthat::expect_identical(nrow(formBoth$comp_stats), expect_rows_comp)
+    
   })
   
-  purrr::map(Valid_forlist_dat, function(index){
-    testthat::expect_length(index, 2)
-    purrr::map(index, function(formDat){
+##  
+  
+  purrr::map2(Valid_forlist_dat, Vfld_list, function(index_form, index_ob){
+    testthat::expect_length(index_form, 2)
+    purrr::map2(index_form, index_ob, function(formDat, parOb){
+      # Data frame population #
       testthat::expect_length(formDat, 3)
       testthat::expect_null(formDat$comp_stats)
       testthat::expect_null(formDat$summary_stats)
       testthat::expect_false(is.null(formDat$data_value))
       testthat::expect_gt(nrow(formDat$data_value), 0)
+      
+      # Data value correct columns and number of rows #
+      form_cols <- colnames(formDat$data_values)
+      testthat::expect_match(toString(form_cols), get_edata_cname(parOb))
+      testthat::expect_match(toString(form_cols), get_fdata_cname(parOb))
+      testthat::expect_true(all(colnames(parOb$f_data) %in% form_cols))
+      form_cols <- form_cols[!(form_cols %in% colnames(parOb$f_data))]
+      testthat::expect_match(toString(form_cols), "abundance")
+      testthat::expect_match(toString(form_cols), "Group")
+      
+      if(!is.null(parOb$e_meta)){
+        testthat::expect_match(toString(form_cols), get_emeta_cname(parOb))
+        testthat::expect_true(all(colnames(parOb$e_meta) %in% form_cols))
+        mult_row <- nrow(unique(
+          parOb$e_meta[c(get_emeta_cname(parOb), get_edata_cname(parOb))]))
+      } else {
+        mult_row <- length(parOb$e_data[[get_edata_cname(parOb)]])
+      }
+      
+      testthat::expect_identical(mult_row * 
+                                   length(parOb$f_data[[get_fdata_cname(parOb)]]),
+                                 nrow(formDat$data_values))
+      
     })
   })
   
@@ -364,212 +625,17 @@ testthat::test_that("Correct dataframe population format data", {
   
 })
 
-################################################################################
+#### Testing data specific expectations #####
 
-## Test format_data outputs ##
-# Testing data specific expectations #
+## Random stats?
 
-### Thus farrr with errors :(
-# Is there a good way to estimate expected row number mathmatically?
-
-# data_values:   cnames, abundance value, f_data colnames, group_DF group, e_meta colnames of associated omicsData
-# comp stats:   e_data cname, "comparison", respective P values (T and G), "Fold_change", "Flag"
-# summary stats : e_data cname, "Group" or "Group_DF", "Count", "Mean"
-
-testthat::test_that("Correct columns and rows in format_data", {
-  
-  # Data-only generated ############
-  testthat::expect_match(toString(colnames(format_isoobject$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_isoobject$data_values)), 
-                         "Group_DF")
-  testthat::expect_match(toString(colnames(format_isoobject$data_values)),
-                        attr(format_isoobject, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(isobaric_object$f_data) %in%
-                              colnames(format_isoobject$data_values)))
-  testthat::expect_true(all(colnames(isobaric_object$e_meta) %in%
-                              colnames(format_isoobject$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_lipobject$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_lipobject$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_lipobject$data_values)),
-                         attr(format_lipobject, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(lipid_object$f_data) %in%
-                              colnames(format_lipobject$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_lipobject2$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_lipobject2$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_lipobject2$data_values)),
-                         attr(format_lipobject2, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(lipid_object2$f_data) %in%
-                              colnames(format_lipobject2$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_metobject$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_metobject$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_metobject$data_values)),
-                         attr(format_metobject, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(metab_object$f_data) %in%
-                              colnames(format_metobject$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_metobject2$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_metobject2$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_metobject2$data_values)),
-                         attr(format_metobject2, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(metab_object2$f_data) %in%
-                              colnames(format_metobject2$data_values)))
-
-  testthat::expect_match(toString(colnames(format_pepobject$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_pepobject$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_pepobject$data_values)),
-                         attr(format_pepobject, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(pep_object$f_data) %in%
-                              colnames(format_pepobject$data_values)))
-  testthat::expect_true(all(colnames(pep_object$e_meta) %in%
-                              colnames(format_pepobject$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_pepobject2$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_pepobject2$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_pepobject2$data_values)),
-                         attr(format_pepobject2, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(pep_object2$f_data) %in%
-                              colnames(format_pepobject2$data_values)))
-  testthat::expect_true(all(colnames(pep_object2$e_meta) %in%
-                              colnames(format_pepobject2$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_proobject$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_proobject$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_proobject$data_values)),
-                         attr(format_proobject, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(pro_object$f_data) %in%
-                              colnames(format_proobject$data_values)))
-  testthat::expect_true(all(colnames(pro_object$e_meta) %in%
-                              colnames(format_proobject$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_tecobject$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_tecobject$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_tecobject$data_values)),
-                         attr(format_tecobject, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(techrep_pep_object$f_data) %in%
-                              colnames(format_tecobject$data_values)))
-  testthat::expect_true(all(colnames(techrep_pep_object$e_meta) %in%
-                              colnames(format_tecobject$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_qpro4$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_qpro4$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_qpro4$data_values)),
-                         attr(format_qpro4, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(qpro4$f_data) %in%
-                              colnames(format_qpro4$data_values)))
-  testthat::expect_true(all(colnames(qpro4$e_meta) %in%
-                              colnames(format_qpro4$data_values)))
-  
-  # Stats-only generated ##########
-  
-  testthat::expect_match(toString(colnames(format_metstats$comp_stats)), 
-                         "Comparison")
-  testthat::expect_match(toString(colnames(format_metstats$comp_stats)), 
-                         "Fold_change")
-  testthat::expect_match(toString(colnames(format_metstats$comp_stats)), 
-                         "Flag")
-  testthat::expect_match(toString(colnames(format_metstats$comp_stats)), 
-                         "P_value_G")
-  testthat::expect_match(toString(colnames(format_metstats$comp_stats)), 
-                         "P_value_T")
-  testthat::expect_match(toString(colnames(format_metstats$comp_stats)),
-                         attr(metab_stats, "cname")$edata_cname)
-  
-  testthat::expect_match(toString(colnames(format_metstats$summary_stats)), 
-                         "Count")
-  testthat::expect_match(toString(colnames(format_metstats$summary_stats)), 
-                         "Mean")
-  testthat::expect_match(toString(colnames(format_metstats$summary_stats)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_metstats$summary_stats)),
-                         attr(metab_stats, "cname")$edata_cname)
-  
-  # Both Stats and Data generated ########
-  
-  testthat::expect_match(toString(colnames(format_metboth2$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(format_metboth2$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_metboth2$data_values)),
-                         attr(metab_object2, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(metab_object2$f_data) %in%
-                              colnames(format_metboth2$data_values)))
-  testthat::expect_true(all(colnames(metab_object2$e_meta) %in%
-                              colnames(format_metboth2$data_values)))
-  
-  testthat::expect_match(toString(colnames(format_metboth2$comp_stats)), 
-                         "Comparison")
-  testthat::expect_match(toString(colnames(format_metboth2$comp_stats)), 
-                         "Fold_change")
-  testthat::expect_match(toString(colnames(format_metboth2$comp_stats)), 
-                         "Flag")
-  testthat::expect_match(toString(colnames(format_metboth2$comp_stats)), 
-                         "P_value_G")
-  testthat::expect_match(toString(colnames(format_metboth2$comp_stats)), 
-                         "P_value_T")
-  testthat::expect_match(toString(colnames(format_metboth2$comp_stats)),
-                         attr(metab_stats, "cname")$edata_cname)
-  
-  testthat::expect_match(toString(colnames(format_metboth2$summary_stats)), 
-                         "Count")
-  testthat::expect_match(toString(colnames(format_metboth2$summary_stats)), 
-                         "Mean")
-  testthat::expect_match(toString(colnames(format_metboth2$summary_stats)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(format_metboth2$summary_stats)),
-                         attr(metab_stats, "cname")$edata_cname)
-  
-  # List of data generated ##########
-
-  testthat::expect_match(toString(colnames(forlist_qpro4dat[[1]]$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(forlist_qpro4dat[[1]]$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(forlist_qpro4dat[[1]]$data_values)),
-                         attr(pep_object2, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(pep_object2$f_data) %in%
-                              colnames(forlist_qpro4dat[[1]]$data_values)))
-  testthat::expect_true(all(colnames(pep_object2$e_meta) %in%
-                              colnames(forlist_qpro4dat[[1]]$data_values)))
-  
-  testthat::expect_match(toString(colnames(forlist_qpro4dat[[2]]$data_values)), 
-                         "abundance")
-  testthat::expect_match(toString(colnames(forlist_qpro4dat[[2]]$data_values)), 
-                         "Group")
-  testthat::expect_match(toString(colnames(forlist_qpro4dat[[2]]$data_values)),
-                         attr(qpro4, "cname")$edata_cname)
-  testthat::expect_true(all(colnames(qpro4$f_data) %in%
-                              colnames(forlist_qpro4dat[[2]]$data_values)))
-  testthat::expect_true(all(colnames(qpro4$e_meta) %in%
-                              colnames(forlist_qpro4dat[[2]]$data_values)))
-  
-})
 
 ################################################################################
 ################################################################################
 
 testthat::context("Test format_plot output")
+
+
 
 ################################################################################
 ################################################################################
@@ -579,22 +645,129 @@ testthat::context("Test data_cogs output")
 ################################################################################
 ################################################################################
 
-testthat::context("Test recursive_format, set_increment, and set_ylimits output")
+testthat::context("Test set_increment and set_ylimits output")
 
-testthat::test_that("Subfunction recursive_format correctly processes", {
-  
-})
+#### Test y-values #### 
+ylist1 <- data.frame(NA, "NA", 8, c(3,2), NA, NA)
+ylist2 <- c(NA, "r"," r", "r", NA, NA)
+ylist3 <- c(NA, "NA"," NA", "NA", NA, NA)
+ylist4 <- c(0)
+ylist5 <- data.frame(NA, NA, NA, NA, NA, NA)
+ylist6 <- c(NULL)
+ylist7 <- c(NA, NA, NA, NA, NA, NA)
+ylist8 <- c(4)
+ylist9 <- c(-4, -4, NA, NA, NA, NA)
+ylist10 <- c(-4, -5, NA, NA, NA, NA)
+ylist11 <- c(4, NA, NA, 6, NA, 5)
+ylist12 <- data.frame(NA, NA, NA, 3, NA, NA)
+ylist13 <- data.frame(NA, NA, NA, c(3,2), NA, NA)
+ylist14 <- data.frame(NA, NA, -8, c(-9,-10), NA, NA)
 
+#### Test set_increment #### 
 testthat::test_that("Subfunction set_increment correctly processes", {
-  
+  testthat::expect_error(pmartR::set_increment(ylist1))
+  testthat::expect_error(pmartR::set_increment(ylist2))
+  testthat::expect_error(pmartR::set_increment(ylist3))
+  testthat::expect_error(pmartR::set_increment(ylist4, include_zero = "z"))
+  testthat::expect_error(pmartR::set_increment(ylist4, include_zero = 1))
+  testthat::expect_identical(pmartR::set_increment(ylist4), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist5), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist6), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist7), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist8), 4/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist8, include_zero = FALSE), 4/20)
+  testthat::expect_identical(pmartR::set_increment(ylist9), 4/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist9, include_zero = FALSE), 4/20)
+  testthat::expect_identical(pmartR::set_increment(ylist10), 5/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist10, include_zero = FALSE), 1/20)
+  testthat::expect_identical(pmartR::set_increment(ylist11), 6/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist11, include_zero = FALSE), 2/20)
+  testthat::expect_identical(pmartR::set_increment(ylist12), 3/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist12, include_zero = FALSE), 3/20)
+  testthat::expect_identical(pmartR::set_increment(ylist13), 3/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist13, include_zero = FALSE), 1/20)
+  testthat::expect_identical(pmartR::set_increment(ylist14), 10/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist14, include_zero = FALSE), 2/20)
 })
 
+#### Test set_ylimits #### 
 testthat::test_that("Subfunction set_ylimits correctly processes", {
   
+  temp_inc <- 1    # Testing increment value
+  temp_ymax <- 20  # Testing y_max
+  temp_ymin <- -16 # Testing y_min
+  temp_yrange <- 6 # Testing y_range
+  
+  #### Errors ####
+  testthat::expect_error(pmartR::set_ylimits(ylist1, temp_inc))
+  testthat::expect_error(pmartR::set_ylimits(ylist2, temp_inc))
+  testthat::expect_error(pmartR::set_ylimits(ylist3, temp_inc))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, NA))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, c(1,2)))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, include_zero = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, include_zero = 1))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_max = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_min = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_range = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, 
+                                             y_range = temp_yrange,
+                                             y_max = temp_ymax,
+                                             y_min = temp_ymin))
+  
+  #### Value match w/o limits ####
+  testthat::expect_identical(pmartR::set_ylimits(ylist4, temp_inc), c(-5, 5))
+  testthat::expect_identical(pmartR::set_ylimits(ylist5, temp_inc), c(-5, 5))
+  testthat::expect_identical(pmartR::set_ylimits(ylist6, temp_inc), c(-5, 5))
+  testthat::expect_identical(pmartR::set_ylimits(ylist7, temp_inc), c(-5, 5))
+  testthat::expect_identical(pmartR::set_ylimits(ylist8, temp_inc), c(-1, 9))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist8, temp_inc, include_zero = FALSE), c(-1, 9))
+  testthat::expect_identical(pmartR::set_ylimits(ylist9, temp_inc), c(-9, 1))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist9, temp_inc, include_zero = FALSE), c(-9, 1))
+  testthat::expect_identical(pmartR::set_ylimits(ylist10, temp_inc), c(-10, 1))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist10, temp_inc, include_zero = FALSE), c(-10, 1))
+  testthat::expect_identical(pmartR::set_ylimits(ylist11, temp_inc), c(-1, 11))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist11, temp_inc, include_zero = FALSE), c(-1, 11))
+  testthat::expect_identical(pmartR::set_ylimits(ylist12, temp_inc), c(-2, 8))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist12, temp_inc, include_zero = FALSE), c(-2, 8))
+  testthat::expect_identical(pmartR::set_ylimits(ylist13, temp_inc), c(-3, 8))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist13, temp_inc, include_zero = FALSE), c(-3, 8))
+  testthat::expect_identical(pmartR::set_ylimits(ylist14, temp_inc), c(-15, 5))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist14, temp_inc, include_zero = FALSE), c(-15, -3))
+  
+  
+  #### Value match w/ limits ####
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_max = temp_ymax), c(-5, 20))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin), c(-16, 5))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin), c(-16, 5))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin, y_max = temp_ymax), c(-16, 20))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_range = temp_yrange, y_max = temp_ymax), c(14, 20))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin, y_range = temp_yrange), c(-16, -10))
+  
 })
 
 ################################################################################
 ################################################################################
 
-testthat::context("Test main function output")
+testthat::context("Test main TrelliVis function output")
 

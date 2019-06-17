@@ -660,42 +660,34 @@ set_increment <- function(yvalues, ...){
   .set_increment(yvalues,  ...)
 }
 
-.set_increment <- function(yvalues, testtype = "NA", include_zero = TRUE){
+.set_increment <- function(yvalues, include_zero = TRUE){
   ## Initial Checks and Replacement ##
-  # Catch NAs, replace with 0 #
-  if (any(is.na(yvalues))){
-    if (include_zero == TRUE){
-      yvalues[is.na(yvalues)] <- 0
-    } else {
-      yvalues <- yvalues[!is.na(yvalues)]
-      if (length(yvalues) == 0){
-        yvalues <- 0
-      }
-    }
+  
+  # Remove NA, duplicate values #
+  yvalues <- unique(yvalues[!is.na(yvalues)])
+  if (length(yvalues) == 0){
+    yvalues <- 0
+  }
+
+  # Add zero if including zero #
+  if (include_zero == TRUE){
+    yvalues <- c(yvalues, 0)
   }
   
-  # Check for numeric data #
-  if(!inherits(yvalues, "numeric")) stop("yvalues must be of the class 'numeric'")
+  # Check if yvalues is a numeric vector #
+  if(!is.vector(yvalues) || !inherits(yvalues, "numeric")) stop(
+    "yvalues must be a numeric vector")
   
-  # Check if a vector #
-  if(!is.vector(yvalues)) stop("yvalues must be a numeric vector")
-  
-  # Check if test type is correct #
-  if(!(testtype %in% c("anova", "gtest", "combined", "NA"))) stop("testtype must be 'anova', 'gtest', or 'combined'")
+  # Check if include_zero is logical #
+  if(!is.logical(include_zero) || !(length(include_zero) == 1) ) stop(
+    "include_zero must be a length 1 logical. (TRUE/FALSE)")
 
-  ## Set increment based on test type ##
-  if (testtype != "gtest"){
-    if(length(yvalues)==1){
-      increment <- yvalues/20
-    } else if (max(yvalues) != min(yvalues)){
-      increment <- (max(yvalues) - min(yvalues))/20
-    } else {
-      increment <- max(yvalues)/20
-    }
+  if(length(yvalues)==1){
+    increment <- yvalues/20
   } else {
-    increment <- max(yvalues)/20
+    increment <- (max(yvalues) - min(yvalues))/20
   }
-
+  
   return(abs(increment))
 }
 
@@ -723,31 +715,53 @@ set_ylimits <- function(yvalues, increment, ...){
                          y_max = NULL, y_min = NULL, include_zero = TRUE){
 
   # Catch NAs #
-  if (any(is.na(yvalues))){
-    yvalues <- yvalues[!is.na(yvalues)]
-    if (length(yvalues) == 0){
-      yvalues <- 0
-    }
+  yvalues <- yvalues[!is.na(yvalues)]
+  if (length(yvalues) == 0){
+    yvalues <- 0
   }
 
   ## Initial Checks and Replacement ##
-  # Check for numeric data #
-  if(!inherits(yvalues, "numeric")) stop("yvalues must be of the class 'numeric'")
   
-  # Check if a vector #
-  if(!is.vector(yvalues)) stop("yvalues must be a numeric vector")
+  # Check if yvalues is numeric vector #
+  if(!is.vector(yvalues) || !inherits(yvalues, "numeric")) stop(
+    "yvalues must be a numeric vector")
+  
+  # Check if increment is numeric length 1 #
+  if(!is.numeric(increment) || !(length(increment) == 1)) stop(
+    "increment must be a length 1 numeric")
+  
+  # Check if y_range is numeric length 1 #
+  if(!is.null(y_range) && 
+     (!inherits(y_range, "numeric") || !(length(y_range) == 1))) stop(
+    "y_range must be a length 1 numeric")
+  # Check if y_max is numeric length 1 #
+  if(!is.null(y_max) &&
+     (!inherits(y_max, "numeric") || !(length(y_max) == 1))) stop(
+    "y_max must be a length 1 numeric")
+  # Check if y_min is numeric length 1 #
+  if(!is.null(y_min) &&
+     (!inherits(y_min, "numeric") || !(length(y_min) == 1))) stop(
+    "y_min must be a length 1 numeric")
+  
+  if(!is.null(y_min) && !is.null(y_max) && !is.null(y_range)) stop(
+       "y_range must be NULL when y_max and y_min are assigned.")
+
+  # Check if include_zero is logical #
+  if(!is.logical(include_zero) || !(length(include_zero) == 1)) stop(
+    "include_zero must be a length 1 logical. (TRUE/FALSE)")
+  
 
   ## Set Limits ##
   # Catch for pre-set y-limits and y_range #
-  if (!is.null(y_min) & !is.null(y_max)){
+  if (!is.null(y_min) && !is.null(y_max)){
     maxi <- y_max
     mini <- y_min
     return(c(mini, maxi))
-  } else if( !is.null(y_range) & !is.null(y_min)){
+  } else if( !is.null(y_range) && !is.null(y_min)){
     mini <- y_min
     maxi <- y_min + y_range
     return(c(mini, maxi))
-  } else if( !is.null(y_range) & !is.null(y_max)){
+  } else if( !is.null(y_range) && !is.null(y_max)){
     maxi <- y_max
     mini <- y_max - y_range
     return(c(mini, maxi))
@@ -762,10 +776,10 @@ set_ylimits <- function(yvalues, increment, ...){
   mini <- min(yvalues) - 5*increment
   
   # Adjust for maximums below 0 and minimums above 0 #
-  if (!(max(yvalues) > 0) & (include_zero == TRUE)){
+  if (!(maxi > 0) && (include_zero == TRUE)){
     maxi <- 5*increment
   }
-  if (!(min(yvalues) < 0) & (include_zero == TRUE)){
+  if (!(mini < 0) && (include_zero == TRUE)){
     mini <- -5*increment
   }
   
@@ -778,7 +792,7 @@ set_ylimits <- function(yvalues, increment, ...){
   }
   
   # Adjust for both 0 (where increment is zero and yvalues are 0) #
-  if ((mini == 0) & (maxi == 0)){
+  if ((mini == 0) && (maxi == 0)){
     mini <- -1
     maxi  <- 1
   }
@@ -979,7 +993,7 @@ format_plot <- function(omicsPlotter, ...) {
       !is.null(omicsPlotter$comp_stats)){
     
     # Sets stats test and colors for borders #
-    option <- attributes(omicsPlotter)$statistical_test
+    option <- attr(omicsPlotter, "statistical_test")
     colors <- c("NA", "darkgrey", "black")
     
     # Sets default y-values based on stats test #
