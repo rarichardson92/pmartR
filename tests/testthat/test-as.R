@@ -171,10 +171,21 @@ testthat::test_that("Correct format_data() error throwing for arguments omicsDat
 })
 
 
-## Invalid until errors are resolved
-# testthat::test_that("Subfunction recursive_format correctly throws errors", {
-#   
-# })
+# Invalid until errors are resolved
+testthat::test_that("Subfunction recursive_format correctly throws errors", {
+  
+  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(pep_stats)))
+  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(pep_stats, pep_stats)))
+  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(pep_stats, pep_stats, pep_stats)))
+  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(metab_stats)))
+  testthat::expect_error(format_data(omicsData = c(pep_object2, qpro4), omicsStats = list(pep_stats, pep_stats)))
+  
+  testthat::expect_error(format_data(omicsData = list(pep_object2, pep_object2)))
+  testthat::expect_error(format_data(omicsData = list(pep_object2, pep_object2, pep_object2)))
+  
+  testthat::expect_error(format_data(omicsStats = list(pep_stats, pep_stats)))
+  testthat::expect_error(format_data(omicsStats = list(pep_object2, pep_object2)))
+})
 
 ################################################################################
 
@@ -625,6 +636,11 @@ testthat::test_that("Correct dataframe population and dimensions", {
   
 })
 
+testthat::test_that("Format list slices are equal to non-lists", {
+  testthat::expect_equal(forlist_qpro4dat[[1]], format_pepobject2)
+  testthat::expect_equal(forlist_qpro4dat[[2]], format_qpro4)
+})
+
 #### Testing data specific expectations #####
 
 ## Random stats?
@@ -635,7 +651,290 @@ testthat::test_that("Correct dataframe population and dimensions", {
 
 testthat::context("Test format_plot output")
 
+## Generate nested plot structures ##
+plot_isoobject <- format_plot(format_isoobject)
+plot_lipobject <- format_plot(format_lipobject)
+plot_lipobject2 <- format_plot(format_lipobject2)
+plot_metobject <- format_plot(format_metobject)
+plot_metobject2 <- format_plot(format_metobject2)
+plot_pepobject <- format_plot(format_pepobject)
+plot_pepobject2 <- format_plot(format_pepobject2)
+plot_proobject <- format_plot(format_proobject)
+plot_tecobject <- format_plot(format_tecobject)
+plot_qpro4 <- format_plot(format_qpro4)
 
+plot_metstats <- format_plot(format_metstats)
+
+plot_metboth2 <- format_plot(format_metboth2)
+
+# Plot object lists #
+Valid_plot_dat <- list(
+  plot_isoobject, plot_lipobject, 
+  plot_lipobject2, plot_metobject, 
+  plot_metobject2, plot_pepobject,
+  plot_pepobject2, plot_proobject,  
+  plot_tecobject, plot_qpro4)
+
+Valid_plot_stat <- list(
+  plot_metstats
+)
+
+##### Test error throwing #####
+
+## "Bad" input data ##
+badform <- format_pepobject
+class(badform) <- "blah"  # incorrect class 
+badform2 <- format_pepobject
+badform2$data_values <- NULL  # Empty dataframes
+badform3 <- format_pepobject
+badform3$data_values <- NA    # Empty dataframes
+badform4 <- format_pepobject
+badform4$data_values <- "rr"  # not a dataframe
+badform5 <- format_metstats
+attr(badform5, "statistical_test") <- "blah"  # Bad test entry 
+badform6 <- format_metstats
+attr(badform6, "statistical_test") <- NULL  # Bad test entry 
+badform7 <- format_metstats
+badform7$comp_stats <- NULL  # missing stats dataframe
+badform8 <- format_metstats
+badform8$summary_stats <- NULL  # missing stats dataframe
+
+## Error throwing ##
+testthat::test_that("Correct error/warning throwing", {
+  # Bad input #
+  testthat::expect_error(format_plot(badform))
+  testthat::expect_error(format_plot(badform2))
+  testthat::expect_error(format_plot(badform3))
+  testthat::expect_error(format_plot(badform4))
+  testthat::expect_error(format_plot(badform5))
+  testthat::expect_error(format_plot(badform6))
+  testthat::expect_error(format_plot(badform7))
+  testthat::expect_error(format_plot(badform8))
+  
+  # p val error #
+  testthat::expect_error(format_plot(format_pepobject, p_val = NULL))
+  testthat::expect_error(format_plot(format_pepobject, p_val = "ghjk"))
+  testthat::expect_error(format_plot(format_pepobject, p_val = c(0.3, 1)))
+  
+  # Comps error #
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_range = 4, 
+                                     comps_y_limits = "free"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_limits = 4))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_range = 4, 
+                                     comps_y_max = 5,
+                                     comps_y_min = 1))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_limits = "free", 
+                                     comps_y_max = 5,
+                                     comps_y_min = 1))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_limits = c("free", "free")))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_range = c("free", "free")))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_range = c(1, 2)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_range = -5))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_range = 0))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_max = "0"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_max = c(1,3)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_min = "0"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_y_min = c(1,3)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_plot_type = c(1,3)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     comps_plot_type = c("box", 
+                                                         "boxpoint", 
+                                                         "raster")))
+  testthat::expect_warning(format_plot(format_metstats, 
+                                      comps_panel_y_axis = "P_value_G",
+                                      comps_panel_x_axis = "P_value_G"), 
+                           "identical")
+  testthat::expect_error(format_plot(format_metstats, 
+                                     comps_panel_x_axis = "Peptide",
+                                     panel_variable = "Peptide"))
+  testthat::expect_error(format_plot(format_metstats, 
+                                     comps_panel_y_axis = "Peptide",
+                                     panel_variable = "Peptide"))
+  testthat::expect_error(format_plot(format_metstats, 
+                                     comps_color_variable = "Peptide",
+                                     panel_variable = "Peptide"))
+  testthat::expect_error(format_plot(format_metstats, 
+                                     comps_color_variable = "blue"))
+  testthat::expect_error(format_plot(format_metstats, 
+                                     panel_variable = "blue"))
+  testthat::expect_error(format_plot(format_metstats, 
+                                     comps_panel_y_axis = "blue"))
+  testthat::expect_error(format_plot(format_metstats, 
+                                     comps_panel_x_axis = "blue"))
+  
+  
+  # Value error #
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_range = 4, 
+                                     value_y_limits = "free"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_limits = 4))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_range = 4, 
+                                     value_y_max = 5,
+                                     value_y_min = 1))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_limits = "free", 
+                                     value_y_max = 5,
+                                     value_y_min = 1))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_limits = c("free", "free")))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_range = c("free", "free")))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_range = c(1, 2)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_range = -5))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_range = 0))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_max = "0"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_max = c(1,3)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_min = "0"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_y_min = c(1,3)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_plot_type = c(1,3)))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_plot_type = c("box", 
+                                                         "boxpoint", 
+                                                         "raster")))
+  testthat::expect_warning(format_plot(format_pepobject, 
+                                       value_panel_y_axis = "abundance",
+                                       value_panel_x_axis = "abundance"), 
+                           "identical")
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_panel_x_axis = "Peptide",
+                                     panel_variable = "Peptide"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_panel_y_axis = "Peptide",
+                                     panel_variable = "Peptide"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_color_variable = "Peptide",
+                                     panel_variable = "Peptide"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_color_variable = "blue"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     panel_variable = "blue"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_panel_y_axis = "blue"))
+  testthat::expect_error(format_plot(format_pepobject, 
+                                     value_panel_x_axis = "blue"))
+})
+
+
+## Test y-value messages
+
+testthat::test_that("Correct messages", {
+  testthat::expect_message(
+    format_plot(format_pepobject2),
+    "No specified value y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_max = 3),
+    "No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max.")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_min = 3), 
+    "No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min.")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_limits = "free"), 
+    "Specified value y-limit: 'free'. Axis y-limits will be scaled per plot.")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_limits = "fixed"), 
+    "Specified value y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_limits = "fixed",  value_y_max = 3), 
+   "Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_limits = "fixed",  value_y_min = 3), 
+    "Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_range = 10), 
+    " units, split over the median.")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_range = 10,  value_y_min = 3), 
+    " units from the y_min. Specified y_min: ")
+  testthat::expect_message(
+    format_plot(format_pepobject2, value_y_range = 10,  value_y_max = 3), 
+    " units from the y_max. Specified y_max: ")
+
+  
+  testthat::expect_message(
+    format_plot(format_metstats),
+    "No specified comparison y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_max = 3),
+    "No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max.")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_min = 3), 
+    "No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min.")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_limits = "free"), 
+    "Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot.")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_limits = "fixed"), 
+    "Specified comparison y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_limits = "fixed",  comps_y_max = 3), 
+    "Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_limits = "fixed",  comps_y_min = 3), 
+    "Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_range = 10), 
+    " units, split over the median.")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_range = 10,  comps_y_min = 3), 
+    " units from the y_min. Specified y_min: ")
+  testthat::expect_message(
+    format_plot(format_metstats, comps_y_range = 10,  comps_y_max = 3), 
+    " units from the y_max. Specified y_max: ")
+})
+
+##### Test dimensions #####
+testthat::test_that("Correct nested table dimensions", {
+  purrr::map2(c(Valid_plot_dat, Valid_plot_stat), 
+              c(Valid_format_dat, Valid_format_stat), 
+              function(plotDat, parForm){
+                if(is.null(parForm$data_values)){
+                  panelVar <- parForm$comp_stats[[colnames(plotDat)[1]]]
+                  } else {
+                    panelVar <- parForm$data_values[[colnames(plotDat)[1]]]
+                    }
+                expect_cols <- c(colnames(plotDat)[1], "data", "panel")
+                # testthat::expect_identical(nrow(plotDat), length(panelVar))
+                testthat::expect_equal(nrow(plotDat), 10)     ######### Subsetted version
+                testthat::expect_identical(colnames(plotDat), expect_cols)
+                testthat::expect_true(inherits(plotDat$data, "list"))
+                testthat::expect_true(inherits(plotDat$panel, c(
+                  "trelliscope_panels",
+                  "list")))
+                testthat::expect_true(all(lapply(plotDat$data, is.data.frame)))
+                testthat::expect_true(all(
+                  map(plotDat$panel, function(plot) inherits(
+                    plot, c("gg", "plotly")))))
+  })
+})
+
+
+##### Test random stats? #####
+
+#Consistant numerics of over trnsformations
 
 ################################################################################
 ################################################################################
@@ -647,7 +946,7 @@ testthat::context("Test data_cogs output")
 
 testthat::context("Test set_increment and set_ylimits output")
 
-#### Test y-values #### 
+#### Testing data: y-values #### 
 ylist1 <- data.frame(NA, "NA", 8, c(3,2), NA, NA)
 ylist2 <- c(NA, "r"," r", "r", NA, NA)
 ylist3 <- c(NA, "NA"," NA", "NA", NA, NA)
@@ -771,3 +1070,4 @@ testthat::test_that("Subfunction set_ylimits correctly processes", {
 
 testthat::context("Test main TrelliVis function output")
 
+##  covr::file_coverage("./R/as.omicsPlotter.R", "./tests/testthat/test-as.R")  42.27%

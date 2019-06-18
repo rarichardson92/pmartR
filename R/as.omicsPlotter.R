@@ -573,6 +573,9 @@ recursive_format <- function(...){
         "Only pepData and proData are valid for lists in omicsData. 
           For omicsStats, please use omics stats argument in this format: 
           omicsStats = list(omicsStats1, omicsStats2)")
+      if(any(duplicated(classlist))) stop(
+        "Only one pepData and one proData supported in omicsData and omicsStats lists."
+      )
       
       plotterlist <- purrr::map2(omicsData, omicsStats, format_data)
       
@@ -606,6 +609,9 @@ recursive_format <- function(...){
         "Only pepData and proData are valid for lists in omicsData.  
           For omicsStats, please use omics stats argument in this format: 
           omicsStats = list(omicsStats1, omicsStats2)")
+      if(any(duplicated(classlist))) stop(
+        "Only one pepData and one proData supported in omicsData lists."
+      )
       
       plotterlist <- purrr::map(omicsData, format_data)
       
@@ -873,7 +879,7 @@ format_plot <- function(omicsPlotter, ...) {
     "No data values or comparison statistics in omicsPlotter to plot")
   
   # Check check if p_val is numeric of length 1 #
-  if(!is.numeric(p_val) | (length(p_val) != 1)) stop(
+  if(!is.numeric(p_val) || (length(p_val) != 1)) stop(
     "p_val must be a numeric of length 1")  
   
   # Check if y_limits or y_range have been selected correctly #
@@ -905,7 +911,7 @@ format_plot <- function(omicsPlotter, ...) {
     if(length(comps_y_range) != 1) stop(
       "Parameter y_range must have length = 1.")
     if(!(comps_y_range > 0)) stop(
-      "Parameter y_range must be positive.")
+      "Parameter y_range must be greater than zero.")
   }
   
   # Check if comps_y_max is numeric and length == 1 #
@@ -928,7 +934,7 @@ format_plot <- function(omicsPlotter, ...) {
   checkplot <- purrr::map(comps_plot_type, 
       function(plot) str_detect(plot, "box|col|point|scatter|bar"))
   if (any(!unlist(checkplot))) stop(
-    "Invalid entry in comp_plot_type. Plot_type strings must contain 
+    "Invalid entry in comps_plot_type. Plot_type strings must contain 
     at least one of the following: box, col, point, scatter, bar")
   
   # --Value-- #
@@ -955,7 +961,7 @@ format_plot <- function(omicsPlotter, ...) {
     if(length(value_y_range) != 1) stop(
       "Parameter y_range must have length = 1.")
     if(!(value_y_range > 0)) stop(
-      "Parameter y_range must be positive.")
+      "Parameter y_range must be greater than zero.")
   }
   
   # Check if value_y_max is numeric and length == 1 #
@@ -1078,14 +1084,38 @@ format_plot <- function(omicsPlotter, ...) {
            cannot match panel_variable. Refer to ?plot_comps for default settings 
            or try setting all of these parameters individually.")
     }
-    if(value_panel_x_axis == value_panel_y_axis){
-      print("Parameter for value panel_y_axis and panel_x_axis are identical. 
+    if(value_panel_x_axis == value_panel_y_axis) warning(
+    "Parameter for value panel_y_axis and panel_x_axis are identical. 
             Refer to ?plot_comps for default settings or try setting 
             parameters individually for different axis labels.")
-    }
+    
+    # Variable for variable-in checks #
+    allcol <- colnames(omicsPlotter$data_values)
+    allcolstr <- toString(allcol)
+    
+    # Ensure panel, color, x, and y parameters are in data_values #
+    if (!(value_panel_x_axis %in% allcol)) stop(
+      paste("Parameter value_panel_x_axis  must be in:", allcolstr))
+    if (!(value_panel_y_axis %in% allcol)) stop(
+      paste("Parameter value_panel_y_axis must  must be in:", allcolstr))
+    if (!(panel_variable %in% allcol)) stop(
+      paste("Parameter panel_variable must be in:", allcolstr))
+    if (!(value_color_variable %in% allcol)) stop(
+      paste("Parameter value_color_variable must be in:", allcolstr))
+    
   }
   
   # --Comps-- #
+  
+  # Ensure summary_stats and comp_stats are both present #
+  if(((is.null(omicsPlotter$summary_stats)) & 
+      (!is.null(omicsPlotter$comp_stats))) | 
+     ((!is.null(omicsPlotter$summary_stats)) &
+      (is.null(omicsPlotter$comp_stats))) ) {
+    stop("Both summary_stats and comp_stats must be present 
+         if one or the other is in omicsPlotter.")
+  }
+
   if ((!is.null(omicsPlotter$summary_stats)) & 
       (!is.null(omicsPlotter$comp_stats))) {
     
@@ -1104,23 +1134,25 @@ format_plot <- function(omicsPlotter, ...) {
             object."))
     
     # Ensure panel, color/x/y parameters are not matching #
-    if(comps_panel_x_axis == comps_panel_y_axis){
-      print("Parameter for comps panel_y_axis and panel_x_axis are identical. 
-            Refer to ?plot_comps for default settings or try setting parameters 
-            individually for different axis labels.")
-    }
-    if (!((comps_panel_x_axis != panel_variable) & 
-          (comps_panel_y_axis != panel_variable) & 
+    if(comps_panel_x_axis == comps_panel_y_axis) warning(
+    "Parameter for comps panel_y_axis and panel_x_axis are identical.
+    Refer to ?plot_comps for default settings or try setting parameters
+    individually for different axis labels.")
+    
+    if (!((comps_panel_x_axis != panel_variable) && 
+          (comps_panel_y_axis != panel_variable) && 
           (panel_variable != comps_color_variable))) stop(
             "Parameters for comps panel_y_axis, panel_x_axis, 
             and color_variable cannot match panel_variable. Refer to ?plot_comps 
             for default settings or try setting all of these parameters 
             individually.")
+    
+    
   
     # Variable for variable-in checks #
     allcol <- c(colnames(omicsPlotter$comp_stats), 
                 colnames(omicsPlotter$summary_stats))
-    allcolstr <- capture.output(cat(unique(allcol), sep = ", "))
+    allcolstr <- toString(unique(allcol))
     
     # Ensure panel, color, x, and y parameters are in comp_stats or summary stats #
     if (!(comps_panel_x_axis %in% allcol)) stop(
@@ -1131,84 +1163,98 @@ format_plot <- function(omicsPlotter, ...) {
       paste("Parameter panel_variable must be in:", allcolstr))
     if (!(comps_color_variable %in% allcol)) stop(
       paste("Parameter comps_color_variable must be in:", allcolstr))
-    
+      
   }
-  
-  # Ensure summary_stats and comp_stats are both present #
-  if(((is.null(omicsPlotter$summary_stats)) & 
-      (!is.null(omicsPlotter$comp_stats))) | 
-     ((!is.null(omicsPlotter$summary_stats)) &
-      (is.null(omicsPlotter$comp_stats))) ) {
-    stop("Both summary_stats and comp_stats must be present 
-         if one or the other is in omicsPlotter.")
-  }
-  
   
   ## Input comps y limits messages, tells user the plot limit parameters ##
   #--Comps--#
   if(!is.null(omicsPlotter$summary_stats) & !is.null(omicsPlotter$comp_stats)){
     ## Input comps y limits messages, tells user the plot limit parameters ##
     if (is.null(comps_y_limits) & is.null(comps_y_range) & is.null(comps_y_max) & is.null(comps_y_min)){
-      print("No specified comparison y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
+      message("No specified comparison y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
       comps_y_limits <- "free"
       } else if (!is.null(comps_y_limits)){
         if ((comps_y_limits == "fixed") & is.null(comps_y_max) & is.null(comps_y_min)){
-          print("Specified comparison y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
+          message("Specified comparison y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
           } else if ((comps_y_limits == "fixed") & !is.null(comps_y_max)){
-            print(paste("Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max: ", y_max, sep = ""))
+            message(paste("Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max: ", comps_y_max, sep = ""))
           } else if ((comps_y_limits == "fixed") & !is.null(comps_y_min)){
-            print(paste("Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min: ", y_min, sep = ""))
+            message(paste("Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min: ", comps_y_min, sep = ""))
           } else if (comps_y_limits == "free" & is.null(comps_y_max) & is.null(comps_y_min)){
-            print("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot.")
+            message("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot.")
           } else if ((comps_y_limits == "free") & !is.null(comps_y_max)){
-            print(paste("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot with a maximum of y_max. Specified y_max: ", y_max, sep = ""))
+            message(paste("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot with a maximum of y_max. Specified y_max: ", comps_y_max, sep = ""))
           } else if ((comps_y_limits == "free") & !is.null(comps_y_min)){
-            print(paste("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot with a minimum of y_min. Specified y_min: ", y_min, sep = ""))
+            message(paste("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot with a minimum of y_min. Specified y_min: ", comps_y_min, sep = ""))
           } 
       } else if (!is.null(comps_y_range) & is.null(comps_y_max) & is.null(comps_y_min)){
-        print(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
+        message(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
                     comps_y_range," units, split over the median.", 
               sep = ""))
       } else if (!is.null(comps_y_range) & !is.null(comps_y_min)) {
-        print(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
-                    comps_y_range," units from the y_min. Specified y_min: ", y_min, sep = ""))
+        message(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
+                    comps_y_range," units from the y_min. Specified y_min: ", comps_y_min, sep = ""))
       } else if (!is.null(comps_y_range) & !is.null(comps_y_max)) {
-        print(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
+        message(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
                     comps_y_range," units from the y_max. Specified y_max: ", comps_y_max, sep = ""))
-      } 
+      } else if (is.null(comps_y_min) && is.null(comps_y_range) && 
+                 is.null(comps_y_limits) && !is.null(comps_y_max)){
+        message(paste("Specified comparison y-max: ", 
+                      comps_y_max,
+                      ". No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max."))
+        comps_y_limits <- "free"
+      } else if (!is.null(comps_y_min) && is.null(comps_y_range) && 
+                 is.null(comps_y_limits) && is.null(comps_y_max)){
+        message(paste("Specified comparison y-min: ", 
+                      comps_y_max,
+                      ". No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min."))
+        comps_y_limits <- "free"
+      }
   }
-  
+
   #--Values--#
   if(!is.null(omicsPlotter$data_values)){
     ## Input values y limits messages, tells user the plot limit parameters ##
     if (is.null(value_y_limits) & is.null(value_y_range) & is.null(value_y_max) & is.null(value_y_min)){
-      print("No specified value y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
+      message("No specified value y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
       value_y_limits <- "free"
     } else if (!is.null(value_y_limits)){
       if ((value_y_limits == "fixed") & is.null(value_y_max) & is.null(value_y_min)){
-        print("Specified value y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
+        message("Specified value y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
       } else if ((value_y_limits == "fixed") & !is.null(value_y_max)){
-        print(paste("Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max: ", y_max, sep = ""))
+        message(paste("Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max: ", value_y_max, sep = ""))
       } else if ((value_y_limits == "fixed") & !is.null(value_y_min)){
-        print(paste("Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min: ", y_min, sep = ""))
+        message(paste("Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min: ", value_y_min, sep = ""))
       } else if (value_y_limits == "free" & is.null(value_y_max) & is.null(value_y_min)){
-        print("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot.")
+        message("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot.")
       } else if ((value_y_limits == "free") & !is.null(value_y_max)){
-        print(paste("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot with a maximum of y_max. Specified y_max: ", y_max, sep = ""))
+        message(paste("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot with a maximum of y_max. Specified y_max: ", value_y_max, sep = ""))
       } else if ((value_y_limits == "free") & !is.null(value_y_min)){
-        print(paste("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot with a minimum of y_min. Specified y_min: ", y_min, sep = ""))
+        message(paste("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot with a minimum of y_min. Specified y_min: ", value_y_min, sep = ""))
       } 
     } else if (!is.null(value_y_range) & is.null(value_y_max) & is.null(value_y_min)){
-      print(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
+      message(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
                   value_y_range," units, split over the median.", 
                   sep = ""))
     } else if (!is.null(value_y_range) & !is.null(value_y_min)) {
-      print(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
+      message(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
                   value_y_range," units from the y_min. Specified y_min: ", value_y_min, sep = ""))
     } else if (!is.null(value_y_range) & !is.null(value_y_max)) {
-      print(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
+      message(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
                   value_y_range," units from the y_max. Specified y_max: ", value_y_max, sep = ""))
-    } 
+    } else if (is.null(value_y_min) && is.null(value_y_range) && 
+               is.null(value_y_limits) && !is.null(value_y_max)){
+      message(paste("Specified comparison y-max: ", 
+                    value_y_max,
+                    ". No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max."))
+      value_y_limits <- "free"
+    } else if (!is.null(value_y_min) && is.null(value_y_range) && 
+               is.null(value_y_limits) && is.null(value_y_max)){
+      message(paste("Specified comparison y-min: ", 
+                    value_y_max,
+                    ". No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min."))
+      value_y_limits <- "free"
+    }
   }
   
   ## Generate nested data w/ trelliscope panel column ##
@@ -1241,7 +1287,7 @@ format_plot <- function(omicsPlotter, ...) {
     if (!is.null(comps_y_limits)){
       if (comps_y_limits == 'fixed'){
         comps_increment <- set_increment(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
-                                         option, include_zero = comps_include_zero)
+                                         include_zero = comps_include_zero)
         comps_ylims <- set_ylimits(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
                                    increment = comps_increment,
                                    y_min = comps_y_min, y_max = comps_y_max,
@@ -1249,7 +1295,7 @@ format_plot <- function(omicsPlotter, ...) {
       }
     } else if (is.null(comps_y_limits) & is.null(comps_y_range)){
       comps_increment <- set_increment(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
-                                       option, include_zero = comps_include_zero)
+                                       include_zero = comps_include_zero)
       comps_ylims <- set_ylimits(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
                                  increment = comps_increment,
                                  y_min = comps_y_min, y_max = comps_y_max,
@@ -1267,8 +1313,8 @@ format_plot <- function(omicsPlotter, ...) {
                                c("comp1", "comp2"), sep = "_vs_", 
                                remove = FALSE) %>%
       reshape2::melt(id.vars = names(omicsPlotter$comp_stats),
-                     value.name = group_df_name) %>%
-      suppressWarnings(dplyr::left_join(omicsPlotter$summary_stats))
+                     value.name = group_df_name)
+    plotter <- suppressWarnings(dplyr::left_join(plotter, omicsPlotter$summary_stats))
     
     if(!is.null(omicsPlotter$data_values)){
       plotter <- suppressWarnings(dplyr::left_join(omicsPlotter$data_values, plotter))
@@ -1299,8 +1345,8 @@ format_plot <- function(omicsPlotter, ...) {
         # Generate increment and y limits based on parameters and y-values #
         if (!is.null(comps_y_limits)){
           if (comps_y_limits == 'free'){
-            comps_increment <-set_increment(nestedData[[comps_panel_y_axis]], 
-                                            option, include_zero = comps_include_zero)
+            comps_increment <-set_increment(nestedData[[comps_panel_y_axis]],
+                                            include_zero = comps_include_zero)
             comps_ylims <- set_ylimits(nestedData[[comps_panel_y_axis]], 
                                  increment = comps_increment,
                                  y_min = comps_y_min, y_max = comps_y_max,
@@ -1308,7 +1354,7 @@ format_plot <- function(omicsPlotter, ...) {
           }
         } else if (!is.null(comps_y_range)){
           comps_increment <- set_increment(nestedData[[comps_panel_y_axis]], 
-                                           option, include_zero = comps_include_zero)
+                                           include_zero = comps_include_zero)
           comps_ylims <- set_ylimits(nestedData[[comps_panel_y_axis]],
                                increment = comps_increment, y_min = comps_y_min, 
                                y_max = comps_y_max, y_range = comps_y_range,
@@ -1356,13 +1402,14 @@ format_plot <- function(omicsPlotter, ...) {
                                 nestedData[row,][[label]]))
           }
         }
-        text_labs_comps[row] <- capture.output(cat(row_text, sep = ", "))
-        label_labs_comps[row] <- capture.output(cat(row_label, sep = ", "))
+        # text_labs_comps[row] <- capture.output(cat(row_text, sep = ", "))
+        # label_labs_comps[row] <- capture.output(cat(row_label, sep = ", "))
+        text_labs_comps[row] <- toString(row_text)
+        label_labs_comps[row] <- toString(row_label)
       }
       nestedData_comps <- data.frame(nestedData_comps, 
                                     text = text_labs_comps, 
                                     labels = label_labs_comps)
-      
       # Make ggplots #
       plot_comps_all <- purrr::map(1:length(comps_plot_type), function (typenum){
       #for (typenum in 1:length(comps_plot_type)){
@@ -1427,19 +1474,20 @@ format_plot <- function(omicsPlotter, ...) {
         }
         if (stringr::str_detect(type, pattern = "point|scatter")){
           typelist <- c(typelist, "scatter")
-          plot_comps <- plot_comps + ggplot2::geom_point(position = position_dodge(), 
+          plot_comps <- plot_comps + ggplot2::geom_point(position = "identity", 
                                                          size = 2) +
               scale_color_manual(values = levels(nestedData_comps$bord))
         }
         if (stringr::str_detect(type, pattern = "box")){
-          if(!is.na(var(na.omit(nestedData_comps[[comps_panel_y_axis]]))) && 
+          if(!is.na(na.omit(nestedData_comps[[comps_panel_y_axis]])) && 
+             !is.na(var(na.omit(nestedData_comps[[comps_panel_y_axis]]))) &&
              var(na.omit(nestedData_comps[[comps_panel_y_axis]])) != 0 ){
             typelist <- c(typelist, "box")
             plot_comps <- plot_comps +  
-              ggplot2::geom_boxplot(alpha = 0.2, 
-                                    position = "dodge2")
+              suppressWarnings(ggplot2::geom_boxplot(alpha = 0.2, 
+                                    position = "dodge2"))
           } else {
-            print("Varience of y_value is zero, boxplot is not applicable. Plotting y-value as a line (geom_crossbar).")
+            message("Varience of y_value is zero, boxplot is not applicable. Plotting y-value as a line (geom_crossbar).")
             typelist <- c(typelist, "line")
             plot_comps <- plot_comps +  
               ggplot2::geom_crossbar(position = "dodge", aes(
@@ -1531,7 +1579,8 @@ format_plot <- function(omicsPlotter, ...) {
                                   nestedData[row,][[label]]))
             }
           }
-          text_labs[row] <- capture.output(cat(row_text, sep = ", "))
+          # text_labs[row] <- capture.output(cat(row_text, sep = ", "))
+          text_labs[row] <- toString(row_text, sep = ", ")
         }
         nestedData_value <- data.frame(nestedData, text = text_labs)
         
@@ -1567,35 +1616,38 @@ format_plot <- function(omicsPlotter, ...) {
           if (stringr::str_detect(type, pattern = "point|scatter")){
             typelist <- c(typelist, "scatter")
             if(plotly == TRUE){
-              plot_value <- plot_value + ggplot2::geom_point(position = position_dodge(), 
+              plot_value <- plot_value + ggplot2::geom_point(position = "identity", 
                                                              size = 2, 
                                                              color = "black")
             } else {
               plot_value <- plot_value + 
-                ggplot2::geom_point(position = position_dodge(),
+                ggplot2::geom_point(position = "identity",
                                     size = 2, 
                                     aes(colour = nestedData_value[[value_color_variable]]))
             }
           }
           if (stringr::str_detect(type, pattern = "box")){
-            if(!is.na(var(na.omit(nestedData_value[[value_panel_y_axis]]))) &&
+            if(!is.na(na.omit(nestedData_value[[value_panel_y_axis]])) &&
+               !is.na(var(na.omit(nestedData_value[[value_panel_y_axis]]))) &&
                var(na.omit(nestedData_value[[value_panel_y_axis]])) != 0 ){
               typelist <- c(typelist, "box")
               omitna <- nestedData_value[!is.na(nestedData_value[[value_panel_y_axis]]),]
-              plot_value <- plot_value +  ggplot2::geom_boxplot(data = omitna, alpha = 0.2, 
-                                                                position = "dodge", aes(
-                                                                  y = omitna[[value_panel_y_axis]],
-                                                                  x = omitna[[value_panel_x_axis]],
-                                                                  fill = omitna[[value_color_variable]],
-                                                                  text = NA)
-                                                                )
+              plot_value <- plot_value + suppressWarnings(
+                ggplot2::geom_boxplot(data = omitna, alpha = 0.2,
+                                      position = "dodge2", 
+                                      aes(
+                                        y = omitna[[value_panel_y_axis]],
+                                        x = omitna[[value_panel_x_axis]],
+                                        fill = omitna[[value_color_variable]],
+                                        text = NA)
+                                      ))
             } else {
               typelist <- c(typelist, "line")
               plot_value <- plot_value +  
                 ggplot2::geom_crossbar(position = "dodge2", aes(
                   ymin = nestedData_value[[value_panel_y_axis]],
                   ymax = nestedData_value[[value_panel_y_axis]],
-                  color = nestedData_comps[[value_color_variable]]))
+                  color = nestedData_value[[value_color_variable]]))
             }
           }
           
@@ -1738,7 +1790,7 @@ data_cogs <- function(...) {
   # Warn in mapping_col is used where data is not pro/pep #
   if(!is.null(mapping_col) && 
      !inherits(omicsData, c("pepData", "proData"))){
-    print(paste("Notice: mapping_col is not used for omicsData of class", class(omicsData)))
+    message(paste("Notice: mapping_col is not used for omicsData of class", class(omicsData)))
   }
 
   ## Fill null variables as needed ##
@@ -1972,8 +2024,9 @@ data_cogs <- function(...) {
         if (is.factor(panel_dat) && 
             !str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value") &&
             !str_detect(names(panel_data[colnum]), "Is_degenerate")){
-          datalist[colnum] <- capture.output(
-            cat(unique(levels(panel_dat)[panel_dat]), sep = ", "))
+          # datalist[colnum] <- capture.output(
+          #   cat(unique(levels(panel_dat)[panel_dat]), sep = ", "))
+          datalist[colnum] <- toString(unique(levels(panel_dat)[panel_dat]))
           # Takes mean of numeric columns, includes numeric strings not in cnames #
         } else if ((is.numeric(panel_dat) | 
                     !any(is.na(as.numeric(stats::na.omit(panel_dat))))) &&
@@ -1989,8 +2042,9 @@ data_cogs <- function(...) {
             any(as.logical(panel_dat)))
         } else {
           # Cats characters, other #
-          datalist[colnum] <- capture.output(
-            cat(unique(panel_dat), sep = ", "))
+          # datalist[colnum] <- capture.output(
+          #   cat(unique(panel_dat), sep = ", "))
+          datalist[colnum] <- toString(unique(panel_dat))
         }
       }
     } else {
@@ -2021,6 +2075,7 @@ data_cogs <- function(...) {
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.
+#' @param omicsFormat Output of format_data() function
 #' @param p_val Numeric that specifies p-value for significance calculations. Default is 0.05.
 #' @param mapping_col String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
@@ -2058,7 +2113,7 @@ trelliVis <- function(...) {
 }
 
 .trelliVis <- function(omicsData = NULL, omicsStats = NULL,
-                       p_val = 0.05, 
+                       omicsFormat = NULL, p_val = 0.05, 
                        mapping_col = NULL, panel_variable = NULL, 
                        try_URL = FALSE, trelli_name = NULL,
                        trelli_path_out = "TrelliDisplay", 
@@ -2075,9 +2130,11 @@ trelliVis <- function(...) {
                        value_plot = TRUE, comps_plot = TRUE, comps_text = TRUE,
                        plotly = TRUE) {
   
-  #store_object, custom_cog_df, interactive = t/f, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
+  #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
   
+  #####
   ## Switch Stats and Omics data as appropriate ##
+  #####
   if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
     omicsStats <- omicsData
     omicsData <- NULL
@@ -2093,6 +2150,10 @@ trelliVis <- function(...) {
     omicsData <- temp
     rm(temp)
   }
+  
+  #####
+  ## Check variable type/lenghts
+  #####
   
   # If lists of omicsData or omicsPlotter are used, make sure panel variables are specified for both #
   if ((class(omicsData) == "list" | 
@@ -2116,8 +2177,25 @@ trelliVis <- function(...) {
   if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
     "try_URL must be a TRUE/FALSE of length 1")  
   
-  # Re-format objects for plotting #
-  omicsPlotter <- format_data(omicsData, omicsStats)
+  #####
+  ## Modification for rollups that don't inherit pep info in emeta
+  #####
+  
+  #Adds e_meta of associated peptide data to associated protein data
+  if(class(omicsData) == "list" &&
+     length(omicsData) != 1){
+    vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
+                   inherits(omicsData[2][[1]], "proData"))
+    omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
+                                                                          omicsData[!vectorpro][[1]]$e_meta))
+  }
+  
+  if (is.null(omicsFormat)){
+    # Re-format objects for plotting #
+    omicsPlotter <- format_data(omicsData, omicsStats)
+  } else {
+    omicsPlotter <- omicsFormat
+  }
   
   # If a pep/pro pair is listed, act on each item #
   if(class(omicsPlotter) == "list"){
@@ -2135,7 +2213,7 @@ trelliVis <- function(...) {
       
       # if trelli_name too long, cut to length(omicsPlotter)  #
     } else if (length(trelli_name) > length(omicsPlotter)) {
-      print("Length trelli_name exceeds the number of generated displays. 
+      warning( "Length trelli_name exceeds the number of generated displays. 
             Only the first %d names will be used.", length(omicsPlotter))
       trelli_name <- trelli_name[1:length(omicsPlotter)]
       
@@ -2158,14 +2236,14 @@ trelliVis <- function(...) {
       mapping_col <- rep(list(NULL), length(omicsPlotter))
     }
     
-    #Adds e_meta of associated peptide data to associated protein data
-    if(class(omicsData) == "list" &&
-       length(omicsData) != 1){
-      vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
-                     inherits(omicsData[2][[1]], "proData"))
-      omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
-                                                    omicsData[!vectorpro][[1]]$e_meta))
-    }
+    # #Adds e_meta of associated peptide data to associated protein data
+    # if(class(omicsData) == "list" &&
+    #    length(omicsData) != 1){
+    #   vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
+    #                  inherits(omicsData[2][[1]], "proData"))
+    #   omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
+    #                                                 omicsData[!vectorpro][[1]]$e_meta))
+    # }
     
     # Nest data and generate trelliscope plots #
     nested_plot <- purrr::map2(omicsPlotter, panel_variable, function(pairedplotter, pan){
@@ -2227,11 +2305,12 @@ trelliVis <- function(...) {
     
     # Default: Name the display after parent classes (omicsData and omicStats clases) #
     if(is.null(trelli_name)){
-      trelli_name <- capture.output(
-        cat(attr(omicsPlotter, "parent_class"), sep = "_"))
+      # trelli_name <- capture.output(
+      #   cat(attr(omicsPlotter, "parent_class"), sep = "_"))
+      trelli_name <- paste(attr(omicsPlotter, "parent_class"), collapse = "_")
       # Make sure trelliname is length 1 #
     } else if (length(trelli_name) != 1) {
-      print("trelli_name length is greater than one where only one display is generated; using only the first entry in trelli_name.")
+      warning("trelli_name length is greater than one where only one display is generated; using only the first entry in trelli_name.")
       trelli_name <- trelli_name[[1]]
     }
     
