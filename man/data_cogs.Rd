@@ -2,14 +2,14 @@
 % Please edit documentation in R/as.omicsPlotter.R
 \name{data_cogs}
 \alias{data_cogs}
-\title{Plot pairwise comparisons and data values in omicsPlotter object}
+\title{Plot pairwise comparisons and data values in trellData object}
 \usage{
 data_cogs(...)
 }
 \arguments{
-\item{omicsPlotter}{An object of class "omicsPlotter" generated from \code{\link{format_data()}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{format_data()}}.}
 
-\item{nested_plot}{A nested table generated from omicsPlotter using formatplot()}
+\item{nested_plot}{A nested table generated from trellData using formatplot()}
 
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
 
@@ -24,7 +24,7 @@ data_cogs(...)
 \item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.}
 }
 \description{
-Plot pairwise comparisons and data values in omicsPlotter object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 }
 \author{
 Rachel Richardson

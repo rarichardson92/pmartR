@@ -2,7 +2,7 @@
 % Please edit documentation in R/as.omicsPlotter.R
 \name{set_increment}
 \alias{set_increment}
-\title{Sets y-axis increment for Omicsplotter labels plotting}
+\title{Sets y-axis increment for trellData labels plotting}
 \usage{
 set_increment(yvalues, ...)
 }
@@ -12,7 +12,7 @@ set_increment(yvalues, ...)
 \item{testtype}{consideration for different statistical tests}
 }
 \description{
-Sets y-axis increment for Omicsplotter plotting. Used by plot_comp.
+Sets y-axis increment for trellData plotting. Used by plot_comp.
 }
 \author{
 Rachel Richardson

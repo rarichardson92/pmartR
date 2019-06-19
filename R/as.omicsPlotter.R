@@ -8,7 +8,7 @@
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
 #' @param ... further arguments
 #'
-#' @details Objects of class 'omicsPlotter' inherit attributes from omicsStats and omicsData. These attributes can be changed from their default value by manual specification. A list of these attributes as well as their default values are as follows:
+#' @details Objects of class 'trellData' inherit attributes from omicsStats and omicsData. These attributes can be changed from their default value by manual specification. A list of these attributes as well as their default values are as follows:
 #' \tabular{ll}{
 #' data_scale \tab Scale of the data provided in \code{e_data}. Acceptable values are 'log2', 'log10', 'log', and 'abundance', which indicate data is log base 2, base 10, natural log transformed, and raw abundance, respectively. Default values is 'abundance'. \cr
 #' \tab \cr
@@ -437,7 +437,7 @@ format_data <- function(...){
               comp_stats = comp_stats)
   
   attributes(res) <- c(attributes(res), inheritDatAtt, inheritStatAtt)
-  class(res) <- "omicsPlotter" 
+  class(res) <- "trellData" 
   
   if (!is.null(omicsData) & !is.null(omicsStats)){
     attr(res, "parent_class") <- c(class(omicsStats), class(omicsData))
@@ -451,19 +451,19 @@ format_data <- function(...){
 })
 
 
-#' print.omicsPlotter
+#' print.trellData
 #' 
-#' For printing an S3 object of type 'omicsPlotter':
+#' For printing an S3 object of type 'trellData':
 #' 
-#'@rdname print-omicsPlotter
+#'@rdname print-trellData
 #'@export
 #'
-print.omicsPlotter<- function(omicsPlotter){
-  if(!inherits(omicsPlotter, "omicsPlotter")) stop("omicsPlotter object must be of the class 'omicsPlotter'")
+print.trellData<- function(trellData){
+  if(!inherits(trellData, "trellData")) stop("trellData object must be of the class 'trellData'")
   
-  data_values <- as.data.frame(lapply(omicsPlotter$data_values, as.character), stringsAsFactors = FALSE, check.names = attr(omicsPlotter, "check.names"))
-  summary_stats <- as.data.frame(lapply(omicsPlotter$summary_stats, as.character), stringsAsFactors = FALSE, check.names = attr(omicsPlotter, "check.names"))
-  comp_stats <- as.data.frame(lapply(omicsPlotter$comp_stats, as.character), stringsAsFactors = FALSE, check.names = attr(omicsPlotter, "check.names"))
+  data_values <- as.data.frame(lapply(trellData$data_values, as.character), stringsAsFactors = FALSE, check.names = attr(trellData, "check.names"))
+  summary_stats <- as.data.frame(lapply(trellData$summary_stats, as.character), stringsAsFactors = FALSE, check.names = attr(trellData, "check.names"))
+  comp_stats <- as.data.frame(lapply(trellData$comp_stats, as.character), stringsAsFactors = FALSE, check.names = attr(trellData, "check.names"))
   data_values_ncols <- ncol(data_values)
   summary_stats_ncols <- ncol(summary_stats)
   comp_stats_ncols <- ncol(comp_stats)
@@ -652,9 +652,9 @@ recursive_format <- function(...){
 
 #' @name set_increment
 #' @rdname set_increment
-#' @title Sets y-axis increment for Omicsplotter labels plotting
+#' @title Sets y-axis increment for trellData labels plotting
 #' 
-#' @description Sets y-axis increment for Omicsplotter plotting. Used by plot_comp.
+#' @description Sets y-axis increment for trellData plotting. Used by plot_comp.
 #'
 #' @param yvalues y-values for plotting
 #' @param testtype consideration for different statistical tests
@@ -699,9 +699,9 @@ set_increment <- function(yvalues, ...){
 
 #' @name set_ylimits
 #' @rdname set_ylimits
-#' @title Sets y-axis limits for Omicsplotter plotting
+#' @title Sets y-axis limits for trellData plotting
 #' 
-#' @description Sets y-axis limits for Omicsplotter plotting. Used by plot_comp.
+#' @description Sets y-axis limits for trellData plotting. Used by plot_comp.
 #'
 #' @param yvalues y-values for plotting
 #' @param increment An increment set based on the maximum/minimum y-values
@@ -811,13 +811,13 @@ set_ylimits <- function(yvalues, increment, ...){
 
 #' @name format_plot
 #' @rdname format_plot
-#' @title Plot pairwise comparisons and data values in omicsPlotter object
+#' @title Plot pairwise comparisons and data values in trellData object
 #'
-#' @description Plot pairwise comparisons and data values in omicsPlotter object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+#' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
-#' @param omicsPlotter An object of class "omicsPlotter" generated from \code{\link{format_data}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{format_data}}.
 #' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
 #' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
@@ -827,30 +827,30 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @param value_y_max For values: Sets the maximum y-value for the y-axis.
 #' @param value_y_min For values: Sets the minimum y-value for the y-axis.
 #' @param p_val Specifies p-value for setting graph border colors
-#' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in omicsPlotter. Defaults to cnames$edata_cname of omicsPlotter.
-#' @param comps_panel_x_axis Specifies what column should be on the x-axis, must be a column in omicsPlotter. Defaults setting plots pairwise comparisons along x-axis.
-#' @param comps_panel_y_axis Specifies what column should be on the y-axis, must be a column in omicsPlotter and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.
-#' @param comps_color_variable Specifies what column should distingush color, must be a column in omicsPlotter. Default settings is set to "Group."
-#' @param value_panel_x_axis Specifies what column should be on the x-axis, must be a column in omicsPlotter. Defaults setting plots pairwise comparisons along x-axis.
-#' @param value_panel_y_axis Specifies what column should be on the y-axis, must be a column in omicsPlotter and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.
-#' @param value_color_variable Specifies what column should distingush color, must be a column in omicsPlotter. Default settings is set to "Group."
+#' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.
+#' @param comps_panel_x_axis Specifies what column should be on the x-axis, must be a column in trellData. Defaults setting plots pairwise comparisons along x-axis.
+#' @param comps_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.
+#' @param comps_color_variable Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."
+#' @param value_panel_x_axis Specifies what column should be on the x-axis, must be a column in trellData. Defaults setting plots pairwise comparisons along x-axis.
+#' @param value_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.
+#' @param value_color_variable Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."
 #' @param value_plot_type For values: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
 #' @param comps_plot_type For comparisons: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
 #' @param comps_include_zero For comparisons: Should plots show y = 0?
 #' @param value_include_zero For values: Should plots show y = 0?
-#' @param value_plot For values: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.
-#' @param comps_plot For comparisons: In the presence of summary_stats and comp_stats in omicsPlotter, should the plot be rendered? Default is TRUE.
+#' @param value_plot For values: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.
+#' @param comps_plot For comparisons: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.
 #' @param comps_text For comparisons only: TRUE/FALSE for p-value text above data
 #' @param plotly Should the plots be rendered as plotly objects?
 #' @param ... further arguments
 #'
 #' @author Rachel Richardson
 #' @export
-format_plot <- function(omicsPlotter, ...) {
-   .format_plot(omicsPlotter,  ...)
+format_plot <- function(trellData, ...) {
+   .format_plot(trellData,  ...)
 }
 
-.format_plot <- function(omicsPlotter, 
+.format_plot <- function(trellData, 
                         comps_y_limits = NULL, comps_y_range = NULL, 
                         comps_y_max = NULL, comps_y_min = NULL, 
                         comps_include_zero = TRUE,
@@ -858,7 +858,7 @@ format_plot <- function(omicsPlotter, ...) {
                         value_y_max = NULL, value_y_min = NULL,
                         value_include_zero = FALSE,
                         p_val = 0.05,
-                        panel_variable = attributes(omicsPlotter)$cnames$edata_cname, 
+                        panel_variable = attributes(trellData)$cnames$edata_cname, 
                         comps_color_variable = NULL,
                         comps_panel_x_axis = "Comparison", comps_panel_y_axis = NULL,
                         value_color_variable = NULL,
@@ -871,12 +871,12 @@ format_plot <- function(omicsPlotter, ...) {
   ## Initial Checks ##
   
   # Check if class is correct #
-  if(!inherits(omicsPlotter, "omicsPlotter")) stop(
-    "omicsPlotter must be of the class 'omicsPlotter'")
+  if(!inherits(trellData, "trellData")) stop(
+    "trellData must be of the class 'trellData'")
   
-  # Check if comp_stats is in omicsPlotter #
-  if(is.null(omicsPlotter$comp_stats) & is.null(omicsPlotter$data_values)) stop(
-    "No data values or comparison statistics in omicsPlotter to plot")
+  # Check if comp_stats is in trellData #
+  if(is.null(trellData$comp_stats) & is.null(trellData$data_values)) stop(
+    "No data values or comparison statistics in trellData to plot")
   
   # Check check if p_val is numeric of length 1 #
   if(!is.numeric(p_val) || (length(p_val) != 1)) stop(
@@ -990,16 +990,16 @@ format_plot <- function(omicsPlotter, ...) {
   ## Moniker Variables ##
   
   if (is.null(panel_variable)){
-    panel_variable  <- attributes(omicsPlotter)$cnames$edata_cname
+    panel_variable  <- attributes(trellData)$cnames$edata_cname
   }
   
   # --Comps-- #
   
-  if (!is.null(omicsPlotter$summary_stats) & 
-      !is.null(omicsPlotter$comp_stats)){
+  if (!is.null(trellData$summary_stats) & 
+      !is.null(trellData$comp_stats)){
     
     # Sets stats test and colors for borders #
-    option <- attr(omicsPlotter, "statistical_test")
+    option <- attr(trellData, "statistical_test")
     colors <- c("NA", "darkgrey", "black")
     
     # Sets default y-values based on stats test #
@@ -1013,7 +1013,7 @@ format_plot <- function(omicsPlotter, ...) {
     
     # Sets default value_color_variable to Group defined in group_DF attribute #
     if (is.null(comps_color_variable)){
-      if ("Group_DF" %in% colnames(omicsPlotter$summary_stats)){
+      if ("Group_DF" %in% colnames(trellData$summary_stats)){
         comps_color_variable <- "Group_DF"
       } else {
         comps_color_variable <- "Group"
@@ -1022,27 +1022,27 @@ format_plot <- function(omicsPlotter, ...) {
     
     # Correct for 'Group_DF' misinput # 
     if (comps_color_variable == "Group_DF" & 
-        !("Group_DF" %in% colnames(omicsPlotter$summary_stats)) &
-        "Group" %in% colnames(omicsPlotter$summary_stats)) {
+        !("Group_DF" %in% colnames(trellData$summary_stats)) &
+        "Group" %in% colnames(trellData$summary_stats)) {
       comps_color_variable <- "Group"
     }
 
   }
   
   # --Value-- #
-  if (!is.null(omicsPlotter$data_values)) {
+  if (!is.null(trellData$data_values)) {
     
     # Set default value_panel_y_axis #
     if (is.null(value_panel_y_axis)){
       value_panel_y_axis  <-  grep("abundance", 
-                                   colnames(omicsPlotter$data_values), 
+                                   colnames(trellData$data_values), 
                                    value = TRUE)
     }
     
     # Sets default value_color_variable to Group defined in group_DF attribute #
     if (is.null(value_color_variable)){
-      if ("Group_DF" %in% colnames(omicsPlotter$data_values) &
-          "Group" %in% colnames(omicsPlotter$data_values)){
+      if ("Group_DF" %in% colnames(trellData$data_values) &
+          "Group" %in% colnames(trellData$data_values)){
         value_color_variable <- "Group_DF"
       } else {
         value_color_variable <- "Group"
@@ -1051,8 +1051,8 @@ format_plot <- function(omicsPlotter, ...) {
     
     # Sets default value_panel_x_axis to Group defined in group_DF attribute #
     if (is.null(value_panel_x_axis)){
-      if ("Group_DF" %in% colnames(omicsPlotter$data_values) &
-          "Group" %in% colnames(omicsPlotter$data_values)){
+      if ("Group_DF" %in% colnames(trellData$data_values) &
+          "Group" %in% colnames(trellData$data_values)){
         value_panel_x_axis <- "Group_DF"
       } else {
         value_panel_x_axis <- "Group"
@@ -1062,17 +1062,17 @@ format_plot <- function(omicsPlotter, ...) {
   
   ## Check Monikers ##
   # --Value-- #
-  if (!is.null(omicsPlotter$data_values)) {
+  if (!is.null(trellData$data_values)) {
     
     # Correct for 'Group_DF' misinput for value_color_variable or value_panel_x_axis # 
     if (value_color_variable == "Group_DF" & 
-        !("Group_DF" %in% colnames(omicsPlotter$data_values)) &
-        "Group" %in% colnames(omicsPlotter$data_values)) {
+        !("Group_DF" %in% colnames(trellData$data_values)) &
+        "Group" %in% colnames(trellData$data_values)) {
       value_color_variable <- "Group"
     }
     if (value_panel_x_axis == "Group_DF" & 
-        !("Group_DF" %in% colnames(omicsPlotter$data_values)) &
-        "Group" %in% colnames(omicsPlotter$data_values)) {
+        !("Group_DF" %in% colnames(trellData$data_values)) &
+        "Group" %in% colnames(trellData$data_values)) {
       value_panel_x_axis <- "Group"
     }
     
@@ -1090,7 +1090,7 @@ format_plot <- function(omicsPlotter, ...) {
             parameters individually for different axis labels.")
     
     # Variable for variable-in checks #
-    allcol <- colnames(omicsPlotter$data_values)
+    allcol <- colnames(trellData$data_values)
     allcolstr <- toString(allcol)
     
     # Ensure panel, color, x, and y parameters are in data_values #
@@ -1108,29 +1108,29 @@ format_plot <- function(omicsPlotter, ...) {
   # --Comps-- #
   
   # Ensure summary_stats and comp_stats are both present #
-  if(((is.null(omicsPlotter$summary_stats)) & 
-      (!is.null(omicsPlotter$comp_stats))) | 
-     ((!is.null(omicsPlotter$summary_stats)) &
-      (is.null(omicsPlotter$comp_stats))) ) {
+  if(((is.null(trellData$summary_stats)) & 
+      (!is.null(trellData$comp_stats))) | 
+     ((!is.null(trellData$summary_stats)) &
+      (is.null(trellData$comp_stats))) ) {
     stop("Both summary_stats and comp_stats must be present 
-         if one or the other is in omicsPlotter.")
+         if one or the other is in trellData.")
   }
 
-  if ((!is.null(omicsPlotter$summary_stats)) & 
-      (!is.null(omicsPlotter$comp_stats))) {
+  if ((!is.null(trellData$summary_stats)) & 
+      (!is.null(trellData$comp_stats))) {
     
     # Correct for 'Group_DF' misinput # 
     if (comps_color_variable == "Group_DF" & 
-        !("Group_DF" %in% colnames(omicsPlotter$summary_stats)) &
-        "Group" %in% colnames(omicsPlotter$summary_stats)) {
+        !("Group_DF" %in% colnames(trellData$summary_stats)) &
+        "Group" %in% colnames(trellData$summary_stats)) {
       comps_color_variable <- "Group"
     }
     
     # Check if stats statistical test attribute is valid #
-    if(!(attributes(omicsPlotter)$statistical_test %in% c("combined", 
+    if(!(attributes(trellData)$statistical_test %in% c("combined", 
                                                           "gtest", 
                                                           "anova"))) stop(
-      paste("Non-applicable statistical_test attribute in omicsPlotter 
+      paste("Non-applicable statistical_test attribute in trellData 
             object."))
     
     # Ensure panel, color/x/y parameters are not matching #
@@ -1150,8 +1150,8 @@ format_plot <- function(omicsPlotter, ...) {
     
   
     # Variable for variable-in checks #
-    allcol <- c(colnames(omicsPlotter$comp_stats), 
-                colnames(omicsPlotter$summary_stats))
+    allcol <- c(colnames(trellData$comp_stats), 
+                colnames(trellData$summary_stats))
     allcolstr <- toString(unique(allcol))
     
     # Ensure panel, color, x, and y parameters are in comp_stats or summary stats #
@@ -1168,7 +1168,7 @@ format_plot <- function(omicsPlotter, ...) {
   
   ## Input comps y limits messages, tells user the plot limit parameters ##
   #--Comps--#
-  if(!is.null(omicsPlotter$summary_stats) & !is.null(omicsPlotter$comp_stats)){
+  if(!is.null(trellData$summary_stats) & !is.null(trellData$comp_stats)){
     ## Input comps y limits messages, tells user the plot limit parameters ##
     if (is.null(comps_y_limits) & is.null(comps_y_range) & is.null(comps_y_max) & is.null(comps_y_min)){
       message("No specified comparison y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
@@ -1213,7 +1213,7 @@ format_plot <- function(omicsPlotter, ...) {
   }
 
   #--Values--#
-  if(!is.null(omicsPlotter$data_values)){
+  if(!is.null(trellData$data_values)){
     ## Input values y limits messages, tells user the plot limit parameters ##
     if (is.null(value_y_limits) & is.null(value_y_range) & is.null(value_y_max) & is.null(value_y_min)){
       message("No specified value y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
@@ -1259,22 +1259,22 @@ format_plot <- function(omicsPlotter, ...) {
   
   ## Generate nested data w/ trelliscope panel column ##
   #--Values--#
-  if(!is.null(omicsPlotter$data_values)){
+  if(!is.null(trellData$data_values)){
     
     # Set ylims if appropriate #
     if (!is.null(value_y_limits)){
       if (value_y_limits == 'fixed'){
-        increment <- set_increment(omicsPlotter$data_values[[value_panel_y_axis]], 
+        increment <- set_increment(trellData$data_values[[value_panel_y_axis]], 
                                    include_zero = value_include_zero)
-        ylims <- set_ylimits(omicsPlotter$data_values[[value_panel_y_axis]], 
+        ylims <- set_ylimits(trellData$data_values[[value_panel_y_axis]], 
                              increment = increment,
                              y_min = value_y_min, y_max = value_y_max, 
                              include_zero = value_include_zero)
       }
     } else if (is.null(value_y_limits) & is.null(value_y_range)){
-      increment <- set_increment(omicsPlotter$data_values[[value_panel_y_axis]], 
+      increment <- set_increment(trellData$data_values[[value_panel_y_axis]], 
                                  include_zero = value_include_zero)
-      ylims <- set_ylimits(omicsPlotter$data_values[[value_panel_y_axis]], 
+      ylims <- set_ylimits(trellData$data_values[[value_panel_y_axis]], 
                            increment = increment,
                            y_min = value_y_min, y_max = value_y_max, 
                            include_zero = value_include_zero)
@@ -1282,21 +1282,21 @@ format_plot <- function(omicsPlotter, ...) {
   }
   
   #--Comps--#
-  if(!is.null(omicsPlotter$comp_stats)){
+  if(!is.null(trellData$comp_stats)){
     # Generate increment and y limits based on parameters and y-values #
     if (!is.null(comps_y_limits)){
       if (comps_y_limits == 'fixed'){
-        comps_increment <- set_increment(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
+        comps_increment <- set_increment(trellData$comp_stats[[comps_panel_y_axis]], 
                                          include_zero = comps_include_zero)
-        comps_ylims <- set_ylimits(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
+        comps_ylims <- set_ylimits(trellData$comp_stats[[comps_panel_y_axis]], 
                                    increment = comps_increment,
                                    y_min = comps_y_min, y_max = comps_y_max,
                                    include_zero = comps_include_zero)
       }
     } else if (is.null(comps_y_limits) & is.null(comps_y_range)){
-      comps_increment <- set_increment(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
+      comps_increment <- set_increment(trellData$comp_stats[[comps_panel_y_axis]], 
                                        include_zero = comps_include_zero)
-      comps_ylims <- set_ylimits(omicsPlotter$comp_stats[[comps_panel_y_axis]], 
+      comps_ylims <- set_ylimits(trellData$comp_stats[[comps_panel_y_axis]], 
                                  increment = comps_increment,
                                  y_min = comps_y_min, y_max = comps_y_max,
                                  include_zero = comps_include_zero)
@@ -1304,24 +1304,24 @@ format_plot <- function(omicsPlotter, ...) {
     
     
   # Nest data #
-    if ("Group_DF" %in% colnames(omicsPlotter$summary_stats)) {
+    if ("Group_DF" %in% colnames(trellData$summary_stats)) {
       group_df_name <- "Group_DF"
     } else {
       group_df_name <- "Group"
     }
-    plotter <- tidyr::separate(omicsPlotter$comp_stats, Comparison,
+    plotter <- tidyr::separate(trellData$comp_stats, Comparison,
                                c("comp1", "comp2"), sep = "_vs_", 
                                remove = FALSE) %>%
-      reshape2::melt(id.vars = names(omicsPlotter$comp_stats),
+      reshape2::melt(id.vars = names(trellData$comp_stats),
                      value.name = group_df_name)
-    plotter <- suppressWarnings(dplyr::left_join(plotter, omicsPlotter$summary_stats))
+    plotter <- suppressWarnings(dplyr::left_join(plotter, trellData$summary_stats))
     
-    if(!is.null(omicsPlotter$data_values)){
-      plotter <- suppressWarnings(dplyr::left_join(omicsPlotter$data_values, plotter))
+    if(!is.null(trellData$data_values)){
+      plotter <- suppressWarnings(dplyr::left_join(trellData$data_values, plotter))
     }
     
   } else {
-    plotter <- omicsPlotter$data_values
+    plotter <- trellData$data_values
   }
   nestplotter <- plotter %>% tidyr::nest(-panel_variable)
   
@@ -1340,7 +1340,7 @@ format_plot <- function(omicsPlotter, ...) {
     mutate(panel = trelliscopejs::map_plot(data, function(nestedData) {
       
       # For comp stats #
-      if(!is.null(omicsPlotter$comp_stats) & 
+      if(!is.null(trellData$comp_stats) & 
          comps_plot == TRUE){
         # Generate increment and y limits based on parameters and y-values #
         if (!is.null(comps_y_limits)){
@@ -1368,7 +1368,7 @@ format_plot <- function(omicsPlotter, ...) {
       nestedData_comps <- data.frame(nestedData, bord = bord)
       
       # Set hover/labels excluding the panel_variable #
-      hover_want_comps <- c(attributes(omicsPlotter)$cnames$edata_cname,
+      hover_want_comps <- c(attributes(trellData)$cnames$edata_cname,
                        "Group", "Count", "Comparison",
                        "P_value_G", "P_value_T", "Fold_change") 
       if (!(comps_panel_y_axis %in% hover_want_comps)){
@@ -1529,7 +1529,7 @@ format_plot <- function(omicsPlotter, ...) {
         }
       }
       
-      if(!is.null(omicsPlotter$data_values) & 
+      if(!is.null(trellData$data_values) & 
          value_plot == TRUE){
         # Generate increment and y limits based on parameters and y-values #
         if (!is.null(value_y_limits)){
@@ -1551,10 +1551,10 @@ format_plot <- function(omicsPlotter, ...) {
         }
         
         # Set hover/labels excluding the panel_variable #
-        hover_want <- c(attributes(omicsPlotter)$cnames$edata_cname, 
-                        attributes(omicsPlotter)$cnames$fdata_cname,
+        hover_want <- c(attributes(trellData)$cnames$edata_cname, 
+                        attributes(trellData)$cnames$fdata_cname,
                         "Group", grep("abundance",
-                                      colnames(omicsPlotter$data_values),
+                                      colnames(trellData$data_values),
                                       value = TRUE)) 
         if (!(value_panel_y_axis %in% hover_want)){
           hover_want <- c(hover_want, value_panel_y_axis)
@@ -1568,7 +1568,7 @@ format_plot <- function(omicsPlotter, ...) {
           row_text <- c()
           for (label in hover_labs){
             if (label %in% c(grep("abundance", 
-                                  colnames(omicsPlotter$data_values), 
+                                  colnames(trellData$data_values), 
                                   value = TRUE), value_panel_y_axis)) {
               row_text <- c(row_text,
                             paste(paste(label, ":", sep = ""), 
@@ -1670,11 +1670,11 @@ format_plot <- function(omicsPlotter, ...) {
       }
       
       if(plotly == TRUE){
-        if(!is.null(omicsPlotter$data_values) & !is.null(omicsPlotter$comp_stats)){
+        if(!is.null(trellData$data_values) & !is.null(trellData$comp_stats)){
           all_plotly <- subplot(list(arr_value_plot, arr_comps_plot), nrows = 2, 
                             titleX = TRUE, titleY = TRUE,
                             margin = 0.1)
-        } else if (!is.null(omicsPlotter$data_values)) {
+        } else if (!is.null(trellData$data_values)) {
           all_plotly <- subplot(list(arr_value_plot), titleX = TRUE, titleY = TRUE, 
                             margin = 0.1)
         } else {
@@ -1683,10 +1683,10 @@ format_plot <- function(omicsPlotter, ...) {
         }
         return(all_plotly)
       } else {
-        if(!is.null(omicsPlotter$data_values) & !is.null(omicsPlotter$comp_stats)){
+        if(!is.null(trellData$data_values) & !is.null(trellData$comp_stats)){
 
           all_ggplot <- ggpubr::ggarrange(plotlist = list(arr_value_plot, arr_comps_plot), nrow = 2)
-        } else if (!is.null(omicsPlotter$data_values)) {
+        } else if (!is.null(trellData$data_values)) {
           all_ggplot <- arr_value_plot
         } else {
           all_ggplot <- arr_comps_plot
@@ -1698,19 +1698,19 @@ format_plot <- function(omicsPlotter, ...) {
   )
 )
   # Return nested table #
-  attr(nestplotter, "parent_class") <- attr(omicsPlotter, "parent_class")
+  attr(nestplotter, "parent_class") <- attr(trellData, "parent_class")
   return(nestplotter)
 }
 
 
 #' @name data_cogs
 #' @rdname data_cogs
-#' @title Plot pairwise comparisons and data values in omicsPlotter object
+#' @title Plot pairwise comparisons and data values in trellData object
 #'
-#' @description Plot pairwise comparisons and data values in omicsPlotter object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+#' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
-#' @param omicsPlotter An object of class "omicsPlotter" generated from \code{\link{format_data()}}.
-#' @param nested_plot A nested table generated from omicsPlotter using formatplot()
+#' @param trellData An object of class "trellData" generated from \code{\link{format_data()}}.
+#' @param nested_plot A nested table generated from trellData using formatplot()
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
@@ -1796,14 +1796,14 @@ data_cogs <- function(...) {
   ## Fill null variables as needed ##
 
   if (is.null(nested_plot)){
-    omicsPlotter = format_data(omicsData, omicsStats)
+    trellData = format_data(omicsData, omicsStats)
     # recursive for lists #
-    if(class(omicsPlotter) == "list"){
-      nested_plot <- purrr::map(omicsPlotter, format_plot)
+    if(class(trellData) == "list"){
+      nested_plot <- purrr::map(trellData, format_plot)
       nestlist <- purrr::pmap(list(nested_plot, omicsData, omicsStats), data_cogs)
       return(nestlist)
     } else {
-      nested_plot <- format_plot(omicsPlotter)
+      nested_plot <- format_plot(trellData)
     }
   }
 
@@ -2069,7 +2069,7 @@ data_cogs <- function(...) {
 
 #' @name trelliVis
 #' @rdname trelliVis
-#' @title Plot pairwise comparisons and data values in omicsPlotter object
+#' @title Plot pairwise comparisons and data values in trellData object
 #'
 #' @description Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
@@ -2092,7 +2092,7 @@ data_cogs <- function(...) {
 #' @param comps_plot_type For omicsStats: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
 #' @param comps_include_zero For omicsStats: Should plots show y = 0?
 #' @param comps_text For omicsStats only: Should p-value text be displayed with plot points/bars/boxes?
-#' @param comps_plot For omicsStats: In the presence of summary_stats and comp_stats in omicsPlotter, should the plot be rendered? Default is TRUE.
+#' @param comps_plot For omicsStats: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.
 #' @param value_y_limits For omicsData: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
 #' @param value_y_range For omicsData: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param value_y_max For omicsData: Sets the maximum y-value for the y-axis.
@@ -2102,7 +2102,7 @@ data_cogs <- function(...) {
 #' @param value_color_variable For omicsData: Specifies what column should distingush color. Default settings is set to "Group."
 #' @param value_plot_type For omicsData: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
 #' @param value_include_zero For omicsData: Should plots show y = 0?
-#' @param value_plot For omicsData: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.
+#' @param value_plot For omicsData: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.
 #' @param plotly Should the plots be rendered as plotly objects?
 #'
 #'
@@ -2155,7 +2155,7 @@ trelliVis <- function(...) {
   ## Check variable type/lenghts
   #####
   
-  # If lists of omicsData or omicsPlotter are used, make sure panel variables are specified for both #
+  # If lists of omicsData or trellData are used, make sure panel variables are specified for both #
   if ((class(omicsData) == "list" | 
       class(omicsStats) == "list") && 
       !is.null(panel_variable) && 
@@ -2163,7 +2163,7 @@ trelliVis <- function(...) {
                                     length(omicsData))) stop(
                                       "Panel variable must be specified for each index in omicsStats/omicsData"
                                     )
-  # If lists of omicsData or omicsPlotter are used with mapping col, #
+  # If lists of omicsData or trellData are used with mapping col, #
   # make sure panel variables are specified for both #
   if ((class(omicsData) == "list" | 
        class(omicsStats) == "list") && 
@@ -2192,48 +2192,48 @@ trelliVis <- function(...) {
   
   if (is.null(omicsFormat)){
     # Re-format objects for plotting #
-    omicsPlotter <- format_data(omicsData, omicsStats)
+    trellData <- format_data(omicsData, omicsStats)
   } else {
-    omicsPlotter <- omicsFormat
+    trellData <- omicsFormat
   }
   
   # If a pep/pro pair is listed, act on each item #
-  if(class(omicsPlotter) == "list"){
+  if(class(trellData) == "list"){
     
     ## Check trelli_name ##
     # Default trelliscope names correspond to data types entered #
     if(is.null(trelli_name)){
-      trelli_name <- attr(omicsPlotter, "data_types")
+      trelli_name <- attr(trellData, "data_types")
       
       # if trelli_name is not of length list, add identifiers #
     } else if (length(trelli_name) == 1){
       trelli_name <- paste(trelli_name, 
-                           attr(omicsPlotter, "data_types"),
+                           attr(trellData, "data_types"),
                            sep = "_")
       
-      # if trelli_name too long, cut to length(omicsPlotter)  #
-    } else if (length(trelli_name) > length(omicsPlotter)) {
+      # if trelli_name too long, cut to length(trellData)  #
+    } else if (length(trelli_name) > length(trellData)) {
       warning( "Length trelli_name exceeds the number of generated displays. 
-            Only the first %d names will be used.", length(omicsPlotter))
-      trelli_name <- trelli_name[1:length(omicsPlotter)]
+            Only the first %d names will be used.", length(trellData))
+      trelli_name <- trelli_name[1:length(trellData)]
       
       # if trelli_name too short and not 1, throw error  #
-    } else if (length(trelli_name) < length(omicsPlotter)) stop(
-      paste("Length of trelli_name != 1 and less than length of omicsPlotter; 
-            please use a trelli_name of length 1 or length", length(omicsPlotter)))
+    } else if (length(trelli_name) < length(trellData)) stop(
+      paste("Length of trelli_name != 1 and less than length of trellData; 
+            please use a trelli_name of length 1 or length", length(trellData)))
     
     # Ensure NULLs ar the correct length #
     if (is.null(omicsData)){
-      omicsData <- rep(list(NULL), length(omicsPlotter))
+      omicsData <- rep(list(NULL), length(trellData))
     }
     if (is.null(omicsStats)){
-      omicsStats <- rep(list(NULL), length(omicsPlotter))
+      omicsStats <- rep(list(NULL), length(trellData))
     }
     if (is.null(panel_variable)){
-      panel_variable <- rep(list(NULL), length(omicsPlotter))
+      panel_variable <- rep(list(NULL), length(trellData))
     }
     if (is.null(mapping_col)){
-      mapping_col <- rep(list(NULL), length(omicsPlotter))
+      mapping_col <- rep(list(NULL), length(trellData))
     }
     
     # #Adds e_meta of associated peptide data to associated protein data
@@ -2246,7 +2246,7 @@ trelliVis <- function(...) {
     # }
     
     # Nest data and generate trelliscope plots #
-    nested_plot <- purrr::map2(omicsPlotter, panel_variable, function(pairedplotter, pan){
+    nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
       format_plot(pairedplotter, 
                   comps_y_limits = comps_y_limits, 
                   comps_y_range = comps_y_range, 
@@ -2306,8 +2306,8 @@ trelliVis <- function(...) {
     # Default: Name the display after parent classes (omicsData and omicStats clases) #
     if(is.null(trelli_name)){
       # trelli_name <- capture.output(
-      #   cat(attr(omicsPlotter, "parent_class"), sep = "_"))
-      trelli_name <- paste(attr(omicsPlotter, "parent_class"), collapse = "_")
+      #   cat(attr(trellData, "parent_class"), sep = "_"))
+      trelli_name <- paste(attr(trellData, "parent_class"), collapse = "_")
       # Make sure trelliname is length 1 #
     } else if (length(trelli_name) != 1) {
       warning("trelli_name length is greater than one where only one display is generated; using only the first entry in trelli_name.")
@@ -2315,7 +2315,7 @@ trelliVis <- function(...) {
     }
     
     # Nest data and generate trelliscope plots #
-    nested_plot <- format_plot(omicsPlotter,
+    nested_plot <- format_plot(trellData,
                                comps_y_limits = comps_y_limits, 
                                comps_y_range = comps_y_range, 
                                comps_y_max = comps_y_max, 

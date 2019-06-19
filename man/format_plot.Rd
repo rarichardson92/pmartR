@@ -2,12 +2,12 @@
 % Please edit documentation in R/as.omicsPlotter.R
 \name{format_plot}
 \alias{format_plot}
-\title{Plot pairwise comparisons and data values in omicsPlotter object}
+\title{Plot pairwise comparisons and data values in trellData object}
 \usage{
-format_plot(omicsPlotter, ...)
+format_plot(trellData, ...)
 }
 \arguments{
-\item{omicsPlotter}{An object of class "omicsPlotter" generated from \code{\link{format_data}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{format_data}}.}
 
 \item{...}{further arguments}
 
@@ -33,19 +33,19 @@ format_plot(omicsPlotter, ...)
 
 \item{p_val}{Specifies p-value for setting graph border colors}
 
-\item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in omicsPlotter. Defaults to cnames$edata_cname of omicsPlotter.}
+\item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
 
-\item{comps_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in omicsPlotter. Defaults setting plots pairwise comparisons along x-axis.}
+\item{comps_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Defaults setting plots pairwise comparisons along x-axis.}
 
-\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in omicsPlotter and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
 
-\item{comps_color_variable}{Specifies what column should distingush color, must be a column in omicsPlotter. Default settings is set to "Group."}
+\item{comps_color_variable}{Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."}
 
-\item{value_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in omicsPlotter. Defaults setting plots pairwise comparisons along x-axis.}
+\item{value_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Defaults setting plots pairwise comparisons along x-axis.}
 
-\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in omicsPlotter and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
 
-\item{value_color_variable}{Specifies what column should distingush color, must be a column in omicsPlotter. Default settings is set to "Group."}
+\item{value_color_variable}{Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."}
 
 \item{value_plot_type}{For values: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.}
 
@@ -55,16 +55,16 @@ format_plot(omicsPlotter, ...)
 
 \item{value_include_zero}{For values: Should plots show y = 0?}
 
-\item{value_plot}{For values: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.}
+\item{value_plot}{For values: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.}
 
-\item{comps_plot}{For comparisons: In the presence of summary_stats and comp_stats in omicsPlotter, should the plot be rendered? Default is TRUE.}
+\item{comps_plot}{For comparisons: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.}
 
 \item{comps_text}{For comparisons only: TRUE/FALSE for p-value text above data}
 
 \item{plotly}{Should the plots be rendered as plotly objects?}
 }
 \description{
-Plot pairwise comparisons and data values in omicsPlotter object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 }
 \author{
 Rachel Richardson

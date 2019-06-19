@@ -2,7 +2,7 @@
 % Please edit documentation in R/as.omicsPlotter.R
 \name{trelliVis}
 \alias{trelliVis}
-\title{Plot pairwise comparisons and data values in omicsPlotter object}
+\title{Plot pairwise comparisons and data values in trellData object}
 \usage{
 trelliVis(...)
 }
@@ -10,6 +10,8 @@ trelliVis(...)
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.}
 
 \item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.}
+
+\item{omicsFormat}{Output of format_data() function}
 
 \item{p_val}{Numeric that specifies p-value for significance calculations. Default is 0.05.}
 
@@ -43,7 +45,7 @@ trelliVis(...)
 
 \item{comps_text}{For omicsStats only: Should p-value text be displayed with plot points/bars/boxes?}
 
-\item{comps_plot}{For omicsStats: In the presence of summary_stats and comp_stats in omicsPlotter, should the plot be rendered? Default is TRUE.}
+\item{comps_plot}{For omicsStats: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.}
 
 \item{value_y_limits}{For omicsData: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
 
@@ -63,7 +65,7 @@ trelliVis(...)
 
 \item{value_include_zero}{For omicsData: Should plots show y = 0?}
 
-\item{value_plot}{For omicsData: In the presence of data_values in omicsPlotter, should the plot be rendered? Default is TRUE.}
+\item{value_plot}{For omicsData: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.}
 
 \item{plotly}{Should the plots be rendered as plotly objects?}
 }

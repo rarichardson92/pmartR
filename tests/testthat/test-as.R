@@ -191,47 +191,9 @@ testthat::test_that("Subfunction recursive_format correctly throws errors", {
 
 ## Generate function outputs from test data ##
 
-isobaric_object
-format_isoobject$data_values
-
 get_edata_cname(isobaric_object)
 get_emeta_cname(isobaric_object)
 get_fdata_cname(isobaric_object)
-
-dim(format_isoobject$data_values)
-
-nrow(
-  unique(
-    format_isoobject$data_values[c(
-      get_edata_cname(isobaric_object),
-      get_emeta_cname(isobaric_object))])) * 
-  nrow(unique(
-    format_isoobject$data_values[get_fdata_cname(isobaric_object)]))
-
-
-dim(format_qpro4$data_values)
-
-nrow(
-  unique(
-    format_qpro4$data_values[c(
-      get_edata_cname(qpro4),
-      get_emeta_cname(qpro4))])) * 
-  nrow(unique(
-    format_qpro4$data_values[get_fdata_cname(qpro4)]))
-
-
-
-dim(format_lipobject$data_values)
-
-nrow(
-  unique(
-    format_lipobject$data_values[
-      get_edata_cname(lipid_object)])) * 
-  nrow(unique(
-    format_lipobject$data_values[get_fdata_cname(lipid_object)]))
-
-
-
 
 
 # Data only #

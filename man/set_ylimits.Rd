@@ -2,7 +2,7 @@
 % Please edit documentation in R/as.omicsPlotter.R
 \name{set_ylimits}
 \alias{set_ylimits}
-\title{Sets y-axis limits for Omicsplotter plotting}
+\title{Sets y-axis limits for trellData plotting}
 \usage{
 set_ylimits(yvalues, increment, ...)
 }
@@ -18,7 +18,7 @@ set_ylimits(yvalues, increment, ...)
 \item{y_min}{Sets the minimum y-value for the y-axis.}
 }
 \description{
-Sets y-axis limits for Omicsplotter plotting. Used by plot_comp.
+Sets y-axis limits for trellData plotting. Used by plot_comp.
 }
 \author{
 Rachel Richardson
