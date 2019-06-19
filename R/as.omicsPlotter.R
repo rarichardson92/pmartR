@@ -441,10 +441,13 @@ format_data <- function(...){
   
   if (!is.null(omicsData) & !is.null(omicsStats)){
     attr(res, "parent_class") <- c(class(omicsStats), class(omicsData))
+    attr(res, "data_class") <- class(omicsData)
   } else if (!is.null(omicsData)){
     attr(res, "parent_class") <- class(omicsData)
+    attr(res, "data_class") <- class(omicsData)
   } else {
     attr(res, "parent_class") <- class(omicsStats)
+    attr(res, "data_class") <- attr(omicsStats, "data_class")
   }
 
   return(res)
@@ -636,7 +639,14 @@ recursive_format <- function(...){
         "List length != 2; list for omicsStats should contain one 
         protien set and one peptide set.")
       
-      classlist <- "NA"                                #####################
+      classlist <- omicsStats %>% purrr::map(function(omics) attr(omics, which = "data_class"))
+      classlgl <- classlist %>% 
+        purrr::map_lgl(function(class) all(stringr::str_detect(class, 
+                                                               pattern = "pepData|proData")))
+      if(!all(classlgl)) stop(
+        "Only stats derived from pepData and proData are valid for lists in omicsStats.")
+      if(any(duplicated(classlist))) stop(
+        "Only stats derived from one pepData and one proData supported in omicsStats lists.")   
       plotterlist <- purrr::map(omicsStats, format_data)
       
     } else {
