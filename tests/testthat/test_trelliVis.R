@@ -80,19 +80,19 @@ qpro2 <- pmartR::applyFilt(pmartR::imdanova_filter(qpro2),
 # isobaric_stats     <- pmartR::imd_anova(isobaric_object,     ##################### Error from above
 #                                         test_method = "combined")
 
-# lipid_stats        <- pmartR::imd_anova(lipid_object, 
-#                                         test_method = "combined")   Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
+lipid_stats        <- pmartR::imd_anova(lipid_object,
+                                        test_method = "combined")   #Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 metab_stats        <- pmartR::imd_anova(metab_object, 
                                         test_method = "combined")
-# pep_stats          <- pmartR::imd_anova(pep_object, 
-#                                         test_method = "combined") ##  Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
-# pro_stats          <- pmartR::imd_anova(pro_object,
-#                                         test_method = "combined")  ##  Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
-# techrep_pep_stats  <- pmartR::imd_anova(techrep_pep_object,
-#                                         test_method = "combined")  ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
+pep_stats          <- pmartR::imd_anova(pep_object,
+                                        test_method = "combined") ##  Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
+pro_stats          <- pmartR::imd_anova(pro_object,
+                                        test_method = "combined")  ##  Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
+techrep_pep_stats  <- pmartR::imd_anova(techrep_pep_object,
+                                        test_method = "combined")  ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 
 # qpro1_stats        <- pmartR::imd_anova(qpro1, test_method = "combined")   ###################
-# qpro2_stats        <- pmartR::imd_anova(qpro2, test_method = "combined") ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
+qpro2_stats        <- pmartR::imd_anova(qpro2, test_method = "combined") ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 
 
 

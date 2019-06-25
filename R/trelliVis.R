@@ -1088,7 +1088,7 @@ format_plot <- function(trellData, ...) {
           }
           
           plot_comps <- plot_comps +
-            ggplot2::geom_text(aes(y = textadj, 
+            ggplot2::geom_text(ggplot2::aes(y = textadj, 
                                    group = textadj), 
                                color = "black",
                                position = ggplot2::position_dodge(width = 0.9))
@@ -1101,13 +1101,13 @@ format_plot <- function(trellData, ...) {
           plot_comps <- plot_comps + ggplot2::geom_col(position = "dodge", 
                                                       size = 1
                                                       ) +
-               scale_color_manual(values = levels(nestedData_comps$bord))
+               ggplot2::scale_color_manual(values = levels(nestedData_comps$bord))
         }
         if (stringr::str_detect(type, pattern = "point|scatter")){
           typelist <- c(typelist, "scatter")
           plot_comps <- plot_comps + ggplot2::geom_point(position = "identity", 
                                                          size = 2) +
-              scale_color_manual(values = levels(nestedData_comps$bord))
+              ggplot2::scale_color_manual(values = levels(nestedData_comps$bord))
         }
         if (stringr::str_detect(type, pattern = "box")){
           if(!is.na(na.omit(nestedData_comps[[comps_panel_y_axis]])) && 
@@ -1295,10 +1295,11 @@ format_plot <- function(trellData, ...) {
   tictoc::toc()
   # Return nested table #
   
-  tictoc::tic("return")
+  #### Don't actually need data
+  nestplotter <- nestplotter[,c(1,3)]
+  
   attr(nestplotter, "parent_class") <- attr(trellData, "parent_class")
   return(nestplotter)
-  tictoc::toc()
 }
 
 
@@ -1787,37 +1788,39 @@ add_plot_features <- function(...){
       hover_want_comps <- hover_want_comps[!(hover_want_comps %in% panel_variable)]
     }
     hover_labs_comps <- hover_want_comps[hover_want_comps %in% colnames(nestedData)]
-    text_labs_comps <- c()
-    label_labs_comps <- c()
     
-    for (row in 1:nrow(nestedData)){
-      row_text <- c()
-      row_label <- c()
-      for (label in hover_labs_comps){
-        if (label %in% c("P_value_G", "P_value_T")){
-          row_label <- c(row_label, 
-                         paste(paste(label, ":", sep = ""), 
-                               signif(nestedData[row,][[label]], 3)))
-          row_text <- c(row_text,
-                        paste(paste(label, ":", sep = ""), 
-                              signif(nestedData[row,][[label]])))
-        } else if (label %in% c("Fold_change", comps_panel_y_axis)) {
-          row_text <- c(row_text,
-                        paste(paste(label, ":", sep = ""), 
-                              signif(nestedData[row,][[label]])))
+    text_labs_comps <- purrr::map(1:nrow(nestedData), function(row){
+      row_text <- purrr::map(hover_labs_comps, function(label){
+        if (label %in% c("P_value_G", "P_value_T")) {
+          return(paste(paste(label, ":", sep = ""), 
+                       signif(nestedData[row,][[label]])))
+        } else if (label %in% c("Fold_change", comps_panel_y_axis)){
+          return(paste(paste(label, ":", sep = ""), 
+                       signif(nestedData[row,][[label]])))
         } else {
-          row_text <- c(row_text,
-                        paste(paste(label, ":", sep = ""), 
-                              nestedData[row,][[label]]))
+          return(paste(paste(label, ":", sep = ""), 
+                       nestedData[row,][[label]]))
         }
-      }
-
-      text_labs_comps[row] <- toString(row_text)
-      label_labs_comps[row] <- toString(row_label)
-    }
+      })
+      return(toString(row_text, sep = ", "))
+    })
+    
+    label_labs_comps <- purrr::map(1:nrow(nestedData), function(row){
+      row_label <- purrr::map(hover_labs_comps, function(label){
+        if (label %in% c("P_value_G", "P_value_T")){
+          return(paste(paste(label, ":", sep = ""), 
+                       signif(nestedData[row,][[label]], 3)))
+        } 
+      })
+      return(toString(row_label, sep = ", "))
+    })
+    
+    label_labs_comps <- stringr::str_remove_all(unlist(label_labs_comps), "NULL, ")
+    label_labs_comps <- stringr::str_remove_all(label_labs_comps, "NULL")
+    
     nestedData_comps <- data.frame(nestedData,
                                    bord = bord,
-                                   text = text_labs_comps,
+                                   text = unlist(text_labs_comps),
                                    labels = label_labs_comps)
     
     return(nestedData_comps)
@@ -1837,25 +1840,22 @@ add_plot_features <- function(...){
       hover_want <- hover_want[!(hover_want %in% panel_variable)]
     }
     hover_labs <- hover_want[hover_want %in% colnames(nestedData)]
-    text_labs <- c()
-    for (row in 1:nrow(nestedData)){
-      row_text <- c()
-      for (label in hover_labs){
+    
+    text_labs <- purrr::map(1:nrow(nestedData), function(row){
+      row_text <- purrr::map(hover_labs, function(label){
         if (label %in% c(grep("abundance", 
                               colnames(trellData$data_values), 
                               value = TRUE), value_panel_y_axis)) {
-          row_text <- c(row_text,
-                        paste(paste(label, ":", sep = ""), 
-                              signif(nestedData[row,][[label]])))
+          return(paste(paste(label, ":", sep = ""),
+                signif(nestedData[row,][[label]])))
         } else {
-          row_text <- c(row_text,
-                        paste(paste(label, ":", sep = ""), 
-                              nestedData[row,][[label]]))
+          return(paste(paste(label, ":", sep = ""), nestedData[row,][[label]]))
         }
-      }
-      text_labs[row] <- toString(row_text, sep = ", ")
-    }
-    nestedData_value <- data.frame(nestedData, text = text_labs)
+      })
+      
+      return(toString(row_text, sep = ", "))
+    })
+    nestedData_value <- data.frame(nestedData, text = unlist(text_labs))
     
     return(nestedData_value)
   }
