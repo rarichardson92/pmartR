@@ -21,46 +21,39 @@ techrep_pep_object <- pmartR::group_designation(techrep_pep_object,
                                                 c("FACTOR", "DILUTION"))
 
 # Log transform untransformed data #
-# isobaric_object2   <- pmartR::edata_transform(isobaric_object, "log2") ################## Error
-lipid_object2      <- pmartR::edata_transform(lipid_object, "log2")
-metab_object2      <- pmartR::edata_transform(metab_object, "log2")
-pep_object2        <- pmartR::edata_transform(pep_object, "log2")
+# isobaric_object   <- pmartR::edata_transform(isobaric_object, "log2") ################## Error
+lipid_object      <- pmartR::edata_transform(lipid_object, "log2")
+metab_object      <- pmartR::edata_transform(metab_object, "log2")
+pep_object        <- pmartR::edata_transform(pep_object, "log2")
 
 ###
 # Error in .as.isobaricpepData(e_data, f_data, e_meta, edata_cname, fdata_cname,  : 
 # 'refpool_notation= Yes  is not in every experiment. See Details and Examples for more information.
 ###
 
-
-### map test for different protein quants? anova/gtest/combined?
-
 # Protein quantification from pepData with mappings #
 
-qpro1 <- pmartR::protein_quant(isobaric_object, "rrollup")
-# qpro2 <- pmartR::protein_quant(isobaric_object2, "rrollup")  ##################### Error from above
-qpro3 <- pmartR::protein_quant(pep_object, "rrollup")
-qpro4 <- pmartR::protein_quant(pep_object2, "rrollup")
-
-## Note: qpor1 and qpro 3 are in "abundance" as is isobaric and pep objects, thus no stats or stats filters run
+# qpro1 <- pmartR::protein_quant(isobaric_object, "rrollup")  ##################### Error from above
+qpro2 <- pmartR::protein_quant(pep_object, "rrollup")
 
 # Stats Filters #
 
 # Not run on non-transformed data
 
-# isobaric_object2 <- pmartR::applyFilt(pmartR::imdanova_filter(isobaric_object2),    ########
-#                                       isobaric_object2,
+# isobaric_object <- pmartR::applyFilt(pmartR::imdanova_filter(isobaric_object),    ########
+#                                       isobaric_object,
 #                                       min_nonmiss_anova = 2,
 #                                       min_nonmiss_gtest = 3)
-lipid_object2 <- pmartR::applyFilt(pmartR::imdanova_filter(lipid_object2),
-                                   lipid_object2,
+lipid_object <- pmartR::applyFilt(pmartR::imdanova_filter(lipid_object),
+                                   lipid_object,
                                    min_nonmiss_anova = 2,
                                    min_nonmiss_gtest = 3)
-metab_object2 <- pmartR::applyFilt(pmartR::imdanova_filter(metab_object2),
-                                  metab_object2,
+metab_object <- pmartR::applyFilt(pmartR::imdanova_filter(metab_object),
+                                  metab_object,
                                   min_nonmiss_anova = 2,
                                   min_nonmiss_gtest = 3)
-pep_object2 <- pmartR::applyFilt(pmartR::imdanova_filter(pep_object2),
-                                pep_object2,
+pep_object <- pmartR::applyFilt(pmartR::imdanova_filter(pep_object),
+                                pep_object,
                                 min_nonmiss_anova = 2,
                                 min_nonmiss_gtest = 3)
 pro_object <- pmartR::applyFilt(pmartR::imdanova_filter(pro_object),
@@ -73,33 +66,33 @@ techrep_pep_object <- pmartR::applyFilt(
   min_nonmiss_anova = 2,
   min_nonmiss_gtest = 3)
 
-# qpro2 <- pmartR::applyFilt(pmartR::imdanova_filter(qpro2),     ############
-#                            qpro2,
+# qpro1 <- pmartR::applyFilt(pmartR::imdanova_filter(qpro1),     ############
+#                            qpro1,
 #                            min_nonmiss_anova = 2,
 #                            min_nonmiss_gtest = 3)
-qpro4 <- pmartR::applyFilt(pmartR::imdanova_filter(qpro4),
-                           qpro4,
+qpro2 <- pmartR::applyFilt(pmartR::imdanova_filter(qpro2),
+                           qpro2,
                            min_nonmiss_anova = 2,
                            min_nonmiss_gtest = 3)
 
 
 # Generate stats (requires log-transformed data) #
-# isobaric_stats     <- pmartR::imd_anova(isobaric_object2,     ##################### Error from above
+# isobaric_stats     <- pmartR::imd_anova(isobaric_object,     ##################### Error from above
 #                                         test_method = "combined")
 
-# lipid_stats        <- pmartR::imd_anova(lipid_object2, 
+# lipid_stats        <- pmartR::imd_anova(lipid_object, 
 #                                         test_method = "combined")   Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
-metab_stats        <- pmartR::imd_anova(metab_object2, 
+metab_stats        <- pmartR::imd_anova(metab_object, 
                                         test_method = "combined")
-# pep_stats          <- pmartR::imd_anova(pep_object2, 
+# pep_stats          <- pmartR::imd_anova(pep_object, 
 #                                         test_method = "combined") ##  Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 # pro_stats          <- pmartR::imd_anova(pro_object,
 #                                         test_method = "combined")  ##  Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 # techrep_pep_stats  <- pmartR::imd_anova(techrep_pep_object,
 #                                         test_method = "combined")  ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 
-# qpro2_stats        <- pmartR::imd_anova(qpro2, test_method = "combined")   ###################
-# qpro4_stats        <- pmartR::imd_anova(qpro4, test_method = "combined") ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
+# qpro1_stats        <- pmartR::imd_anova(qpro1, test_method = "combined")   ###################
+# qpro2_stats        <- pmartR::imd_anova(qpro2, test_method = "combined") ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 
 
 
@@ -119,99 +112,155 @@ badstat4$Flags$Metabolite <- NULL  # Missing e_data cname
 badstat5 <- metab_stats
 badstat5$Full_results[3] <- NULL  # Missing expected columns
 
-baddat <- metab_object2
+baddat <- metab_object
 baddat$e_data <- NULL
-baddat2 <- metab_object2
+baddat2 <- metab_object
 baddat2$f_data$SampleID <- NULL
-baddat3 <- metab_object2
+baddat3 <- metab_object
 baddat3$e_data <- baddat3$e_data[1:3]
 
-# Expected function input error throwing #
+# Expected function input error throwing - format_data to validate_input #
 
 testthat::test_that("Correct format_data() error throwing for arguments omicsData, omicsStats", {
-  testthat::expect_error(pmartR::format_data(omicsData = 23, omicsStats = 34))
-  testthat::expect_error(pmartR::format_data(omicsStats = 34))
-  testthat::expect_error(pmartR::format_data(omicsData = "23")) 
-  testthat::expect_error(pmartR::format_data(omicsData = list()))
-  testthat::expect_error(pmartR::format_data(omicsData = list(), 
-                                             omicsStats = list()))
-  testthat::expect_error(pmartR::format_data(omicsData = NULL, 
-                                             omicsStats = NULL))
-  testthat::expect_error(pmartR::format_data(omicsData = c(), 
-                                             omicsStats = c()))
   testthat::expect_error(
-    pmartR::format_data(omicsData = pro_object, omicsStats = pro_object))
+    pmartR::format_data(omicsData = 23, omicsStats = 34), 
+    "must be of class")
   testthat::expect_error(
-    pmartR::format_data(omicsData = metab_stats, omicsStats = metab_stats))
+    pmartR::format_data(omicsStats = 34), 
+    "must be of the class")
+  testthat::expect_error(
+    pmartR::format_data(omicsData = "23"),  
+    "must be of class") 
+  testthat::expect_error(
+    pmartR::format_data(omicsData = list()), 
+    "Empty list")
+  testthat::expect_error(
+    pmartR::format_data(omicsData = list(), omicsStats = list()), 
+    "Empty list")
+  testthat::expect_error(
+    pmartR::format_data(omicsData = NULL, omicsStats = NULL), 
+    "requires at least")
+  testthat::expect_error(
+    pmartR::format_data(omicsData = c(), omicsStats = c()), 
+    "requires at least")
+  testthat::expect_error(
+    pmartR::format_data(omicsData = pro_object, omicsStats = pro_object), 
+    "class 'statRes'")
+  testthat::expect_error(
+    pmartR::format_data(omicsData = metab_stats, omicsStats = metab_stats), 
+    "omicsData must be of class")
   testthat::expect_warning(
-    pmartR::format_data(omicsData = NULL, omicsStats = pro_object))
+    pmartR::format_data(omicsData = NULL, omicsStats = pro_object), 
+    "Input reordered")
   testthat::expect_error(
-    pmartR::format_data(omicsData = metab_stats, omicsStats = pro_object))
+    pmartR::format_data(omicsData = metab_stats, omicsStats = pro_object), 
+    "Non-matching cname attributes")
   testthat::expect_error(
-    pmartR::format_data(omicsData = pro_object, omicsStats = metab_stats))
+    pmartR::format_data(omicsData = pro_object, omicsStats = metab_stats), 
+    "Non-matching cname attributes")
   
   # Manipulated data
-  testthat::expect_error(pmartR::format_data(badstat))
-  testthat::expect_error(pmartR::format_data(badstat2))
-  testthat::expect_error(pmartR::format_data(badstat3))
-  testthat::expect_error(pmartR::format_data(badstat4))
-  testthat::expect_error(pmartR::format_data(badstat5))
-  testthat::expect_error(pmartR::format_data(badstat, metab_object2))
-  testthat::expect_error(pmartR::format_data(badstat2, metab_object2))
-  testthat::expect_error(pmartR::format_data(badstat3, metab_object2))
-  testthat::expect_error(pmartR::format_data(badstat4, metab_object2))
-  testthat::expect_error(pmartR::format_data(badstat5, metab_object2))
-  testthat::expect_error(pmartR::format_data(baddat))
-  testthat::expect_error(pmartR::format_data(baddat2))
-  testthat::expect_error(pmartR::format_data(baddat3))
-  testthat::expect_error(pmartR::format_data(baddat, metab_stats))
-  testthat::expect_error(pmartR::format_data(baddat2, metab_stats))
-  testthat::expect_error(pmartR::format_data(baddat3, metab_stats))
-  
+  testthat::expect_error(
+    pmartR::format_data(badstat), 
+    "Mismatched rows")
+  testthat::expect_error(
+    pmartR::format_data(badstat2), 
+    "should contain only and all of the following dataframes:")
+  testthat::expect_error(
+    pmartR::format_data(badstat3),  
+    "should contain only and all of the following dataframes:")
+  testthat::expect_error(
+    pmartR::format_data(badstat4), 
+    "column must be present in all omicsStats dataframes")
+  testthat::expect_error(
+    pmartR::format_data(badstat5), 
+    "Number of columns in omicsStats dataframes is different than expected")
+  testthat::expect_error(
+    pmartR::format_data(badstat, metab_object), 
+    "Mismatched rows")
+  testthat::expect_error(
+    pmartR::format_data(badstat2, metab_object), 
+    "Requires compatible identifiers")
+  testthat::expect_error(
+    pmartR::format_data(badstat3, metab_object), 
+    "should contain only and all of the following dataframes:")
+  testthat::expect_error(
+    pmartR::format_data(badstat4, metab_object), 
+    "column must be present in all omicsStats dataframes")
+  testthat::expect_error(
+    pmartR::format_data(badstat5, metab_object), 
+    "Number of columns in omicsStats dataframes is different than expected")
+  testthat::expect_error(
+    pmartR::format_data(baddat), 
+    "Omicsdata requires both e_data and f_data.")
+  testthat::expect_error(
+    pmartR::format_data(baddat2), 
+    "column must be present in omicsData f_data.")
+  testthat::expect_error(
+    pmartR::format_data(baddat3), 
+    "column in f_data does not match column names in e_data" )
+  testthat::expect_error(
+    pmartR::format_data(baddat, metab_stats), 
+    "Biomolecules in omicsStats do not match biomolecules in omicsData.")
+  testthat::expect_error(
+    pmartR::format_data(baddat2, metab_stats), 
+    "SampleID column does not match between omicsData and omicsStats")
+  testthat::expect_error(
+    pmartR::format_data(baddat3, metab_stats), 
+    "SampleID column in f_data does not match column names in e_data")
 })
 
+rm(baddat, baddat2, baddat3, badstat, badstat2, badstat3, badstat4, badstat5)
 
-# Invalid until errors are resolved
+# Invalid until errors are resolved; 
+# format_data -> recursive_format -> format_data (checks list input) -> format_data -> format_data (checks individual omics objects)
 testthat::test_that("Subfunction recursive_format correctly throws errors", {
   
-  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(pep_stats)))
-  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(pep_stats, pep_stats)))
-  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(pep_stats, pep_stats, pep_stats)))
-  testthat::expect_error(format_data(omicsData = list(pep_object2, qpro4), omicsStats = list(metab_stats)))
-  testthat::expect_error(format_data(omicsData = c(pep_object2, qpro4), omicsStats = list(pep_stats, pep_stats)))
+  # testthat::expect_error(
+  #   format_data(omicsData = list(pep_object, qpro2), omicsStats = list(pep_stats)), 
+  #   "Biomolecules in omicsStats do not match biomolecules in omicsData.")
+  # testthat::expect_error(
+  #   format_data(omicsData = list(pep_object, qpro2), omicsStats = list(pep_stats, pep_stats)), 
+  #   "Lists in omicsData and omicsStats have mismatched cname attributes.")
+  # testthat::expect_error(
+  #   format_data(omicsData = list(pep_object, qpro2), omicsStats = list(pep_stats, pep_stats, pep_stats)),
+  #   "List length does not match;")
+  testthat::expect_error(
+    format_data(omicsData = list(pep_object, qpro2), omicsStats = list(metab_stats)),
+    "Non-matching cname attributes in omicsStats and omicsData.")
+  # testthat::expect_error(
+  #   format_data(omicsData = c(pep_object, qpro2), omicsStats = list(pep_stats, pep_stats)),
+  #   "List length does not match;")
+  # 
+  testthat::expect_error(
+    format_data(omicsData = list(pep_object, pep_object)), 
+    "Only one pepData")
+  testthat::expect_error(
+    format_data(omicsData = list(pep_object, pep_object, pep_object)), 
+    "List length != 2")
   
-  testthat::expect_error(format_data(omicsData = list(pep_object2, pep_object2)))
-  testthat::expect_error(format_data(omicsData = list(pep_object2, pep_object2, pep_object2)))
-  
-  testthat::expect_error(format_data(omicsStats = list(pep_stats, pep_stats)))
-  testthat::expect_error(format_data(omicsStats = list(pep_object2, pep_object2)))
+  # testthat::expect_error(
+  #   format_data(omicsStats = list(pep_stats, pep_stats)), 
+  #   "Only one stats object derived from pepData")
+  testthat::expect_error(
+    format_data(omicsStats = list(pep_object, pep_object)),
+    "Only one stats object derived from pepData")
 })
 
 ################################################################################
 
 ## Generate function outputs from test data ##
 
-get_edata_cname(isobaric_object)
-get_emeta_cname(isobaric_object)
-get_fdata_cname(isobaric_object)
-
-
 # Data only #
 format_isoobject   <- pmartR::format_data(isobaric_object)
-# format_isoobject2  <- pmartR::format_data(isobaric_object2) ############
 format_lipobject   <- pmartR::format_data(lipid_object)
-format_lipobject2  <- pmartR::format_data(lipid_object2)
 format_metobject   <- pmartR::format_data(metab_object)
-format_metobject2  <- pmartR::format_data(metab_object2)
 format_pepobject   <- pmartR::format_data(pep_object)
-format_pepobject2  <- pmartR::format_data(pep_object2)
 format_proobject   <- pmartR::format_data(pro_object)
 format_tecobject   <- pmartR::format_data(techrep_pep_object)
 
 # format_qpro1       <- pmartR::format_data(qpro1)              ################
-# format_qpro2       <- pmartR::format_data(qpro2)               #################
-# format_qpro3       <- pmartR::format_data(qpro3)                ################
-format_qpro4       <- pmartR::format_data(qpro4)
+format_qpro2       <- pmartR::format_data(qpro2)
 
 # Stats only #
 # format_isostats  <- pmartR::format_data(isobaric_stats) #############
@@ -221,84 +270,61 @@ format_metstats    <- pmartR::format_data(metab_stats)
 # format_prostats    <- pmartR::format_data(pro_stats) #############
 # format_tecstats    <- pmartR::format_data(techrep_pep_stats) #############
 
-# format_qpro2stats  <- pmartR::format_data(qpro2_stats)         ################
-# format_qpro4stats  <- pmartR::format_data(qpro4_stats)     #############
+# format_qpro1stats  <- pmartR::format_data(qpro1_stats)         ################
+# format_qpro1stats  <- pmartR::format_data(qpro2_stats)     #############
 
 # Both data and stats #
 ## Only log transformed data? ##  ADDD for matching log transforms
 
 # format_isoboth    <- pmartR::format_data(isobaric_object, isobaric_stats) ############
-# format_isoboth2   <- pmartR::format_data(isobaric_object2, isobaric_stats) ###########
 # format_lipboth    <- pmartR::format_data(lipid_object, lipid_stats) ##### Error: different cnames (techrep)
-# format_lipboth2   <- pmartR::format_data(lipid_object2, lipid_stats) ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
-# format_metboth    <- pmartR::format_data(metab_object, metab_stats) ##### Error: different cnames (techrep)
-format_metboth2   <- pmartR::format_data(metab_object2, metab_stats)
+format_metboth   <- pmartR::format_data(metab_object, metab_stats)
 # format_pepboth    <- pmartR::format_data(pep_object, pep_stats)        ##### Error: different cnames (techrep)
-# format_pepboth2   <- pmartR::format_data(pep_object2, pep_stats) ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 # format_proboth    <- pmartR::format_data(pro_object, pro_stats) ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 # format_tecboth    <- pmartR::format_data(techrep_pep_object, techrep_pep_stats) ## Error in Peptide %in% as.character(to_fix) : object 'Peptide' not found
 
+# format_qpro1both <- pmartR::format_data(qpro1_stats, qpro1)   ###
 # format_qpro2both <- pmartR::format_data(qpro2_stats, qpro2)   ###
-# format_qpro4both <- pmartR::format_data(qpro4_stats, qpro4)   ###
 
 # List based on pepData and quantified proData #
 # Data
 # forlist_qpro1dat  <- pmartR::format_data(omicsData = list(isobaric_object,    ################
 #                                                           qpro1))          
-# forlist_qpro2dat  <- pmartR::format_data(omicsData = list(isobaric_object2, ##############
-#                                                           qpro2))
-# forlist_qpro3dat  <- pmartR::format_data(omicsData = list(pep_object,       ################
-#                                                           qpro3))
-forlist_qpro4dat  <- pmartR::format_data(omicsData = list(pep_object2,
-                                                          qpro4))
+forlist_qpro2dat  <- pmartR::format_data(omicsData = list(pep_object, qpro2))
 
-# Stats                                                                                                                    qpro4))
+# Stats                                                                       
 # forlist_qpro1stat <- pmartR::format_data(omicsStats = list(qpro1_stats,   ############
 #                                                           isobaric_stats))
 # forlist_qpro2stat <- pmartR::format_data(omicsStats = list(qpro2_stats,  ############
-#                                                           isobaric_stats))
-# forlist_qpro3stat  <- pmartR::format_data(omicsStats = list(qpro3_stats,   ################
-#                                                           pep_stats))
-# forlist_qpro4stat  <- pmartR::format_data(omicsStats = list(qpro4_stats, #######
 #                                                           pep_stats))
 
-#Both     qpro4))
+
+# Both #
 
 # forlist_qpro1both <- pmartR::format_data(omicsStats = list(qpro1_stats,     #########
 #                                                            isobaric_stats),
 #                                          omicsData = list(qpro1, 
 #                                                           isobaric_object))
 # forlist_qpro2both <- pmartR::format_data(omicsStats = list(qpro2_stats,    ########
-#                                                            isobaric_stats),
+#                                                            pep_stats),
 #                                          omicsData = list(qpro2, 
-#                                                           isobaric_object2))
-
-# forlist_qpro3both  <- pmartR::format_data(omicsStats = list(qpro3_stats,   ################ 
-#                                                             pep_stats),
-#                                           omicsData = list(qpro3,
-#                                                            pep_object))
-# forlist_qpro4both  <- pmartR::format_data(omicsStats = list(qpro4_stats,   #######
-#                                                             pep_stats),
-#                                           omicsData = list(qpro4,
-#                                                            pep_object2))
+#                                                           pep_object))
 
 
 ################################################################################
 
 Valid_format_dat <- list(
   format_isoobject, format_lipobject, 
-  format_lipobject2, format_metobject, 
-  format_metobject2, format_pepobject, 
-  format_pepobject2, format_proobject, 
-  format_tecobject, format_qpro4
+  format_metobject, format_pepobject, 
+  format_proobject, format_tecobject, 
+  format_qpro2
 )
 
 Vfd_obs <- list(
-  isobaric_object, lipid_object,
-  lipid_object2, metab_object,
-  metab_object2, pep_object,
-  pep_object2, pro_object,
-  techrep_pep_object, qpro4)
+  isobaric_object, lipid_object, 
+  metab_object, pep_object,
+  pro_object, techrep_pep_object, 
+  qpro2)
 
 ##
 
@@ -315,13 +341,11 @@ Vfs_obs <- list(
 ##
 
 Valid_format_both <- list(
-  format_metboth2
-  # format_pepboth2, format_proboth,
-  # format_tecboth
+  format_metboth
 )
 
 Vfb_obs1 <- list(
-  metab_object2
+  metab_object
 )
 
 Vfb_obs2 <- list(
@@ -331,35 +355,35 @@ Vfb_obs2 <- list(
 #####
 
 Valid_forlist_dat <- list(
-  forlist_qpro4dat
+  forlist_qpro2dat
 )
 
 Vfld_list <- list(
-  list(pep_object2, qpro4)
+  list(pep_object, qpro2)
 )
 
 ##
 
 Valid_forlist_stat <- list(
-  # forlist_qpro4stat
+  # forlist_qpro2stat
 )
 
 Vfls_list <- list(
-  # list(pro4_stat, pep_stat)
+  # list(qpro2_stat, pep_stat)
 )
 
 ##
 
 Valid_forlist_both <- list(
-  # forlist_qpro4both
+  # forlist_qpro2both
 )
 
 Vflb_list1 <- list(
-  # list(pro4, pep_object2)
+  # list(qpro2, pep_object)
 )
 
 Vflb_list2 <- list(
-  # list(pro4_stat, pep_stat)
+  # list(qpro2_stat, pep_stat)
 )
 
 
@@ -599,8 +623,8 @@ testthat::test_that("Correct dataframe population and dimensions", {
 })
 
 testthat::test_that("Format list slices are equal to non-lists", {
-  testthat::expect_equal(forlist_qpro4dat[[1]], format_pepobject2)
-  testthat::expect_equal(forlist_qpro4dat[[2]], format_qpro4)
+  testthat::expect_equal(forlist_qpro2dat[[1]], format_pepobject)
+  testthat::expect_equal(forlist_qpro2dat[[2]], format_qpro2)
 })
 
 #### Testing data specific expectations #####
@@ -614,28 +638,25 @@ testthat::test_that("Format list slices are equal to non-lists", {
 testthat::context("Test format_plot output")
 
 ## Generate nested plot structures ##
-plot_isoobject <- format_plot(format_isoobject)
-plot_lipobject <- format_plot(format_lipobject)
-plot_lipobject2 <- format_plot(format_lipobject2)
-plot_metobject <- format_plot(format_metobject)
-plot_metobject2 <- format_plot(format_metobject2)
-plot_pepobject <- format_plot(format_pepobject)
-plot_pepobject2 <- format_plot(format_pepobject2)
-plot_proobject <- format_plot(format_proobject)
-plot_tecobject <- format_plot(format_tecobject)
-plot_qpro4 <- format_plot(format_qpro4)
+plot_isoobject <- pmartR::format_plot(format_isoobject)
+plot_lipobject <- pmartR::format_plot(format_lipobject)
+plot_metobject <- pmartR::format_plot(format_metobject)
+plot_pepobject <- pmartR::format_plot(format_pepobject)
+plot_proobject <- pmartR::format_plot(format_proobject)
+plot_tecobject <- pmartR::format_plot(format_tecobject)
+# plot_qpro1   <- pmartR::format_plot(format_qpro1)
+plot_qpro2     <- pmartR::format_plot(format_qpro2)
 
-plot_metstats <- format_plot(format_metstats)
+plot_metstats  <- pmartR::format_plot(format_metstats)$panel[[1]]
 
-plot_metboth2 <- format_plot(format_metboth2)
+plot_metboth   <- pmartR::format_plot(format_metboth)
 
 # Plot object lists #
 Valid_plot_dat <- list(
   plot_isoobject, plot_lipobject, 
-  plot_lipobject2, plot_metobject, 
-  plot_metobject2, plot_pepobject,
-  plot_pepobject2, plot_proobject,  
-  plot_tecobject, plot_qpro4)
+  plot_metobject, plot_pepobject, 
+  plot_proobject, plot_tecobject, 
+  plot_qpro2)
 
 Valid_plot_stat <- list(
   plot_metstats
@@ -664,209 +685,314 @@ badform8$summary_stats <- NULL  # missing stats dataframe
 ## Error throwing ##
 testthat::test_that("Correct error/warning throwing", {
   # Bad input #
-  testthat::expect_error(format_plot(badform))
-  testthat::expect_error(format_plot(badform2))
-  testthat::expect_error(format_plot(badform3))
-  testthat::expect_error(format_plot(badform4))
-  testthat::expect_error(format_plot(badform5))
-  testthat::expect_error(format_plot(badform6))
-  testthat::expect_error(format_plot(badform7))
-  testthat::expect_error(format_plot(badform8))
+  testthat::expect_error(
+    pmartR::format_plot(badform),
+    "trellData must be of the class 'trellData'")
+  testthat::expect_error(
+    pmartR::format_plot(badform2),
+    "No data values or comparison statistics in trellData to plot")
+  testthat::expect_error(
+    pmartR::format_plot(badform3))
+  testthat::expect_error(pmartR::format_plot(badform4))
+  testthat::expect_error(pmartR::format_plot(badform5))
+  testthat::expect_error(pmartR::format_plot(badform6))
+  testthat::expect_error(pmartR::format_plot(badform7))
+  testthat::expect_error(pmartR::format_plot(badform8))
+  
+  rm(badform, badform2, badform3, badform4, badform5, badform6, badform7, badform8)
   
   # p val error #
-  testthat::expect_error(format_plot(format_pepobject, p_val = NULL))
-  testthat::expect_error(format_plot(format_pepobject, p_val = "ghjk"))
-  testthat::expect_error(format_plot(format_pepobject, p_val = c(0.3, 1)))
+  testthat::expect_error(pmartR::format_plot(format_pepobject, p_val = NULL))
+  testthat::expect_error(pmartR::format_plot(format_pepobject, p_val = "ghjk"))
+  testthat::expect_error(pmartR::format_plot(format_pepobject, p_val = c(0.3, 1)))
   
   # Comps error #
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_range = 4, 
                                      comps_y_limits = "free"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_limits = 4))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_range = 4, 
                                      comps_y_max = 5,
                                      comps_y_min = 1))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_limits = "free", 
                                      comps_y_max = 5,
                                      comps_y_min = 1))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_limits = c("free", "free")))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_range = c("free", "free")))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_range = c(1, 2)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_range = -5))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_range = 0))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_max = "0"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_max = c(1,3)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_min = "0"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_y_min = c(1,3)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_plot_type = c(1,3)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      comps_plot_type = c("box", 
                                                          "boxpoint", 
                                                          "raster")))
-  testthat::expect_warning(format_plot(format_metstats, 
-                                      comps_panel_y_axis = "P_value_G",
-                                      comps_panel_x_axis = "P_value_G"), 
-                           "identical")
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_warning(
+    pmartR:::validate_format_plot_input(
+      format_metstats, 
+      comps_panel_y_axis = "P_value_G",
+      comps_panel_x_axis = "P_value_G",
+      comps_color_variable = "Comparison",
+      panel_variable = "Metabolite"),
+    "identical")
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      comps_panel_x_axis = "Peptide",
                                      panel_variable = "Peptide"))
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      comps_panel_y_axis = "Peptide",
                                      panel_variable = "Peptide"))
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      comps_color_variable = "Peptide",
                                      panel_variable = "Peptide"))
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      comps_color_variable = "blue"))
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      panel_variable = "blue"))
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      comps_panel_y_axis = "blue"))
-  testthat::expect_error(format_plot(format_metstats, 
+  testthat::expect_error(pmartR::format_plot(format_metstats, 
                                      comps_panel_x_axis = "blue"))
   
   
   # Value error #
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_range = 4, 
                                      value_y_limits = "free"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_limits = 4))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_range = 4, 
                                      value_y_max = 5,
                                      value_y_min = 1))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_limits = "free", 
                                      value_y_max = 5,
                                      value_y_min = 1))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_limits = c("free", "free")))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_range = c("free", "free")))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_range = c(1, 2)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_range = -5))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_range = 0))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_max = "0"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_max = c(1,3)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_min = "0"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_y_min = c(1,3)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_plot_type = c(1,3)))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_plot_type = c("box", 
                                                          "boxpoint", 
                                                          "raster")))
-  testthat::expect_warning(format_plot(format_pepobject, 
-                                       value_panel_y_axis = "abundance",
-                                       value_panel_x_axis = "abundance"), 
-                           "identical")
-  testthat::expect_error(format_plot(format_pepobject, 
+  
+  testthat::expect_warning(
+    pmartR:::validate_format_plot_input(
+      format_pepobject, 
+      value_panel_y_axis = "log2_abundance",
+      value_panel_x_axis = "log2_abundance",
+      value_color_variable = "Group",
+      panel_variable = "Mass_Tag_ID"),
+    "identical")
+
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_panel_x_axis = "Peptide",
                                      panel_variable = "Peptide"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_panel_y_axis = "Peptide",
                                      panel_variable = "Peptide"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_color_variable = "Peptide",
                                      panel_variable = "Peptide"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_color_variable = "blue"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      panel_variable = "blue"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_panel_y_axis = "blue"))
-  testthat::expect_error(format_plot(format_pepobject, 
+  testthat::expect_error(pmartR::format_plot(format_pepobject, 
                                      value_panel_x_axis = "blue"))
 })
 
 
 ## Test y-value messages
 
-testthat::test_that("Correct messages", {
+testthat::test_that("Correct messages in generate_plot_message", {
   testthat::expect_message(
-    format_plot(format_pepobject2),
+    pmartR:::generate_plot_message(format_pepobject),
     "No specified value y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_max = 3),
+    pmartR:::generate_plot_message(format_pepobject, value_y_max = 3),
     "No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max.")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_min = 3), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_min = 3), 
     "No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min.")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_limits = "free"), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_limits = "free"), 
     "Specified value y-limit: 'free'. Axis y-limits will be scaled per plot.")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_limits = "fixed"), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_limits = "fixed"), 
     "Specified value y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_limits = "fixed",  value_y_max = 3), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_limits = "fixed",  value_y_max = 3), 
    "Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_limits = "fixed",  value_y_min = 3), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_limits = "fixed",  value_y_min = 3), 
     "Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_range = 10), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_range = 10), 
     " units, split over the median.")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_range = 10,  value_y_min = 3), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_range = 10,  value_y_min = 3), 
     " units from the y_min. Specified y_min: ")
   testthat::expect_message(
-    format_plot(format_pepobject2, value_y_range = 10,  value_y_max = 3), 
+    pmartR:::generate_plot_message(format_pepobject, value_y_range = 10,  value_y_max = 3), 
     " units from the y_max. Specified y_max: ")
 
   
   testthat::expect_message(
-    format_plot(format_metstats),
+    pmartR:::generate_plot_message(format_metstats),
     "No specified comparison y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_max = 3),
+    pmartR:::generate_plot_message(format_metstats, comps_y_max = 3),
     "No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max.")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_min = 3), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_min = 3), 
     "No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min.")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_limits = "free"), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_limits = "free"), 
     "Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot.")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_limits = "fixed"), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_limits = "fixed"), 
     "Specified comparison y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_limits = "fixed",  comps_y_max = 3), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_limits = "fixed",  comps_y_max = 3), 
     "Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_limits = "fixed",  comps_y_min = 3), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_limits = "fixed",  comps_y_min = 3), 
     "Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_range = 10), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_range = 10), 
     " units, split over the median.")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_range = 10,  comps_y_min = 3), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_range = 10,  comps_y_min = 3), 
     " units from the y_min. Specified y_min: ")
   testthat::expect_message(
-    format_plot(format_metstats, comps_y_range = 10,  comps_y_max = 3), 
+    pmartR:::generate_plot_message(format_metstats, comps_y_range = 10,  comps_y_max = 3), 
     " units from the y_max. Specified y_max: ")
 })
+
+## Test expected dataframe generation
+
+## Generate plotting mid-point test data ##
+## Nesting is avoided due to large memory allotment (84 Mb to 108 Gb)
+
+testnestdat <- purrr::map(Valid_format_dat, function(trellData){
+  if(!is.null(trellData$comp_stats)){
+    ## Generate nested data ##
+    if ("Group_DF" %in% colnames(trellData$summary_stats)) {
+      group_df_name <- "Group_DF"
+    } else {
+      group_df_name <- "Group"
+    }
+    plotter <- tidyr::separate(trellData$comp_stats, Comparison,
+                               c("comp1", "comp2"), sep = "_vs_", 
+                               remove = FALSE) %>%
+      reshape2::melt(id.vars = names(trellData$comp_stats),
+                     value.name = group_df_name)
+    plotter <- suppressWarnings(dplyr::left_join(plotter, trellData$summary_stats))
+    if(!is.null(trellData$data_values)){
+      plotter <- suppressWarnings(dplyr::left_join(trellData$data_values, plotter))
+      plotter[[attr(format_isoobject, "cname")$edata_cname]] <- NULL
+      return(plotter)
+    }
+  } else {
+    plotter <- trellData$data_values
+    plotter[[attr(format_isoobject, "cname")$edata_cname]] <- NULL
+    return(plotter)
+  }
+})
+    
+testnestdat[[1]]
+
+testthat::test_that("Expected dataframes are generated before plotting", {
+ 
+  purrr::map2(Valid_format_dat, testnestdat, function(trellData, nestdata){
+    
+    print("hang here 0")
+    df <- pmartR:::add_plot_features(trellData, nestdata, 
+                               value_panel_y_axis = grep("abundance", colnames(nestdata)),
+                               panel_variable = attr(trellData, "cname")$edata_cname)
+    
+    print("hang here 1")
+    # Expected columns #
+    if (!is.null(trellData$comp_stats)){
+      addcol <- c("bord", "text", "label")
+      expect_col <- c(colnames(trellData$comp_stats), "comp1", "comp2", group_df_name, colnames(trellData$summary_stats))
+      if (!is.null(trellData$data_values)){
+        expect_col <- c(expect_col, colnames(trellData$data_values))
+      }
+    } else {
+      print("hang here 2")
+      addcol <- "text"
+      expect_col <- colnames(trellData$data_values)
+    }
+    
+    # Expected rows #
+    print("hang here 3")
+    print(colnames(df))
+    print(c(expect_col, addcol))
+    # testthat::expect_true(all(colnames(df) %in% c(expect_col, addcol)))
+    #testthat::expect_true()
+    
+  })
+})
+    
+  
+  format_isoobject
+  format_lipobject
+  format_metboth
+  format_metobject
+  format_pepobject
+  format_proobject
+
+  format_isoobject
+  
+  testisoval <- tidyr::nest(format_isoobject$data_values, -!!attr(format_isoobject, "cname")$edata_cname)
+  
+  pmartR:::add_plot_features(format_isoobject, 
+                             testiso$data[[1]], 
+                             value_panel_y_axis = "abundance",
+                             panel_variable = attr(format_isoobject, "cname")$edata_cname)
+   
+  ?pmartR:::add_plot_features
+  
+})
+
 
 ##### Test dimensions #####
 testthat::test_that("Correct nested table dimensions", {
@@ -879,7 +1005,7 @@ testthat::test_that("Correct nested table dimensions", {
                     panelVar <- parForm$data_values[[colnames(plotDat)[1]]]
                     }
                 expect_cols <- c(colnames(plotDat)[1], "data", "panel")
-                # testthat::expect_identical(nrow(plotDat), length(panelVar))
+                # testthat::expect_identical(nrow(plotDat), length(panelVar)) ######### non-Subsetted version
                 testthat::expect_equal(nrow(plotDat), 10)     ######### Subsetted version
                 testthat::expect_identical(colnames(plotDat), expect_cols)
                 testthat::expect_true(inherits(plotDat$data, "list"))
