@@ -11,7 +11,7 @@ trelliVis(...)
 
 \item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.}
 
-\item{omicsFormat}{Output of format_data() function}
+\item{omicsFormat}{Output of as.Trelldata() function}
 
 \item{p_val}{Numeric that specifies p-value for significance calculations. Default is 0.05.}
 
@@ -33,9 +33,9 @@ trelliVis(...)
 
 \item{comps_y_min}{For omicsStats: Sets the minimum y-value for the y-axis.}
 
-\item{comps_panel_x_axis}{For omicsStats: Specifies what column should be on the x-axis. Defaults setting plots pairwise comparisons along x-axis.}
+\item{comps_panel_x_axis}{For omicsStats: Specifies what column should be on the x-axis. Default setting plots pairwise comparisons along x-axis.}
 
-\item{comps_panel_y_axis}{For omicsStats: Specifies what column should be on the y-axis and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{comps_panel_y_axis}{For omicsStats: Specifies what column should be on the y-axis and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
 
 \item{comps_color_variable}{For omicsStats: Specifies what column should distingush color. Default settings is set to "Group."}
 
@@ -55,9 +55,9 @@ trelliVis(...)
 
 \item{value_y_min}{For omicsData: Sets the minimum y-value for the y-axis.}
 
-\item{value_panel_x_axis}{For omicsData: Specifies what column should be on the x-axis. Defaults setting plots pairwise comparisons along x-axis.}
+\item{value_panel_x_axis}{For omicsData: Specifies what column should be on the x-axis. Default setting plots pairwise comparisons along x-axis.}
 
-\item{value_panel_y_axis}{For omicsData: Specifies what column should be on the y-axis and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{value_panel_y_axis}{For omicsData: Specifies what column should be on the y-axis and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
 
 \item{value_color_variable}{For omicsData: Specifies what column should distingush color. Default settings is set to "Group."}
 

@@ -9,7 +9,7 @@ validate_format_plot_input(...)
 \arguments{
 \item{...}{further arguments}
 
-\item{trellData}{An object of class "trellData" generated from \code{\link{format_data}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata}}.}
 
 \item{comps_y_limits}{For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
 
@@ -31,15 +31,15 @@ validate_format_plot_input(...)
 
 \item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
 
-\item{comps_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Defaults setting plots pairwise comparisons along x-axis.}
+\item{comps_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.}
 
-\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
 
 \item{comps_color_variable}{Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."}
 
-\item{value_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Defaults setting plots pairwise comparisons along x-axis.}
+\item{value_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.}
 
-\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
 
 \item{value_color_variable}{Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."}
 

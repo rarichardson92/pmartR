@@ -7,17 +7,17 @@
 add_plot_features(...)
 }
 \arguments{
-\item{trellData}{An object of class "trellData" generated from \code{\link{format_data}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata}}.}
 
 \item{nestedData}{Nested trellData dataframe}
 
 \item{p_val}{Specifies p-value for setting graph border colors}
 
-\item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
+\item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData.}
 
-\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
 
-\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Defaults setting plots fold change for combined and anova testing and counts for g-test.}
+\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
 
 \item{colors}{Specifies colors to use for border.}
 }

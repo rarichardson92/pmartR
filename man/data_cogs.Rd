@@ -7,7 +7,7 @@
 data_cogs(...)
 }
 \arguments{
-\item{trellData}{An object of class "trellData" generated from \code{\link{format_data()}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata()}}.}
 
 \item{nested_plot}{A nested table generated from trellData using formatplot()}
 

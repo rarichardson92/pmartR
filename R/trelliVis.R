@@ -1,5 +1,5 @@
-#' @name format_data
-#' @rdname format_data
+#' @name as.Trelldata
+#' @rdname as.Trelldata
 #' @title Convert Omics data and pairwise statistics to a plotting object
 #'
 #' @description Converts a ResObject and its respective OmicsData into an easily plottable object.
@@ -48,13 +48,13 @@
 #'
 #' @export
 #' 
-format_data <- function(...){
-  .format_data(...)
+as.Trelldata <- function(...){
+  .as.Trelldata(...)
 }
 
-.format_data <- suppressWarnings(function(omicsData = NULL, omicsStats = NULL){
+.as.Trelldata <- suppressWarnings(function(omicsData = NULL, omicsStats = NULL){
   
-  ## Checks and recursive for lists as input in format_data ##
+  ## Checks and recursive for lists as input in as.Trelldata ##
   if ((class(omicsData) == "list") || (class(omicsStats) == "list")){
     return(recursive_format(omicsData = omicsData, omicsStats = omicsStats))
   }
@@ -321,7 +321,7 @@ print.trellData<- function(trellData){
 
 #' @name recursive_format
 #' @rdname recursive_format
-#' @title Recursive call of format_data and associated checks for list inputs
+#' @title Recursive call of as.Trelldata and associated checks for list inputs
 #' 
 #' @description Checks for validity of list inputs and handles different list combinations as input.
 #'
@@ -343,10 +343,10 @@ recursive_format <- function(...){
 
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
-      plotterlist <- purrr::map2(omicsData, omicsStats, format_data)
+      plotterlist <- purrr::map2(omicsData, omicsStats, as.Trelldata)
       
     } else {
-      plotterlist <- format_data(omicsData[[1]], omicsStats[[1]])
+      plotterlist <- as.Trelldata(omicsData[[1]], omicsStats[[1]])
       return(plotterlist)
     }
     
@@ -356,10 +356,10 @@ recursive_format <- function(...){
       
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
-      plotterlist <- purrr::map(omicsData, format_data)
+      plotterlist <- purrr::map(omicsData, as.Trelldata)
       
     } else {
-      plotterlist <- format_data(omicsData[[1]])
+      plotterlist <- as.Trelldata(omicsData[[1]])
       return(plotterlist)
     }
     
@@ -369,10 +369,10 @@ recursive_format <- function(...){
       
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsStats %>% purrr::map(function(omics) attr(omics, which = "data_class"))
-      plotterlist <- purrr::map(omicsStats, format_data)
+      plotterlist <- purrr::map(omicsStats, as.Trelldata)
       
     } else {
-      plotterlist <- format_data(omicsStats[[1]])
+      plotterlist <- as.Trelldata(omicsStats[[1]])
       return(plotterlist)
     }
   }
@@ -400,7 +400,7 @@ validate_omics_input <- function(...){
 .validate_omics_input <- function(omicsData = NULL, omicsStats = NULL){
   
   
-  ## Checks and recursive for lists as input in format_data ##
+  ## Checks and recursive for lists as input in as.Trelldata ##
   if ((class(omicsData) == "list") || (class(omicsStats) == "list")){
     
     # Check for empty lists #
@@ -519,7 +519,7 @@ validate_omics_input <- function(...){
     ## Initial Checks  for non-lists ##
     # Make sure at least one of omicsData or omicsStats is present #
     if(is.null(omicsStats) & is.null(omicsData)) stop(
-      "format_data() requires at least one of the following: 
+      "as.Trelldata() requires at least one of the following: 
       omicsStats, omicsData")
     
     # Check that omicsData and omicsStats are the correct classes #
@@ -726,7 +726,7 @@ validate_omics_input <- function(...){
 #'
 #' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{format_data}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
 #' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
 #' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
@@ -1310,7 +1310,7 @@ format_plot <- function(trellData, ...) {
 #' 
 #' @description Checks for validity of trellData input and assigns variables where needed
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{format_data}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
 #' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
 #' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
@@ -1625,7 +1625,7 @@ validate_format_plot_input <- function(...){
 #' 
 #' @description Generates a message stating the specified plotting y-limits
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{format_data}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
 #' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
 #' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
@@ -1747,7 +1747,7 @@ generate_plot_message <- function(...){
 #' 
 #' @description Adds border color, hover, and label text as applicable to nested trellData dataframe for plotting
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{format_data}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
 #' @param nestedData Nested trellData dataframe
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. 
@@ -2029,7 +2029,7 @@ set_ylimits <- function(yvalues, increment, ...){
 #'
 #' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{format_data()}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata()}}.
 #' @param nested_plot A nested table generated from trellData using formatplot()
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
@@ -2128,7 +2128,7 @@ data_cogs <- function(...) {
   ## Fill null variables as needed ##
 
   if (is.null(nested_plot)){
-    trellData = format_data(omicsData, omicsStats)
+    trellData = as.Trelldata(omicsData, omicsStats)
     # recursive for lists #
     if(class(trellData) == "list"){
       nested_plot <- purrr::map(trellData, format_plot)
@@ -2437,7 +2437,7 @@ data_cogs <- function(...) {
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.
-#' @param omicsFormat Output of format_data() function
+#' @param omicsFormat Output of as.Trelldata() function
 #' @param p_val Numeric that specifies p-value for significance calculations. Default is 0.05.
 #' @param mapping_col String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
@@ -2554,7 +2554,7 @@ trelliVis <- function(...) {
   
   if (is.null(omicsFormat)){
     # Re-format objects for plotting #
-    trellData <- format_data(omicsData, omicsStats)
+    trellData <- as.Trelldata(omicsData, omicsStats)
   } else {
     trellData <- omicsFormat
   }

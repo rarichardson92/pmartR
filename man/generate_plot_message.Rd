@@ -7,7 +7,7 @@
 generate_plot_message(...)
 }
 \arguments{
-\item{trellData}{An object of class "trellData" generated from \code{\link{format_data}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata}}.}
 
 \item{comps_y_limits}{For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
 
