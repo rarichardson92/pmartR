@@ -1,5 +1,5 @@
-#' @name as.Trelldata
-#' @rdname as.Trelldata
+#' @name as.trellData
+#' @rdname as.trellData
 #' @title Convert Omics data and pairwise statistics to a plotting object
 #'
 #' @description Converts a ResObject and its respective OmicsData into an easily plottable object.
@@ -48,13 +48,13 @@
 #'
 #' @export
 #' 
-as.Trelldata <- function(...){
-  .as.Trelldata(...)
+as.trellData <- function(...){
+  .as.trellData(...)
 }
 
-.as.Trelldata <- suppressWarnings(function(omicsData = NULL, omicsStats = NULL){
+.as.trellData <- suppressWarnings(function(omicsData = NULL, omicsStats = NULL){
   
-  ## Checks and recursive for lists as input in as.Trelldata ##
+  ## Checks and recursive for lists as input in as.trellData ##
   if ((class(omicsData) == "list") || (class(omicsStats) == "list")){
     return(recursive_format(omicsData = omicsData, omicsStats = omicsStats))
   }
@@ -321,7 +321,7 @@ print.trellData<- function(trellData){
 
 #' @name recursive_format
 #' @rdname recursive_format
-#' @title Recursive call of as.Trelldata and associated checks for list inputs
+#' @title Recursive call of as.trellData and associated checks for list inputs
 #' 
 #' @description Checks for validity of list inputs and handles different list combinations as input.
 #'
@@ -343,10 +343,10 @@ recursive_format <- function(...){
 
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
-      plotterlist <- purrr::map2(omicsData, omicsStats, as.Trelldata)
+      plotterlist <- purrr::map2(omicsData, omicsStats, as.trellData)
       
     } else {
-      plotterlist <- as.Trelldata(omicsData[[1]], omicsStats[[1]])
+      plotterlist <- as.trellData(omicsData[[1]], omicsStats[[1]])
       return(plotterlist)
     }
     
@@ -356,10 +356,10 @@ recursive_format <- function(...){
       
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
-      plotterlist <- purrr::map(omicsData, as.Trelldata)
+      plotterlist <- purrr::map(omicsData, as.trellData)
       
     } else {
-      plotterlist <- as.Trelldata(omicsData[[1]])
+      plotterlist <- as.trellData(omicsData[[1]])
       return(plotterlist)
     }
     
@@ -369,10 +369,10 @@ recursive_format <- function(...){
       
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsStats %>% purrr::map(function(omics) attr(omics, which = "data_class"))
-      plotterlist <- purrr::map(omicsStats, as.Trelldata)
+      plotterlist <- purrr::map(omicsStats, as.trellData)
       
     } else {
-      plotterlist <- as.Trelldata(omicsStats[[1]])
+      plotterlist <- as.trellData(omicsStats[[1]])
       return(plotterlist)
     }
   }
@@ -400,7 +400,7 @@ validate_omics_input <- function(...){
 .validate_omics_input <- function(omicsData = NULL, omicsStats = NULL){
   
   
-  ## Checks and recursive for lists as input in as.Trelldata ##
+  ## Checks and recursive for lists as input in as.trellData ##
   if ((class(omicsData) == "list") || (class(omicsStats) == "list")){
     
     # Check for empty lists #
@@ -519,7 +519,7 @@ validate_omics_input <- function(...){
     ## Initial Checks  for non-lists ##
     # Make sure at least one of omicsData or omicsStats is present #
     if(is.null(omicsStats) & is.null(omicsData)) stop(
-      "as.Trelldata() requires at least one of the following: 
+      "as.trellData() requires at least one of the following: 
       omicsStats, omicsData")
     
     # Check that omicsData and omicsStats are the correct classes #
@@ -720,256 +720,732 @@ validate_omics_input <- function(...){
   }
 }
 
+
+
 #' @name format_plot
 #' @rdname format_plot
 #' @title Plot pairwise comparisons and data values in trellData object
 #'
 #' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
-#' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
-#' @param comps_y_min For comparisons: Sets the minimum y-value for the y-axis.
-#' @param value_y_limits For values: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param value_y_range For values: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param value_y_max For values: Sets the maximum y-value for the y-axis.
-#' @param value_y_min For values: Sets the minimum y-value for the y-axis.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.trellData}}.
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.
-#' @param comps_panel_x_axis Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.
-#' @param comps_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.
-#' @param comps_color_variable Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."
-#' @param value_panel_x_axis Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.
-#' @param value_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.
-#' @param value_color_variable Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."
-#' @param value_plot_type For values: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
-#' @param comps_plot_type For comparisons: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
-#' @param comps_include_zero For comparisons: Should plots show y = 0?
-#' @param value_include_zero For values: Should plots show y = 0?
-#' @param value_plot For values: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.
-#' @param comps_plot For comparisons: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.
-#' @param comps_text For comparisons only: TRUE/FALSE for p-value text above data
-#' @param plotly Should the plots be rendered as plotly objects?
+#' @param plot_text For comparisons only: TRUE/FALSE for p-value text above data
+#' @param interactive Should the plots be rendered as plotly objects?
+#' @param plot_type types of plots 
+#' @param y_limits y-limits
 #' @param ... further arguments
 #'
 #' @author Rachel Richardson
 #' @export
 format_plot <- function(trellData, ...) {
-   .format_plot(trellData,  ...)
+  .format_plot(trellData,  ...)
 }
 
 .format_plot <- function(trellData, 
-                        comps_y_limits = NULL, comps_y_range = NULL, 
-                        comps_y_max = NULL, comps_y_min = NULL, 
-                        comps_include_zero = TRUE,
-                        value_y_limits = NULL, value_y_range = NULL, 
-                        value_y_max = NULL, value_y_min = NULL,
-                        value_include_zero = FALSE,
-                        p_val = 0.05,
-                        panel_variable = attributes(trellData)$cnames$edata_cname, 
-                        comps_color_variable = NULL,
-                        comps_panel_x_axis = "Comparison", comps_panel_y_axis = NULL,
-                        value_color_variable = NULL,
-                        value_panel_x_axis = NULL, 
-                        value_panel_y_axis = NULL,
-                        value_plot_type = "boxpoint", comps_plot_type = "col",
-                        value_plot = TRUE, comps_plot = TRUE, 
-                        comps_text = TRUE, plotly = TRUE) {
-
-  tictoc::tic("initial check")
-  ## Initial Checks ##
-  validate_format_plot_input(
-    trellData,
-    comps_y_limits = comps_y_limits, 
-    comps_y_range = comps_y_range, 
-    comps_y_max = comps_y_max, 
-    comps_y_min = comps_y_min, 
-    comps_include_zero = comps_include_zero,
-    value_y_limits = value_y_limits, 
-    value_y_range = value_y_range, 
-    value_y_max = value_y_max, 
-    value_y_min = value_y_min,
-    value_include_zero = value_include_zero,
-    p_val = p_val,
-    value_plot_type = value_plot_type, 
-    comps_plot_type = comps_plot_type,
-    value_plot = value_plot,
-    comps_plot = comps_plot,
-    comps_text = comps_text,
-    plotly = plotly)
-  
-  tictoc::toc()
-  
-  tictoc::tic("assign vars")
-  ## Re-assign Variables (if not specified) ##
+                         panel_variable = NULL, 
+                         plot_type = NULL, 
+                         p_val = 0.05, 
+                         plot_text = FALSE, 
+                         y_limits = NULL,
+                         interactive = FALSE) {
+ 
   if (is.null(panel_variable)){
-    panel_variable  <- attributes(trellData)$cnames$edata_cname
+    panel_variable <- pmartR::get_edata_cname(trellData)
   }
   
-  # --Comps-- #
+  if (is.null(plot_type)){
+    plot_type <- list("abundance_boxplot", "foldchange_bar")
+  }
+   
+  ## Input digestion
+  graphlims <- list_y_limits(plot_type = plot_type, y_limits = y_limits)
   
-  if (!is.null(trellData$summary_stats) & 
-      !is.null(trellData$comp_stats)){
+  All_plots <- list()
+  
+  if (panel_variable == pmartR::get_edata_cname(trellData) && stringr::str_detect(plot_type, "heatmap")) {
+    stop(
+      paste("Heatmaps require a panel_variable that is not the same as edata cname (Default panel_variable is set to edata cname). Current edata cname:", pmartR::get_edata_cname(trellData))
+    )
+  } 
+  
+  cores<- parallel::detectCores()
+  cl<- parallel::makeCluster(cores)
+  doParallel::registerDoParallel(cl)
+  
+  
+  #### Abundance Global ####
+  if("abundance_global" %in% plot_type){
     
-    # Sets stats test and colors for borders #
-    option <- attr(trellData, "statistical_test")
-    colors <- c("NA", "darkgrey", "black")
+    lims <- graphlims[["abundance_global"]]
     
-    # Sets default y-values based on stats test #
-    if(is.null(comps_panel_y_axis) & (option == "gtest")){
-      comps_panel_y_axis <- "Count"
-    } else if (is.null(comps_panel_y_axis)){
-      comps_panel_y_axis <- "Fold_change"
+    if (!is.null(lims$scale) && lims$scale == "free") {
+      warning( 
+        "Scale option 'free' is not valid with abundance_global plots. Fixed plots will be generated based on global values.")
+    }
+    
+    sampID <- pmartR:::get_fdata_cname(trellData)
+    
+    if ("Group_DF" %in% colnames(trellData$data_value)){
+      group <- "Group_DF"
     } else {
-      comps_panel_y_axis <- comps_panel_y_axis
+      group <- "Group"
     }
     
-    # Sets default value_color_variable to Group defined in group_DF attribute #
-    if (is.null(comps_color_variable)){
+    abundance <- grep("abundance", colnames(trellData$data_value), value = TRUE)
+    
+    plot_base <- ggplot2::ggplot() +
+      ggplot2::theme_bw() +
+      ggplot2::geom_boxplot(ggplot2::aes(x = trellData$data_value[[sampID]], 
+                                         y = trellData$data_value[[abundance]], 
+                                        color = trellData$data_value[[group]],
+                                        fill = trellData$data_value[[group]]),
+                            alpha = 0.75,
+                            na.rm = TRUE) +
+      ggplot2::labs(x = group, y = abundance, fill = group, color = group) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
+    
+    
+    data <- trellData$data_value
+    # print(rank(trellData$data_value[[abundance]]))
+    # data <- dplyr::mutate(data, rank = paste(rank(trellData$data_value[[abundance]]),"/", nrow(data), sep = ""))
+    # print(data)
+    
+    
+    output_df <- data.frame(unique(as.character(trellData$data_value[[panel_variable]])), stringsAsFactors = FALSE)
+    colnames(output_df) <- panel_variable
+    
+    All_plots[["abundance_global"]] <- suppressWarnings(
+      foreach::foreach(i=1:length(output_df[[panel_variable]]))%dopar%{
+        
+        cat(paste("abundance_global:", i, "/", length(output_df[[panel_variable]]), "plots\n"), 
+            file="log.trelliVis.txt", append=TRUE)
+        panel <- output_df[[panel_variable]][i]
+    
+      
+      
+    # All_plots[["abundance_global"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
+      rows <- data[[panel_variable]] == panel
+      df <- data[rows,]
+      
+      if(!is.null(lims$max) || 
+         !is.null(lims$min) ||
+         !is.null(lims$range)){
+        
+        increment <- set_increment(df[[abundance]])
+        setlims <- set_ylimits(df[[abundance]],
+                               increment,
+                               y_range = lims$range,
+                               y_max = lims$max,
+                               y_min = lims$min,
+                               include_zero = FALSE)
+      }
+      
+      plot_out <- plot_base +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
+                                                           hjust = 0,
+                                                           vjust = 0.5)) +
+        ggplot2::labs(x = NULL, fill = NULL, color = NULL) +
+        
+        ggplot2::geom_segment(
+          x = as.numeric(factor(df[[sampID]])) - 0.25,
+          xend = as.numeric(factor(df[[sampID]])) + 0.25,
+          y = df[[abundance]],
+          yend = df[[abundance]],
+          ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(df[[abundance]], 4))),
+          na.rm = TRUE) +
+        
+        ggplot2::geom_point(
+          x = as.numeric(factor(df[[sampID]])),
+          y = df[[abundance]],
+          ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(df[[abundance]], 4))),
+          color = NA,
+          na.rm = TRUE)
+      
+      if(length(unique(trellData$data_value[[sampID]])) > 8){
+        plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5))
+      }
+      if(length(unique(trellData$data_value[[sampID]])) > 20){
+        plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+          ggplot2::xlab(sampID)
+      }
+      
+      if(exists("setlims")){
+        plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+      }
+      
+      return(plot_out)
+      
+    })#)
+  }
+  
+  
+  
+  
+  #### Foldchange Global ####
+  if("foldchange_global" %in% plot_type){
+    
+    lims <- graphlims[["foldchange_global"]]
+
+    if (!is.null(lims$scale) && lims$scale == "free") {
+      warning( 
+        "Scale option 'free' is not valid with foldchange_global plots. Fixed plots will be generated based on global values.")
+      lims$scale <- "fixed"
+    }
+    
+    sampID <- pmartR:::get_fdata_cname(trellData)
+    comps <- "Comparison"
+    
+    foldchange <- grep("Fold_change", colnames(trellData$comp_stats), value = TRUE)
+    
+    plot_base <- ggplot2::ggplot() +
+      ggplot2::theme_bw() +
+      ggplot2::geom_boxplot(ggplot2::aes(x = trellData$comp_stats[[comps]], 
+                                         y = trellData$comp_stats[[foldchange]], 
+                                         color = trellData$comp_stats[[comps]],
+                                         fill = trellData$comp_stats[[comps]]), 
+                            alpha = 0.75, na.rm = TRUE) +
+      ggplot2::labs(x = comps, y = foldchange, fill = comps, color = comps) +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1),
+                     legend.position = "none")
+    
+    
+    data <- trellData$comp_stats
+    # print(rank(trellData$comp_stats[[foldchange]]))
+    # data <- dplyr::mutate(data, rank = paste(rank(trellData$data_value[[abundance]]),"/", nrow(data), sep = ""))
+    # print(data)
+    
+    output_df <- data.frame(unique(as.character(trellData$comp_stats[[panel_variable]])), stringsAsFactors = FALSE)
+    colnames(output_df) <- panel_variable
+    
+    All_plots[["foldchange_global"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
+      rows <- trellData$comp_stats[[panel_variable]] == panel
+      df <- trellData$comp_stats[rows,]
+      
+      if(!is.null(lims$max) || 
+         !is.null(lims$min) ||
+         !is.null(lims$range)){
+        
+        increment <- set_increment(df[[foldchange]])
+        setlims <- set_ylimits(df[[foldchange]],
+                               increment,
+                               y_range = lims$range,
+                               y_max = lims$max,
+                               y_min = lims$min,
+                               include_zero = FALSE)
+      }
+      
+      plot_out <- plot_base + 
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
+                                                           hjust = 0,
+                                                           vjust = 0.5)) +
+        ggplot2::labs(x = NULL)   +
+        
+        ggplot2::geom_segment(
+          x = as.numeric(factor(df[[comps]])) - 0.25,
+          xend = as.numeric(factor(df[[comps]])) + 0.25,
+          y = df[[foldchange]],
+          yend = df[[foldchange]],
+          ggplot2::aes(text = #paste(
+            paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
+            # paste("Rank:", df[["rank"]]),
+            # sep = "\n")),
+          na.rm = TRUE) +
+        
+        ggplot2::geom_point(
+          x = as.numeric(factor(df[[comps]])),
+          y = df[[foldchange]],
+          ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
+          color = NA,
+          na.rm = TRUE)
+      
+      
+      if(exists("setlims")){
+        plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+      }
+      
+      return(plot_out)
+    }))
+  }
+  
+  #### Missing Bar ####
+  if("missing_bar" %in% plot_type){
+    
+    lims <- graphlims[["missing_bar"]]
+    
+    if (!is.null(lims$scale) || !is.null(lims$range)) {
+      warning( 
+        "Scale options and range are not valid with missing_bar plots, scale will not be applied. Please use max and min or list(NULL) for missing_bar y_limits.  Refer to examples in ?trelliVis().")
+    }
+    
+    if (!is.null(lims$min) && (lims$min < 0 || lims$min > 1)) {
+      stop( 
+        "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
+    }
+    
+    if (!is.null(lims$max) && (lims$max < 0 || lims$max > 1)) {
+      stop( 
+        "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
+    }
+    
+    
+    if(!is.null(trellData$summary_stats)){
+      
       if ("Group_DF" %in% colnames(trellData$summary_stats)){
-        comps_color_variable <- "Group_DF"
+        group <- "Group_DF"
       } else {
-        comps_color_variable <- "Group"
+        group <- "Group"
       }
+      
+      output_df <- data.frame(unique(
+        as.character(trellData$summary_stats[[panel_variable]]), stringsAsFactors = FALSE))
+      colnames(output_df) <- panel_variable
+      
+      All_plots[["missing_bar"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
+        rows <- as.character(trellData$summary_stats[[panel_variable]]) == panel
+        df <- trellData$summary_stats[rows,]
+        totals <- data.frame(pmartR::get_group_table(trellData), stringsAsFactors = FALSE)
+        
+        colnames(totals) <- c(group, "Total_Group_Counts")
+        df <- dplyr::left_join(df, totals, by = group)
+        
+        df$Missing <-  df[["Total_Group_Counts"]] - df[["Count"]]
+        df$Non_Missing <- df[["Count"]]
+        
+        df <- reshape2::melt(df, 
+                             id.vars = colnames(df)[!stringr::str_detect(colnames(df), "Missing")], 
+                             value.name = "y",
+                             variable.name = "Data")
+        
+        
+        groupgraphs <- suppressWarnings(purrr::map(unique(df[[group]]), function(dfgr){
+          
+          rows <- df[[group]] == dfgr
+          dfsm <- df[rows,]
+          
+          miss <- dfsm$Data == "Missing"
+          dfsm$y[miss] <- sum(dfsm$y[miss])
+          dfsm$y[!miss] <- sum(dfsm$y[!miss])
+          
+          dup <- nrow(dfsm)/2
+          dfsm[["Total_Group_Counts"]] <- dfsm[["Total_Group_Counts"]]*dup
+          
+          setlims <- NULL
+          
+          if(is.null(lims$max)){
+            lims$max <- 1
+          }
+          if(is.null(lims$min)){
+            lims$min <- 0
+          }
+          
+          increment <- set_increment(dfsm[["y"]])
+          setlims <- set_ylimits(dfsm[["y"]],
+                                 increment,
+                                 y_max = lims$max,
+                                 y_min = lims$min,
+                                 include_zero = FALSE)
+          
+          texty <- paste(
+            paste(
+              paste(paste(group, ":", sep = ""),
+              unique(dfsm[[group]])),
+              paste("Count:", unique(dfsm[["y"]])), 
+              sep = "\n"),
+            paste("Status:", unique(dfsm[["Data"]])),
+            sep = "\n")
+          
+          plot_out <- ggplot2::ggplot() +
+            ggplot2::geom_col(
+              ggplot2::aes(text = texty,
+              x = unique(dfsm[[group]]),
+              y = unique(dfsm[["y"]]),
+              fill = unique(dfsm[["Data"]])),
+              position = "fill") +
+            ggplot2::theme_bw() +
+            ggplot2::labs(x = NULL, y = NULL, fill = NULL) +
+            ggplot2::scale_y_continuous(
+              sec.axis = ggplot2::sec_axis(
+                ~.*max(dfsm[["Total_Group_Counts"]]),
+                name = "", 
+                breaks = c(seq(from = 0,
+                               to = max(dfsm[["Total_Group_Counts"]]) - round(max(dfsm[["Total_Group_Counts"]])/10),
+                               by = round(max(dfsm[["Total_Group_Counts"]])/10)+1),
+                           max(dfsm[["Total_Group_Counts"]])
+                )),
+              expand = c(0,0)) +
+            ggplot2::scale_x_discrete(expand = c(0,0)) + 
+            ggplot2::coord_cartesian(ylim = setlims)
+          
+          
+          return(plot_out)
+          
+        }))
+        
+        if (interactive){
+
+          plotlys <- purrr::map(groupgraphs, function(plot) plotly::ggplotly(plot, tooltip = "text"))
+          plot <- plotly::subplot(plotlys, margin = 0.05)
+
+        } else {
+            
+          plot <- ggpubr::ggarrange(plotlist = groupgraphs, common.legend = TRUE)
+          plot <- ggpubr::annotate_figure(plot, 
+                                          right = ggpubr::text_grob("Count", size = 8, rot = 270), 
+                                          left = ggpubr::text_grob("Proportion", size = 8, rot = 90))
+
+        }
+
+        return(plot)
+        
+      }))
+    } else {
+      
+      if ("Group_DF" %in% colnames(trellData$data_values)){
+        group <- "Group_DF"
+      } else {
+        group <- "Group"
+      }
+      
+      output_df <- data.frame(unique(
+        as.character(trellData$data_values[[panel_variable]]), stringsAsFactors = FALSE))
+      colnames(output_df) <- panel_variable
+      
+      All_plots[["missing_bar"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
+        rows <- trellData$data_values[[panel_variable]] == panel
+        df <- trellData$data_values[rows,]
+        
+        Count <- data.frame(table(df[complete.cases(df),]$Group))
+        totals <- data.frame(pmartR::get_group_table(trellData), stringsAsFactors = FALSE)
+        n_rep <- length(unique(df[[pmartR::get_edata_cname(trellData)]]))
+        
+        totals$Freq <- totals$Freq * n_rep
+        
+        colnames(Count) <- c(group, "Count")
+        colnames(totals) <- c(group, "Total_Group_Counts")
+        df <- dplyr::left_join(df, Count, by = group)
+        df <- dplyr::left_join(df, totals, by = group)
+        
+        df$Missing <-  df[["Total_Group_Counts"]] - df[["Count"]]
+        df$Non_Missing <- df[["Count"]]
+        
+        df <- reshape2::melt(df, 
+                             id.vars = colnames(df)[!stringr::str_detect(colnames(df), "Missing")],
+                             value.name = "y",
+                             variable.name = "Data")
+        
+        
+        groupgraphs <- purrr::map(unique(df[[group]]), function(dfgr){
+          rows <- df[[group]] == dfgr
+          dfsm <- df[rows,]
+          
+          setlims <- NULL
+          
+          if(is.null(lims$max)){
+            lims$max <- 1
+          }
+          if(is.null(lims$min)){
+            lims$min <- 0
+          }
+
+          increment <- set_increment(dfsm[["y"]])
+          setlims <- set_ylimits(dfsm[["y"]],
+                                 increment,
+                                 y_max = lims$max,
+                                 y_min = lims$min,
+                                 include_zero = FALSE)
+          
+          plot_out <- ggplot2::ggplot() +
+            ggplot2::theme_bw() +
+            ggplot2::geom_col(ggplot2::aes(x = unique(dfsm[[group]]),
+                                           y = unique(dfsm[["y"]]),
+                                           fill = unique(dfsm[["Data"]])),
+                              position = "fill") +
+            ggplot2::labs(x = NULL, y = NULL, fill = NULL) +
+            ggplot2::scale_y_continuous(
+              sec.axis = ggplot2::sec_axis(
+                ~.*max(dfsm[["Total_Group_Counts"]]),
+                name = "", 
+                breaks = c(seq(from = 0,
+                               to = max(dfsm[["Total_Group_Counts"]]) - round(max(dfsm[["Total_Group_Counts"]])/10),
+                               by = round(max(dfsm[["Total_Group_Counts"]])/10)+1),
+                           max(dfsm[["Total_Group_Counts"]])
+                )),
+              expand = c(0,0)) +
+            ggplot2::scale_x_discrete(expand = c(0,0)) +
+            ggplot2::coord_cartesian(ylim = setlims)
+          
+          return(plot_out)
+          
+        })
+        
+        plot <- ggpubr::ggarrange(plotlist = groupgraphs, common.legend = TRUE)
+        plot <- ggpubr::annotate_figure(plot, right = "Count of samples", left = "Proportion of samples")
+        
+        return(plot)
+      }))
     }
-    
-    # Correct for 'Group_DF' misinput # 
-    if (comps_color_variable == "Group_DF" & 
-        !("Group_DF" %in% colnames(trellData$summary_stats)) &
-        "Group" %in% colnames(trellData$summary_stats)) {
-      comps_color_variable <- "Group"
-    }
-    
-    tictoc::toc()
-    
-    tictoc::tic("second val")
-    
-    ## Validate potential re-assignments ##
-    validate_format_plot_input(trellData,
-                               panel_variable = panel_variable, 
-                               comps_color_variable = comps_color_variable,
-                               comps_panel_x_axis = comps_panel_x_axis,
-                               comps_panel_y_axis = comps_panel_y_axis)
-    
-    tictoc::toc()
   }
   
-  # --Value-- #
-  if (!is.null(trellData$data_values)) {
+  #### Abundance Heatmap ####
+  
+  if("abundance_heatmap" %in% plot_type){
     
-    # Set default value_panel_y_axis #
-    if (is.null(value_panel_y_axis)){
-      value_panel_y_axis  <-  grep("abundance", 
-                                   colnames(trellData$data_values), 
-                                   value = TRUE)
+    lims <- graphlims[["abundance_heatmap"]]
+    
+    if (!is.null(lims[[1]])) {
+      warning( 
+        "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
     }
     
-    # Sets default value_color_variable to Group defined in group_DF attribute #
-    if (is.null(value_color_variable)){
-      if ("Group_DF" %in% colnames(trellData$data_values) &
-          "Group" %in% colnames(trellData$data_values)){
-        value_color_variable <- "Group_DF"
+    
+    if(attr(trellData, "meta_info") && 
+       panel_variable != pmartR::get_edata_cname(trellData)){
+      
+      if ("Group_DF" %in% colnames(trellData$data_values)){
+        group <- "Group_DF"
       } else {
-        value_color_variable <- "Group"
+        group <- "Group"
       }
+      
+      abundance <- grep("abundance", colnames(trellData$data_values), value = T)
+      
+      pal <- grDevices::colorRampPalette(c("red", "yellow"))
+      
+      output_df <- trellData$data_values[c(abundance, 
+                                           group,
+                                           pmartR::get_fdata_cname(trellData),
+                                           pmartR::get_edata_cname(trellData),  
+                                           panel_variable)]
+      
+      output_df <- tidyr::nest(output_df, -!!rlang::sym(panel_variable))
+      
+      All_plots[["abundance_heatmap"]] <- suppressWarnings(purrr::map(output_df$data, function(df){
+        
+        df[[pmartR::get_fdata_cname(trellData)]] <- ordered(
+          df[[pmartR::get_fdata_cname(trellData)]], 
+          levels = rev(sort(unique(df[[pmartR::get_fdata_cname(trellData)]]))))
+        
+        df[[pmartR::get_edata_cname(trellData)]] <- ordered(
+          df[[pmartR::get_edata_cname(trellData)]], 
+          levels = rev(sort(unique(df[[pmartR::get_edata_cname(trellData)]]))))
+        
+        
+        texty <- paste(
+          paste(
+            paste(paste(pmartR::get_edata_cname(trellData), ":", sep = ""),
+                  df[[pmartR::get_edata_cname(trellData)]]),
+            paste(paste(pmartR::get_fdata_cname(trellData), ":", sep = ""),
+                  df[[pmartR::get_fdata_cname(trellData)]]), sep = "\n"),
+          paste(paste(abundance, ":", sep = ""), signif(df[[abundance]], 4)),
+          sep = "\n")
+
+        
+        heatmap <- ggplot2::ggplot() +
+          ggplot2::geom_tile(ggplot2::aes(text = texty,
+            fill = df[[abundance]],
+            x = df[[pmartR::get_fdata_cname(trellData)]],
+            y = df[[pmartR::get_edata_cname(trellData)]])) +
+          ggplot2::scale_fill_gradientn(abundance, colours = pal(50)) +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
+                         axis.ticks = ggplot2::element_blank(),
+                         plot.title = ggplot2::element_text(size=2)) +
+          ggplot2::theme_bw() +
+          ggplot2::scale_x_discrete(expand = c(0, 0)) +
+          ggplot2::scale_y_discrete(expand = c(0, 0)) +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6),
+                         axis.ticks = ggplot2::element_blank(),
+                         legend.title = ggplot2::element_text(size = 8)) +
+          ggplot2::xlab("")
+        
+        if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+          heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
+            ggplot2::ylab(pmartR::get_edata_cname(trellData))
+        } else {
+          heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_text(size = 6)) +
+            ggplot2::ylab("")
+        }
+        
+        if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+          heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+            ggplot2::xlab(pmartR::get_fdata_cname(trellData))
+        } else {
+          heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
+            ggplot2::xlab("")
+        }
+        
+        return(heatmap)
+      }))
     }
-    
-    # Sets default value_panel_x_axis to Group defined in group_DF attribute #
-    if (is.null(value_panel_x_axis)){
-      if ("Group_DF" %in% colnames(trellData$data_values) &
-          "Group" %in% colnames(trellData$data_values)){
-        value_panel_x_axis <- "Group_DF"
-      } else {
-        value_panel_x_axis <- "Group"
-      }
-    }
-    
-    # Correct for 'Group_DF' misinput for value_color_variable or value_panel_x_axis # 
-    if (value_color_variable == "Group_DF" & 
-        !("Group_DF" %in% colnames(trellData$data_values)) &
-        "Group" %in% colnames(trellData$data_values)) {
-      value_color_variable <- "Group"
-    }
-    if (value_panel_x_axis == "Group_DF" & 
-        !("Group_DF" %in% colnames(trellData$data_values)) &
-        "Group" %in% colnames(trellData$data_values)) {
-      value_panel_x_axis <- "Group"
-    }
-    
-    tictoc::tic("second val")
-    ## Validate potential re-assignments ##
-    validate_format_plot_input(trellData,
-                               panel_variable = panel_variable,
-                               value_color_variable = value_color_variable,
-                               value_panel_x_axis = value_panel_x_axis,
-                               value_panel_y_axis = value_panel_y_axis)
-    
-    tictoc::toc()
   }
   
   
-  tictoc::tic("Message")
-  ## Inform user of selected plotting parameters ##
-  generate_plot_message(trellData,
-                        comps_y_limits = comps_y_limits, 
-                        comps_y_range = comps_y_range,
-                        comps_y_max = comps_y_max, 
-                        comps_y_min = comps_y_min,
-                        value_y_limits = value_y_limits, 
-                        value_y_range = value_y_range,
-                        value_y_max = value_y_max, 
-                        value_y_min = value_y_min)
-  
-  tictoc::toc()
-  
-  ## Generate specified y-limits for plotting (if applicable) ##
-  #--Values--#
-  if(!is.null(trellData$data_values)){
+  #### Foldchange Heatmap ####
+  if("foldchange_heatmap" %in% plot_type){
     
-    # Set ylims if appropriate #
-    if (!is.null(value_y_limits)){
-      if (value_y_limits == 'fixed'){
-        increment <- set_increment(trellData$data_values[[value_panel_y_axis]], 
-                                   include_zero = value_include_zero)
-        ylims <- set_ylimits(trellData$data_values[[value_panel_y_axis]], 
-                             increment = increment,
-                             y_min = value_y_min, y_max = value_y_max, 
-                             include_zero = value_include_zero)
-      }
-    } else if (is.null(value_y_limits) & is.null(value_y_range)){
-      increment <- set_increment(trellData$data_values[[value_panel_y_axis]], 
-                                 include_zero = value_include_zero)
-      ylims <- set_ylimits(trellData$data_values[[value_panel_y_axis]], 
-                           increment = increment,
-                           y_min = value_y_min, y_max = value_y_max, 
-                           include_zero = value_include_zero)
+    
+    lims <- graphlims[["foldchange_heatmap"]]
+    
+    if (!is.null(lims[[1]])) {
+      warning( 
+        "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
+    }
+    
+    if(attr(trellData, "meta_info") && panel_variable != pmartR::get_edata_cname(trellData)){
+      
+      foldchange <- grep("change", colnames(trellData$comp_stats), value = T)
+      
+      pal <- grDevices::colorRampPalette(c("red", "yellow"))
+      
+      output_df <- trellData$comp_stats[c(foldchange, 
+                                          "Comparison", 
+                                          pmartR::get_edata_cname(trellData),  
+                                          panel_variable)]
+      
+      output_df <- tidyr::nest(output_df, -!!rlang::sym(panel_variable))
+      
+      All_plots[["foldchange_heatmap"]] <- suppressWarnings(purrr::map(output_df$data, function(df){
+        
+        
+        texty <- paste(
+          paste(
+            paste(paste(pmartR::get_edata_cname(trellData), ":", sep = ""),
+                df[[pmartR::get_edata_cname(trellData)]]),
+            paste("Comparison:", df[["Comparison"]]), sep = "\n"),
+          paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4)),
+          sep = "\n")
+        
+        heatmap <- ggplot2::ggplot(
+          df, 
+          ggplot2::aes(text = texty,
+            x = ordered(!!rlang::sym("Comparison"),
+                        levels = rev(sort(unique(!!rlang::sym("Comparison"))))),
+            y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
+                        levels = rev(sort(unique(!!rlang::sym(pmartR::get_edata_cname(trellData)))))))) +
+          ggplot2::geom_tile(ggplot2::aes(fill = !!rlang::sym(foldchange))) +
+          ggplot2::scale_fill_gradientn(foldchange, colours = pal(50)) +
+          ggplot2::xlab("") +  ggplot2::ylab("") +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
+                         axis.ticks = ggplot2::element_blank(),
+                         plot.title = ggplot2::element_text(size=2)) +
+          ggplot2::theme_bw() + 
+          ggplot2::scale_x_discrete(expand = c(0, 0)) +
+          ggplot2::scale_y_discrete(expand = c(0, 0)) +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6), 
+                         axis.ticks = ggplot2::element_blank(),
+                         legend.title = ggplot2::element_text(size = 8))
+        
+        if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+          heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
+            ggplot2::ylab(pmartR::get_edata_cname(trellData))
+        } else {
+          heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_text(size = 6)) +
+            ggplot2::ylab("")
+        }
+        
+        if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+          heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+            ggplot2::xlab(pmartR::get_fdata_cname(trellData))
+        } else {
+          heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
+            ggplot2::xlab("")
+        }
+        
+        
+        return(heatmap)
+      }))
     }
   }
   
-  #--Comps--#
-  if(!is.null(trellData$comp_stats)){
-    # Generate increment and y limits based on parameters and y-values #
-    if (!is.null(comps_y_limits)){
-      if (comps_y_limits == 'fixed'){
-        comps_increment <- set_increment(trellData$comp_stats[[comps_panel_y_axis]], 
-                                         include_zero = comps_include_zero)
-        comps_ylims <- set_ylimits(trellData$comp_stats[[comps_panel_y_axis]], 
-                                   increment = comps_increment,
-                                   y_min = comps_y_min, y_max = comps_y_max,
-                                   include_zero = comps_include_zero)
-      }
-    } else if (is.null(comps_y_limits) & is.null(comps_y_range)){
-      comps_increment <- set_increment(trellData$comp_stats[[comps_panel_y_axis]], 
-                                       include_zero = comps_include_zero)
-      comps_ylims <- set_ylimits(trellData$comp_stats[[comps_panel_y_axis]], 
-                                 increment = comps_increment,
-                                 y_min = comps_y_min, y_max = comps_y_max,
-                                 include_zero = comps_include_zero)
+  #### Presence Heatmap ####
+  if("presence_heatmap" %in% plot_type){
+    
+    lims <- graphlims[["presence_heatmap"]]
+    
+    if (!is.null(lims[[1]])) {
+      warning( 
+        "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
     }
     
     
-  ## Generate nested data ##
+    if(attr(trellData, "meta_info") && panel_variable != pmartR::get_edata_cname(trellData)){
+      if(!is.null(trellData$data_values)){
+        
+        abundance <- grep("abundance", colnames(trellData$data_values), value = T)
+        pal <- grDevices::colorRampPalette(c("red", "yellow"))
+        
+        output_df <- trellData$data_values[c(abundance,
+                                             pmartR::get_fdata_cname(trellData),
+                                             pmartR::get_edata_cname(trellData),
+                                             panel_variable)]
+        output_df <- tidyr::nest(output_df, -!!rlang::sym(panel_variable))
+        All_plots[["presence_heatmap"]] <- suppressWarnings(purrr::map(output_df$data, function(df){
+          df <- tidyr::nest(df, -c(!!rlang::sym(pmartR::get_edata_cname(trellData)),
+                                   !!rlang::sym(pmartR::get_fdata_cname(trellData))))
+          df <- dplyr::mutate(df, Biomolecule_Presence = purrr::map_lgl(df$data, function(dfdat){
+            !all(is.na(dfdat[[abundance]]))
+          }))
+          
+          df[["Biomolecule_Presence"]] <- gsub(TRUE, "Present", df[["Biomolecule_Presence"]])
+          df[["Biomolecule_Presence"]] <- gsub(FALSE, "Absent", df[["Biomolecule_Presence"]])
+          
+          
+          texty <- paste(
+            paste(
+              paste(paste(pmartR::get_edata_cname(trellData), ":", sep = ""),
+                    df[[pmartR::get_edata_cname(trellData)]]),
+              paste(paste(pmartR::get_fdata_cname(trellData), ":", sep = ""),
+                    df[[pmartR::get_fdata_cname(trellData)]]), sep = "\n"),
+            paste("Biomolecule_Presence:", df[["Biomolecule_Presence"]]),
+            sep = "\n")
+          
+          heatmap <- ggplot2::ggplot(
+            df,
+            ggplot2::aes(text = texty,
+              x = ordered(!!rlang::sym(pmartR::get_fdata_cname(trellData)),
+                          levels = rev(sort(unique(!!rlang::sym(pmartR::get_fdata_cname(trellData)))))),
+              y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
+                          levels = rev(sort(unique(!!rlang::sym(pmartR::get_edata_cname(trellData)))))))) +
+            ggplot2::geom_tile(ggplot2::aes(fill = Biomolecule_Presence)) +
+            ggplot2::scale_fill_manual(NULL, values = c("Present" = "blue", "Absent" = "grey")) +
+            ggplot2::xlab("") +  ggplot2::ylab("") + ggplot2::labs(color = NULL) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
+                           axis.ticks = ggplot2::element_blank(),
+                           plot.title = ggplot2::element_text(size=2)) +
+            ggplot2::theme_bw() +
+            ggplot2::scale_x_discrete(expand = c(0, 0)) +
+            ggplot2::scale_y_discrete(expand = c(0, 0)) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6),
+                           axis.ticks = ggplot2::element_blank())
+          
+          if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+            heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
+              ggplot2::ylab(pmartR::get_edata_cname(trellData))
+          } else {
+            heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_text(size = 6)) +
+              ggplot2::ylab("")
+          }
+          
+          if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+            heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+              ggplot2::xlab(pmartR::get_fdata_cname(trellData))
+          } else {
+            heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
+              ggplot2::xlab("")
+          }
+          
+          return(heatmap)
+          
+        }))
+      }
+    }
+  }
+  
+  #### Foldchange bar ####
+  if("foldchange_bar" %in% plot_type){
+    
+    lims <- graphlims[["foldchange_bar"]]
     
     if ("Group_DF" %in% colnames(trellData$summary_stats)) {
       group_df_name <- "Group_DF"
@@ -977,331 +1453,340 @@ format_plot <- function(trellData, ...) {
       group_df_name <- "Group"
     }
     
-    tictoc::tic("make comp df")
+    plotter <- trellData$comp_stats
     
-    plotter <- tidyr::separate(trellData$comp_stats, Comparison,
-                               c("comp1", "comp2"), sep = "_vs_", 
-                               remove = FALSE) %>%
-      reshape2::melt(id.vars = names(trellData$comp_stats),
-                     value.name = group_df_name)
-    plotter <- suppressWarnings(dplyr::left_join(plotter, trellData$summary_stats))
-    
-    if(!is.null(trellData$data_values)){
-      plotter <- suppressWarnings(dplyr::left_join(trellData$data_values, plotter))
+    if(!is.null(lims$scale) && lims$scale == "fixed"){
+      
+      setter <- plotter[["Fold_change"]] +
+        (0.55 * plotter[["Fold_change"]])
+      
+      increment <- set_increment(setter)
+      setlims <- set_ylimits(setter,
+                             increment,
+                             y_range = lims$range,
+                             y_max = lims$max,
+                             y_min = lims$min,
+                             include_zero = TRUE)
     }
     
-    tictoc::toc()
+    output_df <- plotter %>% tidyr::nest(-panel_variable)
     
-  } else {
-    plotter <- trellData$data_values
+    #  # #Subset large groups ########### Take out later ######################################
+    # if (nrow(nestplotter) > 10){
+    #   nestplotter <- nestplotter[1:10,]
+    # }
+    
+    All_plots[["foldchange_bar"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
+      
+      ## Add border color, hover text, and label text to dataframe for plotting ##
+      nestedData_comps <- add_plot_features(trellData,
+                                            nestedData,
+                                            p_val = p_val,
+                                            panel_variable = panel_variable,
+                                            comps_panel_y_axis = "Fold_change"   ### Remove from function later
+                                            )
+      
+      
+      # Make ggplots #
+      
+      if(!is.null(lims$scale) && lims$scale != "fixed" ||
+         !is.null(lims$max) ||
+         !is.null(lims$min) ||
+         !is.null(lims$range)){
+        
+        setter <- nestedData_comps[["Fold_change"]] +
+          (0.55 * nestedData_comps[["Fold_change"]])
+        
+        increment <- set_increment(setter)
+        setlims <- set_ylimits(setter,
+                               increment,
+                               y_range = lims$range,
+                               y_max = lims$max,
+                               y_min = lims$min,
+                               include_zero = TRUE)
+      }
+      
+      plot_comps <- ggplot2::ggplot() + 
+        ggplot2::theme_bw() +
+        ggplot2::geom_hline(yintercept = 0) +
+        ggplot2::theme(
+                       axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+        
+        ggplot2::xlab("Comparison") + 
+        ggplot2::ylab("Fold_change") 
+      
+      if (pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps)){
+        
+        plot_comps <- plot_comps + ggplot2::geom_col(
+          ggplot2::aes(
+            text = gsub(", ", "\n", nestedData_comps[["text"]]),
+            x = nestedData_comps[[pmartR::get_edata_cname(trellData)]],
+            y = as.numeric(nestedData_comps[["Fold_change"]]),
+            fill = as.character(nestedData_comps[["Comparison"]]),
+            color = nestedData_comps[["bord"]]),
+          position = "dodge2",
+          size = 1,
+          na.rm = TRUE) +
+          ggplot2::labs(fill = "", color = "", x = NULL) +
+          ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black"), guide = FALSE)
+        
+        if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 8){
+          plot_comps <- plot_comps + ggplot2::theme(
+            axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 5))
+        }
+        
+        if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 21){
+          plot_comps <- plot_comps + ggplot2::theme(
+            axis.text.x = ggplot2::element_blank()) +
+            ggplot2::xlab("Biomolecules")
+        }
+        
+      } else {
+        
+        plot_comps <- plot_comps + ggplot2::geom_col(
+          ggplot2::aes(
+            text = gsub(", ", "\n", nestedData_comps[["text"]]),
+            x = as.character(nestedData_comps[["Comparison"]]),
+            y = as.numeric(nestedData_comps[["Fold_change"]]),
+            fill = as.character(nestedData_comps[["Comparison"]])
+            ),
+          color = nestedData_comps[["bord"]],
+          position = "dodge2",
+          size = 1,
+          na.rm = TRUE) +
+          ggplot2::labs(fill = "", color = "", x = NULL) +
+          ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+          ggplot2::theme(legend.position = "none")
+        
+        if (plot_text){
+          
+          textcomps <- nestedData_comps
+          textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
+          
+          plot_comps <-  plot_comps + ggplot2::geom_text(
+            ggplot2::aes(
+              x = as.character(textcomps[["Comparison"]]),
+              y = textcomps[["Fold_change"]] + 
+                (0.5 * textcomps[["Fold_change"]]), 
+              label = gsub(", ", "\n", textcomps[["labels"]])),
+            color = "black"
+          )
+        }
+        
+      }
+
+      if (!is.null(lims[[1]])){
+        plot_comps <- plot_comps + ggplot2::coord_cartesian(ylim = setlims)
+      }
+      
+      if (interactive){
+        plot_comps <- plot_comps + ggplot2::theme(legend.position = "none")
+      }
+      
+      return(plot_comps)
+    }))
   }
   
-  tictoc::tic("nesting")
-  
-  nestplotter <- plotter %>% tidyr::nest(-panel_variable)
-  
-  tictoc::toc()
-  
-  # #Subset large groups ########### Take out later ######################################
- if (nrow(nestplotter) > 10){
-   nestplotter <- nestplotter[1:10,]
- }
-  
-  tictoc::tic("plotting")
-  nestplotter <- nestplotter %>% 
-    dplyr::mutate(panel = trelliscopejs::map_plot(data, function(nestedData) {
-      
-      ## Generate specified y-limits for plotting (if applicable) ##
-      # For comp stats #
-      if(!is.null(trellData$comp_stats) && 
-         comps_plot == TRUE){
-        # Generate increment and y limits based on parameters and y-values #
-        if (!is.null(comps_y_limits)){
-          if (comps_y_limits == 'free'){
-            comps_increment <-set_increment(nestedData[[comps_panel_y_axis]],
-                                            include_zero = comps_include_zero)
-            comps_ylims <- set_ylimits(nestedData[[comps_panel_y_axis]], 
-                                 increment = comps_increment,
-                                 y_min = comps_y_min, y_max = comps_y_max,
-                                 include_zero = comps_include_zero)
-          }
-        } else if (!is.null(comps_y_range)){
-          comps_increment <- set_increment(nestedData[[comps_panel_y_axis]], 
-                                           include_zero = comps_include_zero)
-          comps_ylims <- set_ylimits(nestedData[[comps_panel_y_axis]],
-                               increment = comps_increment, y_min = comps_y_min, 
-                               y_max = comps_y_max, y_range = comps_y_range,
-                               include_zero = comps_include_zero)
-        }
-      
-        ## Add border color, hover text, and label text to dataframe for plotting ##
-        nestedData_comps <- add_plot_features(trellData,
-                                              nestedData,
-                                              p_val = p_val,
-                                              panel_variable = panel_variable,
-                                              comps_panel_y_axis = comps_panel_y_axis,
-                                              colors = colors)
-        
-      # Make ggplots #
-      plot_comps_all <- purrr::map(1:length(comps_plot_type), function (typenum){
-        type <- comps_plot_type[typenum]
-        
-        plot_comps <- ggplot2::ggplot(
-          data = nestedData_comps,
-          ggplot2::aes(x = as.character(nestedData_comps[[comps_panel_x_axis]]),
-                       y = nestedData_comps[[comps_panel_y_axis]],
-                       color = bord,
-                       fill = nestedData_comps[[comps_color_variable]],
-                       text = gsub(", ", "\n", text),
-                       label = gsub(", ", "\n", labels)
-                       )
-          ) +
-          ggplot2::geom_hline(yintercept = 0) +
-          ggplot2::xlab(comps_panel_x_axis) + 
-          ggplot2::ylab(comps_panel_y_axis) +
-          ggplot2::labs(fill = "", color = "") +
-          ggplot2::theme_bw() +
-          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, 
-                                                             hjust = 1, 
-                                                             vjust = 0.5), 
-                         legend.position='none') +
-          ggplot2::guides(color = FALSE) +
-          ggplot2::coord_cartesian(ylim=comps_ylims)
-
-        if (comps_text == TRUE) {
-          # Set text spacing above/below barplot #
-          if (any(is.na(nestedData[[comps_panel_y_axis]]))){
-            tempfold <- nestedData[[comps_panel_y_axis]]
-            tempfold[is.na(tempfold)] <- 0
-            if (option == "gtest"){
-              textadj <- max(tempfold) + sign(max(tempfold))*comps_increment*4
-            } else {
-              textadj <- tempfold + sign(tempfold)*comps_increment*4
-            }
-          } else {
-            if (option == "gtest"){
-              textadj <- max(nestedData[[comps_panel_y_axis]]) + comps_increment*4
-            } else {
-              textadj <- nestedData[[comps_panel_y_axis]] + 
-                sign(nestedData[[comps_panel_y_axis]])*comps_increment*4
-            }
-          }
-          
-          plot_comps <- plot_comps +
-            ggplot2::geom_text(ggplot2::aes(y = textadj, 
-                                   group = textadj), 
-                               color = "black",
-                               position = ggplot2::position_dodge(width = 0.9))
-          
-        }
-        
-        typelist <- c()
-        if (stringr::str_detect(type, pattern = "col|bar")){
-          typelist <- c("bar")
-          plot_comps <- plot_comps + ggplot2::geom_col(position = "dodge", 
-                                                      size = 1
-                                                      ) +
-               ggplot2::scale_color_manual(values = levels(nestedData_comps$bord))
-        }
-        if (stringr::str_detect(type, pattern = "point|scatter")){
-          typelist <- c(typelist, "scatter")
-          plot_comps <- plot_comps + ggplot2::geom_point(position = "identity", 
-                                                         size = 2) +
-              ggplot2::scale_color_manual(values = levels(nestedData_comps$bord))
-        }
-        if (stringr::str_detect(type, pattern = "box")){
-          if(!is.na(na.omit(nestedData_comps[[comps_panel_y_axis]])) && 
-             !is.na(var(na.omit(nestedData_comps[[comps_panel_y_axis]]))) &&
-             var(na.omit(nestedData_comps[[comps_panel_y_axis]])) != 0 ){
-            typelist <- c(typelist, "box")
-            plot_comps <- plot_comps +  
-              suppressWarnings(ggplot2::geom_boxplot(alpha = 0.2, 
-                                    position = "dodge2"))
-          } else {
-            message("Varience of y_value is zero, boxplot is not applicable. Plotting y-value as a line (geom_crossbar).")
-            typelist <- c(typelist, "line")
-            plot_comps <- plot_comps +  
-              ggplot2::geom_crossbar(position = "dodge", ggplot2::aes(
-                ymin = nestedData_comps[[comps_panel_y_axis]],
-                ymax = nestedData_comps[[comps_panel_y_axis]]), color = "black")
-          }
-        }
-        
-        if (plotly == TRUE){
-          # Make and return plotly for map_plot #
-          comps_plotly <- plotly::ggplotly(plot_comps, tooltip = c("text"))
-          for (plotter in 1:length(comps_plotly$x$data)){
-            if (!(comps_plotly$x$data[[plotter]]$type %in% typelist)){
-              # comps_plotly$x$data[[plotter]]$showlegend <- FALSE
-              comps_plotly$x$data[[plotter]]$hovertext <- stringr::str_remove(
-                comps_plotly$x$data[[plotter]]$hovertext,
-                "Group: .+\nCount: .+\n")
-            }
-
-          }
-          
-          return(comps_plotly)
-        } else {
-          
-          return(plot_comps)
-        }
-      })
-      
-      if (plotly == TRUE){
-        arr_comps_plot <- plotly::subplot(plot_comps_all, shareY = TRUE,
-                                    margin = 0.02)
-      } else {
-        arr_comps_plot <- ggpubr::ggarrange(plotlist = plot_comps_all)
-        }
-      }
-      
-      if(!is.null(trellData$data_values) & 
-         value_plot == TRUE){
-        # Generate increment and y limits based on parameters and y-values #
-        if (!is.null(value_y_limits)){
-          if (value_y_limits == 'free'){
-            increment <-set_increment(nestedData[[value_panel_y_axis]], 
-                                      include_zero = value_include_zero)
-            ylims <- set_ylimits(nestedData[[value_panel_y_axis]], 
-                                 increment = increment,
-                                 y_min = value_y_min, y_max = value_y_max, 
-                                 include_zero = value_include_zero)
-          }
-        } else if (!is.null(value_y_range)){
-          increment <- set_increment(nestedData[[value_panel_y_axis]], 
-                                     include_zero = value_include_zero)
-          ylims <- set_ylimits(nestedData[[value_panel_y_axis]],
-                               increment = increment, y_min = value_y_min, 
-                               y_max = value_y_max, y_range = value_y_range, 
-                               include_zero = value_include_zero)
-        }
-        
-        ## Set hover, excluding the panel_variable ##
-        nestedData_value <- add_plot_features(trellData,
-                                              nestedData,
-                                              p_val = p_val,
-                                              panel_variable = panel_variable,
-                                              value_panel_y_axis = value_panel_y_axis)
-        
-        # Make ggplots #
-        plot_value_all <- purrr::map(1:length(value_plot_type), function (typenum){
-          type <- value_plot_type[typenum]
-          
-          plot_value <- ggplot2::ggplot(data = nestedData_value,
-                                    ggplot2::aes(x = as.character(nestedData_value[[value_panel_x_axis]]), 
-                                                 y = nestedData_value[[value_panel_y_axis]],
-                                                 fill = nestedData_value[[value_color_variable]],
-                                                 text = gsub(", ", "\n", text),
-                                    )
-          ) +
-            ggplot2::theme_bw() +
-            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 25, 
-                                                               hjust = 1, 
-                                                               vjust = 0.5),
-                           legend.position='none') +
-            ggplot2::xlab(value_panel_x_axis) + 
-            ggplot2::ylab(value_panel_y_axis) +
-            ggplot2::labs(color = "", fill = "") +
-            ggplot2::coord_cartesian(ylim=ylims)
-          
-          typelist <- c()
-          
-          if (stringr::str_detect(type, pattern = "col|bar")){
-            typelist <- c("bar")
-            plot_value <- plot_value + ggplot2::geom_col(position = "dodge", size = 1)
-          }
-          if (stringr::str_detect(type, pattern = "point|scatter")){
-            typelist <- c(typelist, "scatter")
-            if(plotly == TRUE){
-              plot_value <- plot_value + ggplot2::geom_point(position = "identity", 
-                                                             size = 2, 
-                                                             color = "black")
-            } else {
-              plot_value <- plot_value + 
-                ggplot2::geom_point(position = "identity",
-                                    size = 2, 
-                                    ggplot2::aes(colour = nestedData_value[[value_color_variable]]))
-            }
-          }
-          if (stringr::str_detect(type, pattern = "box")){
-            if(!is.na(na.omit(nestedData_value[[value_panel_y_axis]])) &&
-               !is.na(var(na.omit(nestedData_value[[value_panel_y_axis]]))) &&
-               var(na.omit(nestedData_value[[value_panel_y_axis]])) != 0 ){
-              typelist <- c(typelist, "box")
-              omitna <- nestedData_value[!is.na(nestedData_value[[value_panel_y_axis]]),]
-              plot_value <- plot_value + suppressWarnings(
-                ggplot2::geom_boxplot(data = omitna, alpha = 0.2,
-                                      position = "dodge2", 
-                                      ggplot2::aes(
-                                        y = omitna[[value_panel_y_axis]],
-                                        x = omitna[[value_panel_x_axis]],
-                                        fill = omitna[[value_color_variable]],
-                                        text = NA)
-                                      ))
-            } else {
-              typelist <- c(typelist, "line")
-              plot_value <- plot_value +  
-                ggplot2::geom_crossbar(position = "dodge2", ggplot2::aes(
-                  ymin = nestedData_value[[value_panel_y_axis]],
-                  ymax = nestedData_value[[value_panel_y_axis]],
-                  color = nestedData_value[[value_color_variable]]))
-            }
-          }
-          
-          if (plotly == TRUE){
-            value_plotly <- plotly::ggplotly(plot_value, tooltip = c("text"))
-            return(value_plotly)
-          } else {
-            return(plot_value)
-            }
-        })
-        
-        if (plotly == TRUE){
-          arr_value_plot <- plotly::subplot(plot_value_all, shareY = TRUE,
-                                    margin = 0.02)
-        } else {
-          arr_value_plot <- ggpubr::ggarrange(plotlist = plot_value_all)
-        }
-      }
-      
-      if(plotly == TRUE){
-        if(!is.null(trellData$data_values) & !is.null(trellData$comp_stats)){
-          all_plotly <- plotly::subplot(list(arr_value_plot, arr_comps_plot), nrows = 2, 
-                            titleX = TRUE, titleY = TRUE,
-                            margin = 0.1)
-        } else if (!is.null(trellData$data_values)) {
-          all_plotly <- plotly::subplot(list(arr_value_plot), titleX = TRUE, titleY = TRUE, 
-                            margin = 0.1)
-        } else {
-          all_plotly <- plotly::subplot(list(arr_comps_plot), titleX = TRUE, titleY = TRUE, 
-                            margin = 0.1)
-        }
-        return(all_plotly)
-      } else {
-        if(!is.null(trellData$data_values) & !is.null(trellData$comp_stats)){
-
-          all_ggplot <- ggpubr::ggarrange(plotlist = list(arr_value_plot, arr_comps_plot), nrow = 2)
-        } else if (!is.null(trellData$data_values)) {
-          all_ggplot <- arr_value_plot
-        } else {
-          all_ggplot <- arr_comps_plot
-        }
-        return(all_ggplot)
-      }
-
+  #### Abundance Boxplot ####
+  if("abundance_boxplot" %in% plot_type){
+    
+    lims <- graphlims[["abundance_boxplot"]]
+    
+    if ("Group_DF" %in% colnames(trellData$data_values)) {
+      group_df_name <- "Group_DF"
+    } else {
+      group_df_name <- "Group"
     }
-  )
-)
-  tictoc::toc()
-  # Return nested table #
+    
+    abundance <- grep("abundance",
+                      colnames(trellData$data_values),
+                      value = TRUE)
+    
+    plotter <- trellData$data_values
+    
+    if(!is.null(lims$scale) && lims$scale == "fixed"){
+      
+      increment <- set_increment(plotter[[abundance]])
+      setlims <- set_ylimits(plotter[[abundance]],
+                             increment,
+                             y_range = lims$range,
+                             y_max = lims$max,
+                             y_min = lims$min,
+                             include_zero = FALSE)
+    }
+    
+    output_df <- plotter %>% tidyr::nest(-panel_variable)
+    
+    All_plots[["abundance_boxplot"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
+      
+      ## Set hover, excluding the panel_variable ##
+      nestedData_value <- add_plot_features(trellData,
+                                            nestedData,
+                                            p_val = p_val,
+                                            panel_variable = panel_variable,
+                                            value_panel_y_axis = abundance)  ### Take out of function later 
+      
+      # Make ggplots #
+      if((!is.null(lims$scale) && lims$scale != "fixed") ||
+         !is.null(lims$max) ||
+         !is.null(lims$min) ||
+         !is.null(lims$range)){
+        increment <- set_increment(nestedData_value[[abundance]])
+        setlims <- set_ylimits(nestedData_value[[abundance]],
+                               increment,
+                               y_range = lims$range,
+                               y_max = lims$max,
+                               y_min = lims$min,
+                               include_zero = FALSE)
+      }
+      
+      plot_value <- ggplot2::ggplot() +
+        ggplot2::theme_bw() +
+        ggplot2::theme(legend.position='none',
+                       axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+        ggplot2::xlab(group_df_name) + 
+        ggplot2::ylab(abundance) +
+        ggplot2::labs(color = "", fill = "") +
+        
+        ggplot2::geom_point(
+          ggplot2::aes(
+            text = gsub(", ", "\n", nestedData_value[["text"]]),
+            x = as.character(nestedData_value[[group_df_name]]),
+            y = nestedData_value[[abundance]],
+            fill = nestedData_value[[group_df_name]]),
+          position = "jitter",
+          size = 2,
+          color = "black",
+          na.rm = TRUE) +
+        
+        ggplot2::geom_boxplot(
+          ggplot2::aes(
+            x = as.character(nestedData_value[[group_df_name]]),
+            y = nestedData_value[[abundance]],
+            fill = nestedData_value[[group_df_name]]),
+          alpha = 0.2,
+          position = "dodge2",
+          na.rm = TRUE) +
+        ggplot2::labs(x = NULL)
+      
+      if (!is.null(lims[[1]])){
+        plot_value <- plot_value + ggplot2::coord_cartesian(ylim = setlims)
+      }
+      return(plot_value)
+    }))
+  }
   
-  #### Don't actually need data
-  nestplotter <- nestplotter[,c(1,3)]
   
-  attr(nestplotter, "parent_class") <- attr(trellData, "parent_class")
-  return(nestplotter)
-}
+  #######
+  #######
+  
+  parallel::stopCluster()
 
+  
+  ##### Process plots
+  
+  pvs <- data.frame(unique(as.character(trellData$summary_stats[[panel_variable]])))
+  
+  if(nrow(pvs) == 0){
+    pvs <- data.frame(unique(as.character(trellData$data_values[[panel_variable]])))
+  }
+  
+  colnames(pvs) <- panel_variable
+  
+  pvs <- dplyr::mutate(pvs, panel = trelliscopejs::pmap_plot(All_plots, function(abundance_global = NULL, 
+                                                                          foldchange_global = NULL, 
+                                                                          missing_bar = NULL, 
+                                                                          abundance_heatmap = NULL, 
+                                                                          foldchange_heatmap = NULL, 
+                                                                          presence_heatmap = NULL, 
+                                                                          abundance_boxplot = NULL, 
+                                                                          foldchange_bar = NULL){
+    
+    plots <- list(
+      abundance_global = abundance_global,
+      foldchange_global = foldchange_global,
+      abundance_heatmap = abundance_heatmap,
+      foldchange_heatmap = foldchange_heatmap,
+      presence_heatmap = presence_heatmap,
+      missing_bar = missing_bar,
+      abundance_boxplot = abundance_boxplot,
+      foldchange_bar = foldchange_bar)
+    
+    plots <- plots[-which(sapply(plots, is.null))]
+    
+    if(interactive == FALSE){
+      if (length(plot_type) > 3){
+  
+        out_plot <- patchwork::wrap_plots(plots)
+        
+      } else if (length(plot_type) == 3) {
+        
+        out_plot <- ggpubr::ggarrange(plotlist = plots,
+                                      ncol = 2,
+                                      nrow = 2
+        )
+        
+      } else if (length(plot_type) == 2) {
+        
+        out_plot <- ggpubr::ggarrange(plotlist = plots,
+                                      ncol = 1,
+                                      nrow = 2
+        )
+        
+      } else {
+        out_plot <- ggpubr::ggarrange(plotlist = plots,
+                                      ncol = 1,
+                                      nrow = 1
+        )
+      }
+    } else {
+      
+      if (any(stringr::str_detect(names(plots), "heatmap"))){
+        heatplots <- names(plots)[stringr::str_detect(names(plots), "heatmap")]
+        plots[heatplots] <- purrr::map(heatplots, function(heatitem){
+          plots[[heatitem]] <- plotly::ggplotly(plots[[heatitem]] + ggplot2::theme(legend.position = "none"), 
+                                                tooltip = c("text"))
+          plots[[heatitem]] <- plots[[heatitem]] %>% plotly::layout(plot_bgcolor='grey',
+                                                                    xaxis = list(showgrid = F),
+                                                                    yaxis = list(showgrid = F))
+          return(plots[[heatitem]])
+        })
+      }
+      
+      if (length(plot_type) > 6){
+        out_plot <- plotly::subplot(plots, nrows = 3, margin = 0.05, titleX = TRUE, titleY = TRUE)
+      } else if (length(plot_type) < 6 && length(plot_type) != 1) {
+        out_plot <- plotly::subplot(plots, nrows = 2, margin = 0.05, titleX = TRUE, titleY = TRUE)
+      } else {
+        out_plot <- plotly::ggplotly(plots[[1]])
+      }
+      
+      for(num in 1:length(out_plot$x$data)){
+        out_plot$x$data[[num]]$text <- gsub(
+          "nested(\\w|[[:punct:]])+[[:space:]]+(\\w|[[:punct:]])+<br \\/>", 
+          "", 
+          out_plot$x$data[[num]]$text)
+        out_plot$x$data[[num]]$text <- gsub(
+          "as.\\w+\\(",
+          "", 
+          out_plot$x$data[[num]]$text)
+        out_plot$x$data[[num]]$text <- gsub(
+          "nested.+", 
+          "", 
+          out_plot$x$data[[num]]$text)
+
+      }
+      
+      
+    }
+    
+    return(out_plot)
+  }))
+  
+  
+  return(pvs)
+  
+}
 
 
 #' @name validate_format_plot_input
@@ -1309,315 +1794,301 @@ format_plot <- function(trellData, ...) {
 #' @title Validate inputs for omicsData and omicsStats in trelliVis processing
 #' 
 #' @description Checks for validity of trellData input and assigns variables where needed
-#'
-#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
-#' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
-#' @param comps_y_min For comparisons: Sets the minimum y-value for the y-axis.
-#' @param value_y_limits For values: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param value_y_range For values: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param value_y_max For values: Sets the maximum y-value for the y-axis.
-#' @param value_y_min For values: Sets the minimum y-value for the y-axis.
+#' 
+#' @param trellData An object of class "trellData" generated from \code{\link{as.trellData}}.
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.
-#' @param comps_panel_x_axis Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.
-#' @param comps_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.
-#' @param comps_color_variable Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."
-#' @param value_panel_x_axis Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.
-#' @param value_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.
-#' @param value_color_variable Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."
-#' @param value_plot_type For values: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
-#' @param comps_plot_type For comparisons: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
-#' @param comps_include_zero For comparisons: Should plots show y = 0?
-#' @param value_include_zero For values: Should plots show y = 0?
-#' @param value_plot For values: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.
-#' @param comps_plot For comparisons: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.
-#' @param comps_text For comparisons only: TRUE/FALSE for p-value text above data
+#' @param plot_text For comparisons only: TRUE/FALSE for p-value text above data
 #' @param plotly Should the plots be rendered as plotly objects?
 #' @param ... further arguments
-#'
+#' 
 #' @author Rachel Richardson
-#'
 
-validate_format_plot_input <- function(...){
-  .validate_format_plot_input(...)
-}
 
-.validate_format_plot_input <- function(trellData, 
-                                  comps_y_limits = NULL, comps_y_range = NULL, 
-                                  comps_y_max = NULL, comps_y_min = NULL, 
-                                  comps_include_zero = NULL,
-                                  value_y_limits = NULL, value_y_range = NULL, 
-                                  value_y_max = NULL, value_y_min = NULL,
-                                  value_include_zero = NULL,
-                                  p_val = NULL,
-                                  panel_variable = NULL, 
-                                  comps_color_variable = NULL,
-                                  comps_panel_x_axis = NULL, comps_panel_y_axis = NULL,
-                                  value_color_variable = NULL,
-                                  value_panel_x_axis = NULL, 
-                                  value_panel_y_axis = NULL,
-                                  value_plot_type = NULL, comps_plot_type = NULL,
-                                  value_plot = NULL, comps_plot = NULL, 
-                                  comps_text = NULL, plotly = NULL) {
-  
-  ##### Initial checks #####
-  
-  # Check if class is correct #
-  if(!inherits(trellData, "trellData")) stop(
-    "trellData must be of the class 'trellData'")
-  
-  if(!(is.null(p_val) && 
-       is.null(plotly) &&
-       is.null(comps_y_limits) &&
-       is.null(comps_y_range) &&
-       is.null(comps_y_max) &&
-       is.null(comps_y_min) &&
-       is.null(comps_include_zero) &&
-       is.null(comps_plot) &&
-       is.null(comps_text) &&
-       is.null(comps_plot_type) &&
-       is.null(value_y_limits) &&
-       is.null(value_y_range) &&
-       is.null(value_y_max) &&
-       is.null(value_y_min) &&
-       is.null(value_plot_type) &&
-       is.null(value_include_zero) &&
-       is.null(value_plot)
-       )) {
-
-    
-    # Check if comp_stats is in trellData #
-    if(is.null(trellData$comp_stats) && is.null(trellData$data_values)) stop(
-      "No data values or comparison statistics in trellData to plot")
-    
-    # Check if comp_stats is in trellData (as above) #
-    if(is.na(trellData$comp_stats) && is.na(trellData$data_values)) stop(
-      "No data values or comparison statistics in trellData to plot")
-    
-    # Check check if p_val is numeric of length 1 #
-    if(!is.numeric(p_val) || (length(p_val) != 1)) stop(
-      "p_val must be a numeric of length 1")  
-    
-    # Check check if plotly is logical of length 1 #
-    if(!is.logical(plotly) || (length(plotly) != 1)) stop(
-      "plotly must be a logical (TRUE or FALSE) of length 1") 
-    
-    # Check check if comps_include_zero is logical of length 1 #
-    if(!is.logical(comps_include_zero) || (length(comps_include_zero) != 1)) stop(
-      "comps_include_zero must be a logical (TRUE or FALSE) of length 1") 
-    
-    # Check check if comps_plot is logical of length 1 #
-    if(!is.logical(comps_plot) || (length(comps_plot) != 1)) stop(
-      "comps_plot must be a logical (TRUE or FALSE) of length 1") 
-    
-    # Check check if comps_text is logical of length 1 #
-    if(!is.logical(comps_text) || (length(comps_text) != 1)) stop(
-      "comps_text must be a logical (TRUE or FALSE) of length 1") 
-    
-    # Check check if value_include_zero is logical of length 1 #
-    if(!is.logical(value_include_zero) || (length(value_include_zero) != 1)) stop(
-      "value_include_zero must be a logical (TRUE or FALSE) of length 1") 
-    
-    # Check check if value_plot is logical of length 1 #
-    if(!is.logical(value_plot) || (length(value_plot) != 1)) stop(
-      "value_plot must be a logical (TRUE or FALSE) of length 1") 
-    
-    
-    # Check if y_limits or y_range have been selected correctly #
-    if((!is.null(comps_y_limits) & !is.null(comps_y_range)) | 
-       (!is.null(value_y_limits) & !is.null(value_y_range))) stop(
-         "Input either y_limits or y_range parameters, but not both.")
-    
-    # --Comps-- #
-    # Check if only one of comps_y_max and comps_y_min has been selected with comps_y_limits or comps_y_range #
-    if(!is.null(comps_y_max) & 
-       !is.null(comps_y_min) & 
-       (!is.null(comps_y_range) | !is.null(comps_y_limits))) stop(
-         "Cannot use both comps_y_min and comps_y_max with comps_y_range 
-       or comps_y_limits parameters. Only one of comps_y_min or 
-       comps_y_max can be used.")
-    
-    # Check if comps_y_limits is in acceptable strings and length == 1 #
-    if ( !is.null(comps_y_limits)){
-      if((length(comps_y_limits) != 1)) stop(
-        "Parameter y_limits must have length = 1.")
-      if(!(comps_y_limits %in% c("fixed", "free"))) stop(
-        "Parameter y_limits must be input as either 'fixed' or 'free'.")
-    }
-    
-    # Check if comps_y_range is positive, numeric and length == 1 #
-    if (!is.null(comps_y_range)){
-      if(!is.numeric(comps_y_range)) stop(
-        "Parameter y_range must be numeric.")
-      if(length(comps_y_range) != 1) stop(
-        "Parameter y_range must have length = 1.")
-      if(!(comps_y_range > 0)) stop(
-        "Parameter y_range must be greater than zero.")
-    }
-    
-    # Check if comps_y_max is numeric and length == 1 #
-    if (!is.null(comps_y_max)){
-      if(!is.numeric(comps_y_max)) stop(
-        "Parameter y_max must be numeric.")
-      if(length(comps_y_max) != 1) stop(
-        "Parameter y_max must have length = 1.")
-    }
-    
-    # Check if comps_y_min is numeric and length == 1 #
-    if (!is.null(comps_y_min)){
-      if(!is.numeric(comps_y_min)) stop(
-        "Parameter y_min must be numeric.")
-      if(length(comps_y_min) != 1) stop(
-        "Parameter y_min must have length = 1.")
-    }
-    
-    # Check if comps_plot_type has one of the available options #
-    checkplot <- purrr::map(comps_plot_type, 
-                            function(plot) stringr::str_detect(plot, "box|col|point|scatter|bar"))
-    if (any(!unlist(checkplot))) stop(
-      "Invalid entry in comps_plot_type. Plot_type strings must contain 
-    at least one of the following: box, col, point, scatter, bar")
-    
-    # --Value-- #
-    # Check if only one of value_y_max and value_y_min has been selected with value_y_limits or value_y_range #
-    if(!is.null(value_y_max) & 
-       !is.null(value_y_min) & 
-       (!is.null(value_y_range) | !is.null(value_y_limits))) stop(
-         "Cannot use both value_y_min and value_y_max with value_y_range 
-       or value_y_limits parameters. Only one of y_min or y_max can be 
-       used.")
-    
-    # Check if value_y_limits is in acceptable strings and length == 1 #
-    if (!is.null(value_y_limits) ){
-      if((length(value_y_limits) != 1)) stop(
-        "Parameter y_limits must have length = 1.")
-      if(!(value_y_limits %in% c("fixed", "free")) ) stop(
-        "Parameter y_limits must be input as either 'fixed' or 'free'.")
-    }
-    
-    # Check if value_y_range is positive, numeric and length == 1 #
-    if (!is.null(value_y_range)){
-      if(!is.numeric(value_y_range)) stop(
-        "Parameter y_range must be numeric.")
-      if(length(value_y_range) != 1) stop(
-        "Parameter y_range must have length = 1.")
-      if(!(value_y_range > 0)) stop(
-        "Parameter y_range must be greater than zero.")
-    }
-    
-    # Check if value_y_max is numeric and length == 1 #
-    if (!is.null(value_y_max)){
-      if(!is.numeric(value_y_max)) stop(
-        "Parameter y_max must be numeric.")
-      if(length(value_y_max) != 1) stop(
-        "Parameter y_max must have length = 1.")
-    }
-    
-    # Check if value_y_min is numeric and length == 1 #
-    if (!is.null(value_y_min)){
-      if(!is.numeric(value_y_min)) stop(
-        "Parameter y_min must be numeric.")
-      if(length(value_y_min) != 1) stop(
-        "Parameter y_min must have length = 1.")
-    }
-    
-    # Check if value_plot_type has one of the available options #
-    checkplot <- purrr::map(value_plot_type, 
-                            function(plot) stringr::str_detect(plot, "box|col|point|scatter|bar"))
-    if (any(!unlist(checkplot))) stop(
-      "Invalid entry in value_plot_type. Plot_type strings must contain 
-    at least one of the following: box, col, point, scatter, bar")
-    
-  } else {
-    
-    ##### Post-Moniker and null assignment check ####
-    # --Value-- #
-    if (!is.null(trellData$data_values)) {
-      
-      # Ensure panel, color/x/y parameters are not matching #
-      if (!((value_panel_x_axis != panel_variable) & 
-            (value_panel_y_axis != panel_variable) & 
-            (panel_variable != value_color_variable))){
-        stop("Parameters for value panel_y_axis, panel_x_axis, and color_variable 
-           cannot match panel_variable. Refer to ?plot_comps for default settings 
-           or try setting all of these parameters individually.")
-      }
-      if(value_panel_x_axis == value_panel_y_axis) warning(
-        "Parameter for value panel_y_axis and panel_x_axis are identical. 
-            Refer to ?plot_comps for default settings or try setting 
-            parameters individually for different axis labels.")
-      
-      # Variable for variable-in checks #
-      allcol <- colnames(trellData$data_values)
-      allcolstr <- toString(allcol)
-      
-      # Ensure panel, color, x, and y parameters are in data_values #
-      if (!(value_panel_x_axis %in% allcol)) stop(
-        paste("Parameter value_panel_x_axis  must be in:", allcolstr))
-      if (!(value_panel_y_axis %in% allcol)) stop(
-        paste("Parameter value_panel_y_axis must  must be in:", allcolstr))
-      if (!(panel_variable %in% allcol)) stop(
-        paste("Parameter panel_variable must be in:", allcolstr))
-      if (!(value_color_variable %in% allcol)) stop(
-        paste("Parameter value_color_variable must be in:", allcolstr))
-      
-    }
-    
-    # --Comps-- #
-    
-    # Ensure summary_stats and comp_stats are both present #
-    if(((is.null(trellData$summary_stats)) & 
-        (!is.null(trellData$comp_stats))) | 
-       ((!is.null(trellData$summary_stats)) &
-        (is.null(trellData$comp_stats))) ) {
-      stop("Both summary_stats and comp_stats must be present 
-         if one or the other is in trellData.")
-    }
-    
-    if ((!is.null(trellData$summary_stats)) & 
-        (!is.null(trellData$comp_stats))) {
-      
-      # Check if stats statistical test attribute is valid #
-      if(!(
-        attributes(trellData)$statistical_test %in% 
-        c("combined", "gtest", "anova"))) stop(
-        paste("Non-applicable statistical_test attribute in trellData object."))
-      
-      # Ensure panel, color/x/y parameters are not matching #
-      if(comps_panel_x_axis == comps_panel_y_axis) warning(
-        "Parameter for comps panel_y_axis and panel_x_axis are identical.
-    Refer to ?plot_comps for default settings or try setting parameters
-    individually for different axis labels.")
-      
-      if (!((comps_panel_x_axis != panel_variable) && 
-            (comps_panel_y_axis != panel_variable) && 
-            (panel_variable != comps_color_variable))) stop(
-              "Parameters for comps panel_y_axis, panel_x_axis, 
-            and color_variable cannot match panel_variable. Refer to ?plot_comps 
-            for default settings or try setting all of these parameters 
-            individually.")
-      
-      # Variable for variable-in checks #
-      allcol <- c(colnames(trellData$comp_stats), 
-                  colnames(trellData$summary_stats))
-      allcolstr <- toString(unique(allcol))
-      
-      # Ensure panel, color, x, and y parameters are in comp_stats or summary stats #
-      if (!(comps_panel_x_axis %in% allcol)) stop(
-        paste("Parameter comps_panel_x_axis  must be in:", allcolstr))
-      if (!(comps_panel_y_axis %in% allcol)) stop(
-        paste("Parameter comps_panel_y_axis must  must be in:", allcolstr))
-      if (!(panel_variable %in% allcol)) stop(
-        paste("Parameter panel_variable must be in:", allcolstr))
-      if (!(comps_color_variable %in% allcol)) stop(
-        paste("Parameter comps_color_variable must be in:", allcolstr))
-      
-    }
-  }
-}
-  
+# validate_format_plot_input <- function(...){
+#   .validate_format_plot_input(...)
+# }
+# 
+# .validate_format_plot_input <- function(trellData, 
+#                                   comps_y_limits = NULL, comps_y_range = NULL, 
+#                                   comps_y_max = NULL, comps_y_min = NULL, 
+#                                   comps_include_zero = NULL,
+#                                   value_y_limits = NULL, value_y_range = NULL, 
+#                                   value_y_max = NULL, value_y_min = NULL,
+#                                   value_include_zero = NULL,
+#                                   p_val = NULL,
+#                                   panel_variable = NULL, 
+#                                   comps_color_variable = NULL,
+#                                   comps_panel_x_axis = NULL, comps_panel_y_axis = NULL,
+#                                   value_color_variable = NULL,
+#                                   value_panel_x_axis = NULL, 
+#                                   value_panel_y_axis = NULL,
+#                                   value_plot_type = NULL, comps_plot_type = NULL,
+#                                   value_plot = NULL, comps_plot = NULL, 
+#                                   comps_text = NULL, plotly = NULL) {
+#   
+#   ##### Initial checks #####
+#   
+#   # Check if class is correct #
+#   if(!inherits(trellData, "trellData")) stop(
+#     "trellData must be of the class 'trellData'")
+#   
+#   if(!(is.null(p_val) && 
+#        is.null(plotly) &&
+#        is.null(comps_y_limits) &&
+#        is.null(comps_y_range) &&
+#        is.null(comps_y_max) &&
+#        is.null(comps_y_min) &&
+#        is.null(comps_include_zero) &&
+#        is.null(comps_plot) &&
+#        is.null(comps_text) &&
+#        is.null(comps_plot_type) &&
+#        is.null(value_y_limits) &&
+#        is.null(value_y_range) &&
+#        is.null(value_y_max) &&
+#        is.null(value_y_min) &&
+#        is.null(value_plot_type) &&
+#        is.null(value_include_zero) &&
+#        is.null(value_plot)
+#        )) {
+# 
+#     
+#     # Check if comp_stats is in trellData #
+#     if(is.null(trellData$comp_stats) && is.null(trellData$data_values)) stop(
+#       "No data values or comparison statistics in trellData to plot")
+#     
+#     # Check if comp_stats is in trellData (as above) #
+#     if(is.na(trellData$comp_stats) && is.na(trellData$data_values)) stop(
+#       "No data values or comparison statistics in trellData to plot")
+#     
+#     # Check check if p_val is numeric of length 1 #
+#     if(!is.numeric(p_val) || (length(p_val) != 1)) stop(
+#       "p_val must be a numeric of length 1")  
+#     
+#     # Check check if plotly is logical of length 1 #
+#     if(!is.logical(plotly) || (length(plotly) != 1)) stop(
+#       "plotly must be a logical (TRUE or FALSE) of length 1") 
+#     
+#     # Check check if comps_include_zero is logical of length 1 #
+#     if(!is.logical(comps_include_zero) || (length(comps_include_zero) != 1)) stop(
+#       "comps_include_zero must be a logical (TRUE or FALSE) of length 1") 
+#     
+#     # Check check if comps_plot is logical of length 1 #
+#     if(!is.logical(comps_plot) || (length(comps_plot) != 1)) stop(
+#       "comps_plot must be a logical (TRUE or FALSE) of length 1") 
+#     
+#     # Check check if comps_text is logical of length 1 #
+#     if(!is.logical(comps_text) || (length(comps_text) != 1)) stop(
+#       "comps_text must be a logical (TRUE or FALSE) of length 1") 
+#     
+#     # Check check if value_include_zero is logical of length 1 #
+#     if(!is.logical(value_include_zero) || (length(value_include_zero) != 1)) stop(
+#       "value_include_zero must be a logical (TRUE or FALSE) of length 1") 
+#     
+#     # Check check if value_plot is logical of length 1 #
+#     if(!is.logical(value_plot) || (length(value_plot) != 1)) stop(
+#       "value_plot must be a logical (TRUE or FALSE) of length 1") 
+#     
+#     
+#     # Check if y_limits or y_range have been selected correctly #
+#     if((!is.null(comps_y_limits) & !is.null(comps_y_range)) | 
+#        (!is.null(value_y_limits) & !is.null(value_y_range))) stop(
+#          "Input either y_limits or y_range parameters, but not both.")
+#     
+#     # --Comps-- #
+#     # Check if only one of comps_y_max and comps_y_min has been selected with comps_y_limits or comps_y_range #
+#     if(!is.null(comps_y_max) & 
+#        !is.null(comps_y_min) & 
+#        (!is.null(comps_y_range) | !is.null(comps_y_limits))) stop(
+#          "Cannot use both comps_y_min and comps_y_max with comps_y_range 
+#        or comps_y_limits parameters. Only one of comps_y_min or 
+#        comps_y_max can be used.")
+#     
+#     # Check if comps_y_limits is in acceptable strings and length == 1 #
+#     if ( !is.null(comps_y_limits)){
+#       if((length(comps_y_limits) != 1)) stop(
+#         "Parameter y_limits must have length = 1.")
+#       if(!(comps_y_limits %in% c("fixed", "free"))) stop(
+#         "Parameter y_limits must be input as either 'fixed' or 'free'.")
+#     }
+#     
+#     # Check if comps_y_range is positive, numeric and length == 1 #
+#     if (!is.null(comps_y_range)){
+#       if(!is.numeric(comps_y_range)) stop(
+#         "Parameter y_range must be numeric.")
+#       if(length(comps_y_range) != 1) stop(
+#         "Parameter y_range must have length = 1.")
+#       if(!(comps_y_range > 0)) stop(
+#         "Parameter y_range must be greater than zero.")
+#     }
+#     
+#     # Check if comps_y_max is numeric and length == 1 #
+#     if (!is.null(comps_y_max)){
+#       if(!is.numeric(comps_y_max)) stop(
+#         "Parameter y_max must be numeric.")
+#       if(length(comps_y_max) != 1) stop(
+#         "Parameter y_max must have length = 1.")
+#     }
+#     
+#     # Check if comps_y_min is numeric and length == 1 #
+#     if (!is.null(comps_y_min)){
+#       if(!is.numeric(comps_y_min)) stop(
+#         "Parameter y_min must be numeric.")
+#       if(length(comps_y_min) != 1) stop(
+#         "Parameter y_min must have length = 1.")
+#     }
+#     
+#     # Check if comps_plot_type has one of the available options #
+#     checkplot <- purrr::map(comps_plot_type, 
+#                             function(plot) stringr::str_detect(plot, "box|col|point|scatter|bar"))
+#     if (any(!unlist(checkplot))) stop(
+#       "Invalid entry in comps_plot_type. Plot_type strings must contain 
+#     at least one of the following: box, col, point, scatter, bar")
+#     
+#     # --Value-- #
+#     # Check if only one of value_y_max and value_y_min has been selected with value_y_limits or value_y_range #
+#     if(!is.null(value_y_max) & 
+#        !is.null(value_y_min) & 
+#        (!is.null(value_y_range) | !is.null(value_y_limits))) stop(
+#          "Cannot use both value_y_min and value_y_max with value_y_range 
+#        or value_y_limits parameters. Only one of y_min or y_max can be 
+#        used.")
+#     
+#     # Check if value_y_limits is in acceptable strings and length == 1 #
+#     if (!is.null(value_y_limits) ){
+#       if((length(value_y_limits) != 1)) stop(
+#         "Parameter y_limits must have length = 1.")
+#       if(!(value_y_limits %in% c("fixed", "free")) ) stop(
+#         "Parameter y_limits must be input as either 'fixed' or 'free'.")
+#     }
+#     
+#     # Check if value_y_range is positive, numeric and length == 1 #
+#     if (!is.null(value_y_range)){
+#       if(!is.numeric(value_y_range)) stop(
+#         "Parameter y_range must be numeric.")
+#       if(length(value_y_range) != 1) stop(
+#         "Parameter y_range must have length = 1.")
+#       if(!(value_y_range > 0)) stop(
+#         "Parameter y_range must be greater than zero.")
+#     }
+#     
+#     # Check if value_y_max is numeric and length == 1 #
+#     if (!is.null(value_y_max)){
+#       if(!is.numeric(value_y_max)) stop(
+#         "Parameter y_max must be numeric.")
+#       if(length(value_y_max) != 1) stop(
+#         "Parameter y_max must have length = 1.")
+#     }
+#     
+#     # Check if value_y_min is numeric and length == 1 #
+#     if (!is.null(value_y_min)){
+#       if(!is.numeric(value_y_min)) stop(
+#         "Parameter y_min must be numeric.")
+#       if(length(value_y_min) != 1) stop(
+#         "Parameter y_min must have length = 1.")
+#     }
+#     
+#     # Check if value_plot_type has one of the available options #
+#     checkplot <- purrr::map(value_plot_type, 
+#                             function(plot) stringr::str_detect(plot, "box|col|point|scatter|bar"))
+#     if (any(!unlist(checkplot))) stop(
+#       "Invalid entry in value_plot_type. Plot_type strings must contain 
+#     at least one of the following: box, col, point, scatter, bar")
+#     
+#   } else {
+#     
+#     ##### Post-Moniker and null assignment check ####
+#     # --Value-- #
+#     if (!is.null(trellData$data_values) && !is.null(value_panel_x_axis)) {
+#       
+#       # print(value_panel_x_axis)
+#       # print(value_panel_y_axis)
+#       # print(panel_variable)
+#       # print(value_color_variable)
+#       
+#       # Ensure panel, color/x/y parameters are not matching #
+#       if (!((value_panel_x_axis != panel_variable) && 
+#             (value_panel_y_axis != panel_variable) && 
+#             (panel_variable != value_color_variable))){
+#         stop("Parameters for value panel_y_axis, panel_x_axis, and color_variable 
+#            cannot match panel_variable. Refer to ?plot_comps for default settings 
+#            or try setting all of these parameters individually.")
+#       }
+#       if(value_panel_x_axis == value_panel_y_axis) warning(
+#         "Parameter for value panel_y_axis and panel_x_axis are identical. 
+#             Refer to ?plot_comps for default settings or try setting 
+#             parameters individually for different axis labels.")
+#       
+#       # Variable for variable-in checks #
+#       allcol <- colnames(trellData$data_values)
+#       allcolstr <- toString(allcol)
+#       
+#       # Ensure panel, color, x, and y parameters are in data_values #
+#       if (!(value_panel_x_axis %in% allcol)) stop(
+#         paste("Parameter value_panel_x_axis  must be in:", allcolstr))
+#       if (!(value_panel_y_axis %in% allcol)) stop(
+#         paste("Parameter value_panel_y_axis must  must be in:", allcolstr))
+#       if (!(panel_variable %in% allcol)) stop(
+#         paste("Parameter panel_variable must be in:", allcolstr))
+#       if (!(value_color_variable %in% allcol)) stop(
+#         paste("Parameter value_color_variable must be in:", allcolstr))
+#       
+#     }
+#     
+#     # --Comps-- #
+#     
+#     # Ensure summary_stats and comp_stats are both present #
+#     if(((is.null(trellData$summary_stats)) & 
+#         (!is.null(trellData$comp_stats))) | 
+#        ((!is.null(trellData$summary_stats)) &
+#         (is.null(trellData$comp_stats))) ) {
+#       stop("Both summary_stats and comp_stats must be present 
+#          if one or the other is in trellData.")
+#     }
+#     
+#     if ((!is.null(trellData$summary_stats)) && 
+#         (!is.null(trellData$comp_stats)) &&
+#         (!is.null(comps_panel_x_axis)) ) {
+#       
+#       # Check if stats statistical test attribute is valid #
+#       if(!(
+#         attributes(trellData)$statistical_test %in% 
+#         c("combined", "gtest", "anova"))) stop(
+#         paste("Non-applicable statistical_test attribute in trellData object."))
+#       
+#       # Ensure panel, color/x/y parameters are not matching #
+#       if(comps_panel_x_axis == comps_panel_y_axis) warning(
+#         "Parameter for comps panel_y_axis and panel_x_axis are identical.
+#     Refer to ?plot_comps for default settings or try setting parameters
+#     individually for different axis labels.")
+#       
+#       if (!((comps_panel_x_axis != panel_variable) && 
+#             (comps_panel_y_axis != panel_variable) && 
+#             (panel_variable != comps_color_variable))) stop(
+#               "Parameters for comps panel_y_axis, panel_x_axis, 
+#             and color_variable cannot match panel_variable. Refer to ?plot_comps 
+#             for default settings or try setting all of these parameters 
+#             individually.")
+#       
+#       # Variable for variable-in checks #
+#       allcol <- c(colnames(trellData$comp_stats), 
+#                   colnames(trellData$summary_stats))
+#       allcolstr <- toString(unique(allcol))
+#       
+#       # Ensure panel, color, x, and y parameters are in comp_stats or summary stats #
+#       if (!(comps_panel_x_axis %in% allcol)) stop(
+#         paste("Parameter comps_panel_x_axis  must be in:", allcolstr))
+#       if (!(comps_panel_y_axis %in% allcol)) stop(
+#         paste("Parameter comps_panel_y_axis must  must be in:", allcolstr))
+#       if (!(panel_variable %in% allcol)) stop(
+#         paste("Parameter panel_variable must be in:", allcolstr))
+#       if (!(comps_color_variable %in% allcol)) stop(
+#         paste("Parameter comps_color_variable must be in:", allcolstr))
+#       
+#     }
+#   }
+# }
+#   
 
 #' @name generate_plot_message
 #' @rdname generate_plot_message
@@ -1625,7 +2096,7 @@ validate_format_plot_input <- function(...){
 #' 
 #' @description Generates a message stating the specified plotting y-limits
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.trellData}}.
 #' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
 #' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
@@ -1738,6 +2209,9 @@ generate_plot_message <- function(...){
       value_y_limits <- "free"
     }
   }
+  
+  return(list(comps_y_limits , value_y_limits))
+  
 }
 
 
@@ -1747,13 +2221,12 @@ generate_plot_message <- function(...){
 #' 
 #' @description Adds border color, hover, and label text as applicable to nested trellData dataframe for plotting
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata}}.
+#' @param trellData An object of class "trellData" generated from \code{\link{as.trellData}}.
 #' @param nestedData Nested trellData dataframe
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. 
 #' @param comps_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. 
 #' @param value_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. 
-#' @param colors Specifies colors to use for border.
 #'
 #' @author Rachel Richardson
 #'
@@ -1767,15 +2240,20 @@ add_plot_features <- function(...){
                                p_val = NULL, 
                                panel_variable = NULL,
                                comps_panel_y_axis = NULL,
-                               value_panel_y_axis = NULL,
-                               colors = NULL){
+                               value_panel_y_axis = NULL){
+  
+  colors <- c(NA, "grey40", "black")
   
   if(is.null(value_panel_y_axis)){
     
     # Set border colors based on significance #
-    bord <- rep(colors[1], length(nestedData$P_value_T))
-    bord[nestedData$P_value_G < p_val & !is.na(nestedData$P_value_G)] <-  colors[2]
-    bord[nestedData$P_value_T < p_val & !is.na(nestedData$P_value_T)] <- colors[3]
+    bord <- rep(colors[1], nrow(nestedData))
+    if("P_value_G" %in% colnames(nestedData)){
+      bord[nestedData$P_value_G < p_val & !is.na(nestedData$P_value_G)] <-  colors[2]
+    }
+    if("P_value_T" %in% colnames(nestedData)){
+      bord[nestedData$P_value_T < p_val & !is.na(nestedData$P_value_T)] <- colors[3]
+    }
     
     # Set hover/labels excluding the panel_variable #
     hover_want_comps <- c(attributes(trellData)$cnames$edata_cname,
@@ -1861,6 +2339,142 @@ add_plot_features <- function(...){
   }
   
 }
+
+
+#' @name list_y_limits
+#' @rdname list_y_limits
+#' @title Digests user input for y_limits
+#' 
+#' @description Takes lists/strings/numeric input and digests as a list of y_limits for each plot type.
+#'
+#' @param plot_type plots to graph in trelliVis
+#' @param y_limits User input y-axis limits for plots
+#'
+#' @author Rachel Richardson
+#'
+#' @export
+
+list_y_limits <- function(plot_type, y_limits){
+  .list_y_limits(plot_type, y_limits)
+}
+
+.list_y_limits <- function(plot_type, y_limits){
+    
+    limlist <- list()
+    plotlims <- list()
+    plotlims2 <- list()
+    
+    ## Set if null
+    if(is.null(y_limits)){
+      y_limits <- "fixed"
+    }
+    
+    ## Find and assign any list elements
+    lists <- purrr::map(y_limits, function(elements){
+      is.list(elements)
+    })
+    
+    ## Catch for one item list
+    if(is.list(y_limits) && 
+       !any(purrr::map_lgl(1:length(y_limits), function(item) is.list(y_limits[[item]])))){
+      if (is.null(names(y_limits))) stop(
+        "Invalid format. List inputs must be named. Refer to ?trelliVis for examples."
+      )
+      if (any(duplicated(names(y_limits)))) stop(
+        paste("List inputs may not have duplicate names. Use a list of lists to specify different plot y_limits. Duplicate names:",
+              names(y_limits)[duplicated(names(y_limits))])
+      )
+      if (!all(names(y_limits) %in% c("min", "max", "range", "scale"))) stop(
+        "List names for y_limits are restricted to 'min', 'max', 'range', and 'scale'"
+      )
+      
+      plotlims[1:length(plot_type)] <- list(y_limits)
+    }
+    
+    ###### Checks for singular input
+    if (length(y_limits) == 1 && (y_limits == "fixed" || y_limits == "free")){
+      limlist[["scale"]] <- y_limits
+      plotlims[1:length(plot_type)] <- list(limlist)
+      
+    } else if (is.numeric(y_limits) && length(y_limits) == 2){
+      limlist[["min"]] <- y_limits[1]
+      limlist[["max"]] <- y_limits[2]
+      plotlims[1:length(plot_type)] <- list(limlist)
+      
+      #### Handles lists of y_limit input
+    } else if (any(unlist(lists))){
+      
+      ##Check list correctness
+      if (any(purrr::map_lgl(y_limits, function(elements){
+        any(purrr::map_lgl(elements, function(item2) is.list(item2)))
+      }))) stop(
+        "List of lists of lists are not supported in y_limits.")
+      
+      if (length(y_limits) != length(plot_type)) stop(
+        "Lists in y_limits must be the same length as plot_type. Refer to examples in ?trelliVis().")
+      
+      plotlims <- y_limits[unlist(lists)]
+      
+      if(!is.null(plotlims) && length(plotlims) > 1){
+        purrr::map(plotlims, function(listitem){
+          if (length(listitem) > 1 && is.null(names(listitem))) stop(
+            "Invalid format. List inputs must be named. Refer to ?trelliVis for examples."
+          )
+          if (any(duplicated(names(listitem)))) stop(
+            paste("List inputs may not have duplicate names. Use a list of lists to specify different plot y_limits. Duplicate names:",
+                  names(listitem)[duplicated(names(listitem))])
+          )
+          
+          if (!all(names(listitem) %in% c("min", "max", "range", "scale"))) stop(
+            "List names for y_limits are restricted to 'min', 'max', 'range', and 'scale'"
+          )
+          
+        })
+        
+      } else if (!is.null(plotlims)){
+        if (is.null(names(plotlims[[1]]))) stop(
+          "Invalid format. List inputs must be named. Refer to ?trelliVis for examples."
+        )
+        
+        if (any(duplicated(names(plotlims[[1]])))) stop(
+          paste("List inputs may not have duplicate names. Use a list of lists to specify different plot y_limits. Duplicate names:",
+                names(plotlims[[1]])[duplicated(names(plotlims[[1]]))])
+        )
+        
+        if (!all(names(plotlims[[1]]) %in% c("min", "max", "range", "scale"))) stop(
+          "List names for y_limits are restricted to 'min', 'max', 'range', and 'scale'"
+        )
+        
+      }
+      
+      
+      
+      ## Find and assign non-list elements
+      plotlims2 <- purrr::map(y_limits[!unlist(lists)], function(limit){
+        
+        listlims2 <- list()
+        if (limit == "fixed" || limit == "free"){
+          listlims2$scale <- limit
+        } else if (is.numeric(limit) && length(limit) == 2){
+          listlims2$min <- limit[1]
+          listlims2$max <- limit[2]
+        }
+        return(listlims2)
+      })
+    }
+    
+    if(length(plotlims) == 0 && length(plotlims2) == 0) stop(
+      "Invalid input. y_limits input is restricted to named lists for each plot type, strings 'fixed' or 'free', or a numeric vector of length 2 specifying maximum and minimum y_values. Refer to ?trelliVis for examples."
+    )
+    
+    output <- c(plotlims, plotlims2)
+    nms <- c(plot_type[unlist(lists)], plot_type[!unlist(lists)])
+    nms <- nms[!is.na(nms)]
+    names(output) <- nms
+    
+    return(output)
+  }
+
 
 
 #' @name set_increment
@@ -1991,15 +2605,15 @@ set_ylimits <- function(yvalues, increment, ...){
   }
   
   # Set maxi and mini based on difference between max and min values #
-  maxi <- max(yvalues) + 5*increment
-  mini <- min(yvalues) - 5*increment
+  maxi <- max(yvalues) + 3*increment
+  mini <- min(yvalues) - 3*increment
   
   # Adjust for maximums below 0 and minimums above 0 #
   if (!(maxi > 0) && (include_zero == TRUE)){
-    maxi <- 5*increment
+    maxi <- 3*increment
   }
   if (!(mini < 0) && (include_zero == TRUE)){
-    mini <- -5*increment
+    mini <- -3*increment
   }
   
   # Adjust for specified y_min and y_max #
@@ -2029,7 +2643,6 @@ set_ylimits <- function(yvalues, increment, ...){
 #'
 #' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
-#' @param trellData An object of class "trellData" generated from \code{\link{as.Trelldata()}}.
 #' @param nested_plot A nested table generated from trellData using formatplot()
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
@@ -2128,7 +2741,7 @@ data_cogs <- function(...) {
   ## Fill null variables as needed ##
 
   if (is.null(nested_plot)){
-    trellData = as.Trelldata(omicsData, omicsStats)
+    trellData = as.trellData(omicsData, omicsStats)
     # recursive for lists #
     if(class(trellData) == "list"){
       nested_plot <- purrr::map(trellData, format_plot)
@@ -2176,27 +2789,49 @@ data_cogs <- function(...) {
   
     uniqlist <- joiner[[uniqueID]]
     panel_list <- joiner[[panel_variable]]
-    pvalg <- data.frame(t(joiner[stringr::str_detect(names(joiner), "P_value_G")]))
-    pvalt <- data.frame(t(joiner[stringr::str_detect(names(joiner), "P_value_T")]))
-    colnames(pvalg) <- substring(colnames(pvalg), 2)
-    colnames(pvalt) <- substring(colnames(pvalt), 2)
-    Sig_G_p_value <- as.factor(uniqlist %in% uniqlist[as.numeric(names(
-      select_if(pvalg, function(x) any(x < p_val & !is.na(x)))
-    ))])
-    Sig_T_p_value <- as.factor(uniqlist %in% uniqlist[as.numeric(names(
-      select_if(pvalt, function(x) any(x < p_val & !is.na(x)))
-    ))])
     
-    addcogs <- data.frame(
-      uniqlist,
-      trelliscopejs::cog(Sig_G_p_value, desc = "Boolean for significant G test p-values,
+    addcogs <- data.frame(uniqlist)
+    colnames(addcogs) <- uniqueID
+    
+    if(any(stringr::str_detect(names(joiner), "P_value_G"))){
+      
+      pvalg <- data.frame(t(joiner[stringr::str_detect(names(joiner), "P_value_G")]))
+      colnames(pvalg) <- substring(colnames(pvalg), 2)
+      Sig_G_p_value <- as.factor(uniqlist %in% uniqlist[as.numeric(names(
+        dplyr::select_if(pvalg, function(x) any(x < p_val & !is.na(x)))
+      ))])
+      
+      addcogs[["Sig_G_p_value"]] <- trelliscopejs::cog(Sig_G_p_value, desc = "Boolean for significant G test p-values,
       where TRUE indicates that the p-value is < 0.05 and is grounds for 
-      rejecting the null hypothesis (independence of missing data)."),
-      trelliscopejs::cog(Sig_T_p_value, desc = "Boolean for significant T test p-values,
+      rejecting the null hypothesis (independence of missing data).")
+      
+    }
+    
+    if(any(stringr::str_detect(names(joiner), "P_value_T"))){
+      
+      pvalt <- data.frame(t(joiner[stringr::str_detect(names(joiner), "P_value_T")]))
+      colnames(pvalt) <- substring(colnames(pvalt), 2)
+      Sig_T_p_value <- as.factor(uniqlist %in% uniqlist[as.numeric(names(
+        dplyr::select_if(pvalt, function(x) any(x < p_val & !is.na(x)))
+      ))])
+      
+      addcogs[["Sig_T_p_value"]] <- trelliscopejs::cog(Sig_T_p_value, desc = "Boolean for significant T test p-values,
       where TRUE indicates that the p-value is < 0.05 and is grounds for 
       rejecting the null hypothesis (no significant 
-      difference between groups)."))
-    colnames(addcogs) <- c(uniqueID, 'Sig_G_p_value', 'Sig_T_p_value')
+      difference between groups).")
+      
+    }
+
+    # addcogs <- data.frame(
+    #   uniqlist,
+    #   trelliscopejs::cog(Sig_G_p_value, desc = "Boolean for significant G test p-values,
+    #   where TRUE indicates that the p-value is < 0.05 and is grounds for 
+    #   rejecting the null hypothesis (independence of missing data)."),
+    #   trelliscopejs::cog(Sig_T_p_value, desc = "Boolean for significant T test p-values,
+    #   where TRUE indicates that the p-value is < 0.05 and is grounds for 
+    #   rejecting the null hypothesis (no significant 
+    #   difference between groups)."))
+    # colnames(addcogs) <- c(uniqueID, 'Sig_G_p_value', 'Sig_T_p_value')
     
     if (!identical(uniqlist, panel_list)){
       addcogs[[panel_variable]] <- panel_list
@@ -2437,36 +3072,17 @@ data_cogs <- function(...) {
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.
-#' @param omicsFormat Output of as.Trelldata() function
+#' @param omicsFormat Output of as.trellData() function
 #' @param p_val Numeric that specifies p-value for significance calculations. Default is 0.05.
 #' @param mapping_col String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
 #' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #' @param trelli_name String: name of display, or list of names where a list is provided for omicsData and omicsStats
 #' @param trelli_path_out String: path to where trelliscope is stored. Default is "./TrelliDisplay"
-#' @param comps_y_limits For omicsStats: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param comps_y_range For omicsStats: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param comps_y_max For omicsStats: Sets the maximum y-value for the y-axis.
-#' @param comps_y_min For omicsStats: Sets the minimum y-value for the y-axis.
-#' @param comps_panel_x_axis For omicsStats: Specifies what column should be on the x-axis. Default setting plots pairwise comparisons along x-axis.
-#' @param comps_panel_y_axis For omicsStats: Specifies what column should be on the y-axis and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.
-#' @param comps_color_variable For omicsStats: Specifies what column should distingush color. Default settings is set to "Group."
-#' @param comps_plot_type For omicsStats: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
-#' @param comps_include_zero For omicsStats: Should plots show y = 0?
-#' @param comps_text For omicsStats only: Should p-value text be displayed with plot points/bars/boxes?
-#' @param comps_plot For omicsStats: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.
-#' @param value_y_limits For omicsData: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param value_y_range For omicsData: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param value_y_max For omicsData: Sets the maximum y-value for the y-axis.
-#' @param value_y_min For omicsData: Sets the minimum y-value for the y-axis.
-#' @param value_panel_x_axis For omicsData: Specifies what column should be on the x-axis. Default setting plots pairwise comparisons along x-axis.
-#' @param value_panel_y_axis For omicsData: Specifies what column should be on the y-axis and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.
-#' @param value_color_variable For omicsData: Specifies what column should distingush color. Default settings is set to "Group."
-#' @param value_plot_type For omicsData: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.
-#' @param value_include_zero For omicsData: Should plots show y = 0?
-#' @param value_plot For omicsData: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.
-#' @param plotly Should the plots be rendered as plotly objects?
-#'
+#' @param interactive Should the plots be rendered as plotly objects?
+#' @param plot_text Disable plot text
+#' @param y_limits Y limits 
+#' @param plot_type plots for plotting
 #'
 #' @author Rachel Richardson
 #' @export
@@ -2479,18 +3095,9 @@ trelliVis <- function(...) {
                        mapping_col = NULL, panel_variable = NULL, 
                        try_URL = FALSE, trelli_name = NULL,
                        trelli_path_out = "TrelliDisplay", 
-                       comps_y_limits = NULL, comps_y_range = NULL, 
-                       comps_y_max = NULL, comps_y_min = NULL, 
-                       comps_include_zero = TRUE, value_y_limits = NULL, 
-                       value_y_range = NULL, value_y_max = NULL, 
-                       value_y_min = NULL, value_include_zero = FALSE, 
-                       comps_color_variable = NULL,
-                       comps_panel_x_axis = "Comparison", 
-                       comps_panel_y_axis = NULL, value_color_variable = NULL, 
-                       value_panel_x_axis = NULL, value_panel_y_axis = NULL, 
-                       value_plot_type = "boxpoint", comps_plot_type = "col", 
-                       value_plot = TRUE, comps_plot = TRUE, comps_text = TRUE,
-                       plotly = TRUE) {
+                       plot_text = FALSE, interactive = FALSE,
+                       y_limits = NULL, plot_type = NULL) {
+  
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
   
@@ -2554,13 +3161,27 @@ trelliVis <- function(...) {
   
   if (is.null(omicsFormat)){
     # Re-format objects for plotting #
-    trellData <- as.Trelldata(omicsData, omicsStats)
+    trellData <- as.trellData(omicsData, omicsStats)
   } else {
     trellData <- omicsFormat
   }
   
+
   # If a pep/pro pair is listed, act on each item #
   if(class(trellData) == "list"){
+    
+    
+    if (!pmartR::get_data_norm(trellData[[1]]) &&
+        (is.null(attributes(trellData[[1]])$isobaric_info$norm_info$is_normalized) || #### update helper function
+         attributes(trellData[[1]])$isobaric_info$norm_info$is_normalized != TRUE)) stop(
+           "Input must be normalized prior to plotting; use normalize_global or normalize_isobaric as appropriate."
+         )
+    
+    if (!pmartR::get_data_norm(trellData[[2]]) &&
+        (is.null(attributes(trellData[[2]])$isobaric_info$norm_info$is_normalized) || #### update helper function
+         attributes(trellData[[2]])$isobaric_info$norm_info$is_normalized != TRUE)) stop(
+           "Input must be normalized prior to plotting; use normalize_global or normalize_isobaric as appropriate."
+         )
     
     ## Check trelli_name ##
     # Default trelliscope names correspond to data types entered #
@@ -2598,42 +3219,15 @@ trelliVis <- function(...) {
       mapping_col <- rep(list(NULL), length(trellData))
     }
     
-    # #Adds e_meta of associated peptide data to associated protein data
-    # if(class(omicsData) == "list" &&
-    #    length(omicsData) != 1){
-    #   vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
-    #                  inherits(omicsData[2][[1]], "proData"))
-    #   omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
-    #                                                 omicsData[!vectorpro][[1]]$e_meta))
-    # }
-    
     # Nest data and generate trelliscope plots #
     nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
-      format_plot(pairedplotter, 
-                  comps_y_limits = comps_y_limits, 
-                  comps_y_range = comps_y_range, 
-                  comps_y_max = comps_y_max, 
-                  comps_y_min = comps_y_min, 
-                  comps_include_zero = comps_include_zero,
-                  value_y_limits = value_y_limits, 
-                  value_y_range = value_y_range, 
-                  value_y_max = value_y_max, 
-                  value_y_min = value_y_min,
-                  value_include_zero = value_include_zero,
+      format_plot(trellData = pairedplotter, 
                   p_val = p_val,
                   panel_variable = pan, 
-                  comps_color_variable = comps_color_variable,
-                  comps_panel_x_axis = comps_panel_x_axis, 
-                  comps_panel_y_axis = comps_panel_y_axis,
-                  value_color_variable = value_color_variable,
-                  value_panel_x_axis = value_panel_x_axis, 
-                  value_panel_y_axis = value_panel_y_axis,
-                  value_plot_type = value_plot_type, 
-                  comps_plot_type = comps_plot_type,
-                  value_plot = value_plot,
-                  comps_plot = comps_plot,
-                  comps_text = comps_text,
-                  plotly = plotly)
+                  plot_type = plot_type,
+                  plot_text = plot_text,
+                  y_limits = y_limits,
+                  interactive = interactive)
       })
     
     # Generate default cognostics #
@@ -2644,15 +3238,15 @@ trelliVis <- function(...) {
            panel_variable,
            mapping_col),
       function(nest, dat, stat, pan, map){
-        data_cogs(nested_plot = nest, 
+        suppressWarnings(data_cogs(nested_plot = nest, 
                   omicsData = dat,  
                   omicsStats = stat,
                   p_val = p_val,
                   mapping_col = map, 
                   panel_variable = pan, 
-                  try_URL = try_URL)
+                  try_URL = try_URL))
         })
-    
+
     # Generate trelliscope display #
     purrr::map2(nest_plot_cog_list, 
               trelli_name, function(display, name){
@@ -2664,6 +3258,12 @@ trelliVis <- function(...) {
     
   # Where not a pep/pro pair: #
   } else {
+    
+    if (!pmartR::get_data_norm(trellData) &&
+        (is.null(attributes(trellData)$isobaric_info$norm_info$is_normalized) || #### update helper function
+         attributes(trellData)$isobaric_info$norm_info$is_normalized != TRUE)) stop(
+           "Input must be normalized prior to plotting; use normalize_global or normalize_isobaric as appropriate."
+         )
     
     # Default: Name the display after parent classes (omicsData and omicStats clases) #
     if(is.null(trelli_name)){
@@ -2677,40 +3277,23 @@ trelliVis <- function(...) {
     }
     
     # Nest data and generate trelliscope plots #
-    nested_plot <- format_plot(trellData,
-                               comps_y_limits = comps_y_limits, 
-                               comps_y_range = comps_y_range, 
-                               comps_y_max = comps_y_max, 
-                               comps_y_min = comps_y_min, 
-                               comps_include_zero = comps_include_zero,
-                               value_y_limits = value_y_limits, 
-                               value_y_range = value_y_range, 
-                               value_y_max = value_y_max, 
-                               value_y_min = value_y_min,
-                               value_include_zero = value_include_zero,
+    nested_plot <- format_plot(trellData = trellData, 
                                p_val = p_val,
                                panel_variable = panel_variable, 
-                               comps_color_variable = comps_color_variable,
-                               comps_panel_x_axis = comps_panel_x_axis, 
-                               comps_panel_y_axis = comps_panel_y_axis,
-                               value_color_variable = value_color_variable,
-                               value_panel_x_axis = value_panel_x_axis, 
-                               value_panel_y_axis = value_panel_y_axis,
-                               value_plot_type = value_plot_type, 
-                               comps_plot_type = comps_plot_type,
-                               value_plot = value_plot,
-                               comps_plot = comps_plot,
-                               comps_text = comps_text,
-                               plotly = plotly)
+                               plot_type = plot_type,
+                               plot_text = plot_text,
+                               y_limits = y_limits,
+                               interactive = interactive)
+
     
     # Generate default cognostics #
-    nest_plot_cog <- data_cogs(nested_plot = nested_plot, 
+    nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
                                omicsData = omicsData, 
                                omicsStats = omicsStats, 
                                p_val = p_val, 
                                mapping_col = mapping_col, 
                                panel_variable = panel_variable, 
-                               try_URL = try_URL)
+                               try_URL = try_URL))
     
     # Generate trelliscope display #
     nest_plot_cog %>%

@@ -7,57 +7,21 @@
 format_plot(trellData, ...)
 }
 \arguments{
-\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
 
 \item{...}{further arguments}
-
-\item{comps_y_limits}{For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
-
-\item{comps_y_range}{For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
-
-\item{comps_y_max}{For comparisons: Sets the maximum y-value for the y-axis.}
-
-\item{comps_y_min}{For comparisons: Sets the minimum y-value for the y-axis.}
-
-\item{value_y_limits}{For values: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
-
-\item{value_y_range}{For values: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
-
-\item{value_y_max}{For values: Sets the maximum y-value for the y-axis.}
-
-\item{value_y_min}{For values: Sets the minimum y-value for the y-axis.}
 
 \item{p_val}{Specifies p-value for setting graph border colors}
 
 \item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
 
-\item{comps_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.}
+\item{plot_text}{For comparisons only: TRUE/FALSE for p-value text above data}
 
-\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
+\item{interactive}{Should the plots be rendered as plotly objects?}
 
-\item{comps_color_variable}{Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."}
+\item{plot_type}{types of plots}
 
-\item{value_panel_x_axis}{Specifies what column should be on the x-axis, must be a column in trellData. Default setting plots pairwise comparisons along x-axis.}
-
-\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
-
-\item{value_color_variable}{Specifies what column should distingush color, must be a column in trellData. Default settings is set to "Group."}
-
-\item{value_plot_type}{For values: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.}
-
-\item{comps_plot_type}{For comparisons: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.}
-
-\item{comps_include_zero}{For comparisons: Should plots show y = 0?}
-
-\item{value_include_zero}{For values: Should plots show y = 0?}
-
-\item{value_plot}{For values: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.}
-
-\item{comps_plot}{For comparisons: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.}
-
-\item{comps_text}{For comparisons only: TRUE/FALSE for p-value text above data}
-
-\item{plotly}{Should the plots be rendered as plotly objects?}
+\item{y_limits}{y-limits}
 }
 \description{
 Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

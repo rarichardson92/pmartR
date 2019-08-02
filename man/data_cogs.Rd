@@ -7,8 +7,6 @@
 data_cogs(...)
 }
 \arguments{
-\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata()}}.}
-
 \item{nested_plot}{A nested table generated from trellData using formatplot()}
 
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}

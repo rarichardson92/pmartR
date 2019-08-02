@@ -11,7 +11,7 @@ trelliVis(...)
 
 \item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.}
 
-\item{omicsFormat}{Output of as.Trelldata() function}
+\item{omicsFormat}{Output of as.trellData() function}
 
 \item{p_val}{Numeric that specifies p-value for significance calculations. Default is 0.05.}
 
@@ -25,49 +25,13 @@ trelliVis(...)
 
 \item{trelli_path_out}{String: path to where trelliscope is stored. Default is "./TrelliDisplay"}
 
-\item{comps_y_limits}{For omicsStats: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
+\item{interactive}{Should the plots be rendered as plotly objects?}
 
-\item{comps_y_range}{For omicsStats: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
+\item{plot_text}{Disable plot text}
 
-\item{comps_y_max}{For omicsStats: Sets the maximum y-value for the y-axis.}
+\item{y_limits}{Y limits}
 
-\item{comps_y_min}{For omicsStats: Sets the minimum y-value for the y-axis.}
-
-\item{comps_panel_x_axis}{For omicsStats: Specifies what column should be on the x-axis. Default setting plots pairwise comparisons along x-axis.}
-
-\item{comps_panel_y_axis}{For omicsStats: Specifies what column should be on the y-axis and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
-
-\item{comps_color_variable}{For omicsStats: Specifies what column should distingush color. Default settings is set to "Group."}
-
-\item{comps_plot_type}{For omicsStats: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.}
-
-\item{comps_include_zero}{For omicsStats: Should plots show y = 0?}
-
-\item{comps_text}{For omicsStats only: Should p-value text be displayed with plot points/bars/boxes?}
-
-\item{comps_plot}{For omicsStats: In the presence of summary_stats and comp_stats in trellData, should the plot be rendered? Default is TRUE.}
-
-\item{value_y_limits}{For omicsData: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
-
-\item{value_y_range}{For omicsData: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
-
-\item{value_y_max}{For omicsData: Sets the maximum y-value for the y-axis.}
-
-\item{value_y_min}{For omicsData: Sets the minimum y-value for the y-axis.}
-
-\item{value_panel_x_axis}{For omicsData: Specifies what column should be on the x-axis. Default setting plots pairwise comparisons along x-axis.}
-
-\item{value_panel_y_axis}{For omicsData: Specifies what column should be on the y-axis and numeric. Default setting plots fold change for combined and anova testing and counts for g-test.}
-
-\item{value_color_variable}{For omicsData: Specifies what column should distingush color. Default settings is set to "Group."}
-
-\item{value_plot_type}{For omicsData: Specifies plot types for graphing; must be a list of strings where "box", "bar", or "point" is specified. Combined strings like "boxpoint" will plot both in the same graph.}
-
-\item{value_include_zero}{For omicsData: Should plots show y = 0?}
-
-\item{value_plot}{For omicsData: In the presence of data_values in trellData, should the plot be rendered? Default is TRUE.}
-
-\item{plotly}{Should the plots be rendered as plotly objects?}
+\item{plot_type}{plots for plotting}
 }
 \description{
 Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

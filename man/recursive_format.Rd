@@ -2,7 +2,7 @@
 % Please edit documentation in R/trelliVis.R
 \name{recursive_format}
 \alias{recursive_format}
-\title{Recursive call of as.Trelldata and associated checks for list inputs}
+\title{Recursive call of as.trellData and associated checks for list inputs}
 \usage{
 recursive_format(...)
 }

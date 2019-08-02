@@ -7,7 +7,7 @@
 add_plot_features(...)
 }
 \arguments{
-\item{trellData}{An object of class "trellData" generated from \code{\link{as.Trelldata}}.}
+\item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
 
 \item{nestedData}{Nested trellData dataframe}
 
@@ -18,8 +18,6 @@ add_plot_features(...)
 \item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
 
 \item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
-
-\item{colors}{Specifies colors to use for border.}
 }
 \description{
 Adds border color, hover, and label text as applicable to nested trellData dataframe for plotting
