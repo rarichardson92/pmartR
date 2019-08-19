@@ -517,19 +517,19 @@ validate_omics_input <- function(...){
     
     ## Initial Checks  for non-lists ##
     # Make sure at least one of omicsData or omicsStats is present #
-    if(is.null(omicsStats) & is.null(omicsData)) stop(
+    if(is.null(omicsStats) && is.null(omicsData)) stop(
       "as.trellData() requires at least one of the following: 
       omicsStats, omicsData")
     
     # Check that omicsData and omicsStats are the correct classes #
-    if (!is.null(omicsData) & 
+    if (!is.null(omicsData) && 
         !inherits(omicsData, c("proData", 
                                "pepData", 
                                "metabData", 
                                "lipidData"))) stop(
                                  "omicsData must be of class 'proData', 
                                  'pepData', 'metabData', or 'lipidData'")
-    if(!is.null(omicsStats) & !inherits(omicsStats, "statRes")) stop(
+    if(!is.null(omicsStats) && !inherits(omicsStats, "statRes")) stop(
       "omicsStats must be of the class 'statRes'")
     
     
@@ -750,120 +750,9 @@ format_plot <- function(trellData, ...) {
                          y_limits = NULL,
                          interactive = FALSE) {
  
-  
-  # add_plot_features <- function(...){
-  #   .add_plot_features(...)
-  # }
-  # 
-  # .add_plot_features <- function(trellData,
-  #                                nestedData,
-  #                                p_val = NULL, 
-  #                                panel_variable = NULL,
-  #                                comps_panel_y_axis = NULL,
-  #                                value_panel_y_axis = NULL){
-  #   
-  #   colors <- c(NA, "grey40", "black")
-  #   
-  #   if(is.null(value_panel_y_axis)){
-  #     
-  #     # Set border colors based on significance #
-  #     bord <- rep(colors[1], nrow(nestedData))
-  #     if("P_value_G" %in% colnames(nestedData)){
-  #       bord[nestedData$P_value_G < p_val & !is.na(nestedData$P_value_G)] <-  colors[2]
-  #     }
-  #     if("P_value_T" %in% colnames(nestedData)){
-  #       bord[nestedData$P_value_T < p_val & !is.na(nestedData$P_value_T)] <- colors[3]
-  #     }
-  #     
-  #     # Set hover/labels excluding the panel_variable #
-  #     hover_want_comps <- c(attributes(trellData)$cnames$edata_cname,
-  #                           "Group", "Count", "Comparison",
-  #                           "P_value_G", "P_value_T", "Fold_change") 
-  #     if (!(comps_panel_y_axis %in% hover_want_comps)){
-  #       hover_want_comps <- c(hover_want_comps, comps_panel_y_axis)
-  #     }
-  #     if (panel_variable %in% hover_want_comps){
-  #       hover_want_comps <- hover_want_comps[!(hover_want_comps %in% panel_variable)]
-  #     }
-  #     hover_labs_comps <- hover_want_comps[hover_want_comps %in% colnames(nestedData)]
-  #     
-  #     text_labs_comps <- purrr::map(1:nrow(nestedData), function(row){
-  #       row_text <- purrr::map(hover_labs_comps, function(label){
-  #         if (label %in% c("P_value_G", "P_value_T")) {
-  #           return(paste(paste(label, ":", sep = ""), 
-  #                        signif(nestedData[row,][[label]])))
-  #         } else if (label %in% c("Fold_change", comps_panel_y_axis)){
-  #           return(paste(paste(label, ":", sep = ""), 
-  #                        signif(nestedData[row,][[label]])))
-  #         } else {
-  #           return(paste(paste(label, ":", sep = ""), 
-  #                        nestedData[row,][[label]]))
-  #         }
-  #       })
-  #       return(toString(row_text, sep = ", "))
-  #     })
-  #     
-  #     label_labs_comps <- purrr::map(1:nrow(nestedData), function(row){
-  #       row_label <- purrr::map(hover_labs_comps, function(label){
-  #         if (label %in% c("P_value_G", "P_value_T")){
-  #           return(paste(paste(label, ":", sep = ""), 
-  #                        signif(nestedData[row,][[label]], 3)))
-  #         } 
-  #       })
-  #       return(toString(row_label, sep = ", "))
-  #     })
-  #     
-  #     label_labs_comps <- stringr::str_remove_all(unlist(label_labs_comps), "NULL, ")
-  #     label_labs_comps <- stringr::str_remove_all(label_labs_comps, "NULL")
-  #     
-  #     nestedData_comps <- data.frame(nestedData,
-  #                                    bord = bord,
-  #                                    text = unlist(text_labs_comps),
-  #                                    labels = label_labs_comps)
-  #     
-  #     return(nestedData_comps)
-  #     
-  #   } else {
-  #     
-  #     # Set hover excluding the panel_variable #
-  #     hover_want <- c(attributes(trellData)$cnames$edata_cname, 
-  #                     attributes(trellData)$cnames$fdata_cname,
-  #                     "Group", grep("abundance",
-  #                                   colnames(trellData$data_values),
-  #                                   value = TRUE)) 
-  #     if (!(value_panel_y_axis %in% hover_want)){
-  #       hover_want <- c(hover_want, value_panel_y_axis)
-  #     }
-  #     if (panel_variable %in% hover_want){
-  #       hover_want <- hover_want[!(hover_want %in% panel_variable)]
-  #     }
-  #     hover_labs <- hover_want[hover_want %in% colnames(nestedData)]
-  #     
-  #     text_labs <- purrr::map(1:nrow(nestedData), function(row){
-  #       row_text <- purrr::map(hover_labs, function(label){
-  #         if (label %in% c(grep("abundance", 
-  #                               colnames(trellData$data_values), 
-  #                               value = TRUE), value_panel_y_axis)) {
-  #           return(paste(paste(label, ":", sep = ""),
-  #                        signif(nestedData[row,][[label]])))
-  #         } else {
-  #           return(paste(paste(label, ":", sep = ""), nestedData[row,][[label]]))
-  #         }
-  #       })
-  #       
-  #       return(toString(row_text, sep = ", "))
-  #     })
-  #     nestedData_value <- data.frame(nestedData, text = unlist(text_labs))
-  #     
-  #     return(nestedData_value)
-  #   }
-  #   
-  # }
-  # 
   ## Input checks
   
-  if(!is.null(plot_type) && !all(plot_type %in% c("abundance_boxplot", 
-                           "foldchange_bar", 
+  if(!is.null(plot_type) && !all(plot_type %in% c(
                            "abundance_global", 
                            "foldchange_global", 
                            "missing_bar",
@@ -904,13 +793,15 @@ format_plot <- function(trellData, ...) {
   }
   
   if (is.null(plot_type)){
-    plot_type <- list("abundance_boxplot", "foldchange_bar")
+    if(is.null(trellData$comp_stats)){
+      plot_type <- "abundance_boxplot"
+    } else if (is.null(trellData$data_values)){
+      plot_type <- "foldchange_bar"
+    } else {
+      plot_type <- list("abundance_boxplot", "foldchange_bar")
+    }
   }
    
-  ## Input digestion
-  graphlims <- list_y_limits(plot_type = plot_type, y_limits = y_limits)
-  
-  # All_plots <- list()
   
   if (panel_variable == pmartR::get_edata_cname(trellData) && stringr::str_detect(plot_type, "heatmap")) {
     stop(
@@ -918,8 +809,13 @@ format_plot <- function(trellData, ...) {
     )
   } 
   
+  ## Input digestion
+  graphlims <- list_y_limits(plot_type = plot_type, y_limits = y_limits)
+  
   
   generate_plots <- function(panel){
+    
+    
   
     #### Abundance Global ####
     if("abundance_global" %in% plot_type){
@@ -941,46 +837,35 @@ format_plot <- function(trellData, ...) {
       
       abundance <- grep("abundance", colnames(trellData$data_value), value = TRUE)
       
+      # reorder levels #
+      plot_data <- trellData$data_value[order(trellData$data_value[,group]),]
+      plot_data[[sampID]] <- factor(plot_data[[sampID]], levels=unique(plot_data[[sampID]]), ordered=TRUE)
+      
       plot_base <- ggplot2::ggplot() +
         ggplot2::theme_bw() +
-        ggplot2::geom_boxplot(ggplot2::aes(x = trellData$data_value[[sampID]], 
-                                           y = trellData$data_value[[abundance]], 
-                                          color = trellData$data_value[[group]],
-                                          fill = trellData$data_value[[group]]),
-                              alpha = 0.75,
-                              na.rm = TRUE) +
+        ggplot2::geom_boxplot(ggplot2::aes(
+          x = plot_data[[sampID]],
+          y = plot_data[[abundance]],
+          color = plot_data[[group]],
+          fill = plot_data[[group]]),
+          alpha = 0.75,
+          na.rm = TRUE) +
         ggplot2::labs(x = group, y = abundance, fill = group, color = group) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
       
       
       data <- trellData$data_value
-      # print(rank(trellData$data_value[[abundance]]))
-      # data <- dplyr::mutate(data, rank = paste(rank(trellData$data_value[[abundance]]),"/", nrow(data), sep = ""))
-      # print(data)
-      
-      
-      # output_df <- data.frame(unique(as.character(trellData$data_value[[panel_variable]])), stringsAsFactors = FALSE)
-      # colnames(output_df) <- panel_variable
-      
-      # All_plots[["abundance_global"]] <- vector(mode = "list", length = length(output_df[[panel_variable]]))
-      
-      # All_plots[["abundance_global"]] <- suppressWarnings(foreach::foreach(i=1:length(output_df[[panel_variable]]))%dopar%{
-      #     
-      #     cat(paste("abundance_global:", i, "/", length(output_df[[panel_variable]]), "plots\n"), 
-      #         file="log.trelliVis.txt", append=TRUE)
-      #     panel <- output_df[[panel_variable]][i]
-      #   
-      
-      # All_plots[["abundance_global"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
-        rows <- data[[panel_variable]] == panel
-        df <- data[rows,]
+      data <- plot_data
+
+        rows <- as.character(data[[panel_variable]]) == panel
+        df1 <- data[rows,]
         
         if(!is.null(lims$max) || 
            !is.null(lims$min) ||
            !is.null(lims$range)){
           
-          increment <- set_increment(df[[abundance]])
-          setlims <- set_ylimits(df[[abundance]],
+          increment <- set_increment(df1[[abundance]])
+          setlims1 <- set_ylimits(df1[[abundance]],
                                  increment,
                                  y_range = lims$range,
                                  y_max = lims$max,
@@ -988,41 +873,111 @@ format_plot <- function(trellData, ...) {
                                  include_zero = FALSE)
         }
         
-        plot_out <- plot_base +
-          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
-                                                             hjust = 0,
-                                                             vjust = 0.5)) +
-          ggplot2::labs(x = NULL, fill = NULL, color = NULL) +
+        if(plot_type[1] == "abundance_global"){
           
-          ggplot2::geom_segment(
-            x = as.numeric(factor(df[[sampID]])) - 0.25,
-            xend = as.numeric(factor(df[[sampID]])) + 0.25,
-            y = df[[abundance]],
-            yend = df[[abundance]],
-            ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(df[[abundance]], 4))),
-            na.rm = TRUE) +
+          plot_out <- plot_base +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
+                                                               hjust = 0,
+                                                               vjust = 0.5)) +
+            ggplot2::labs(x = NULL, fill = NULL, color = NULL) +
+            
+            ggplot2::geom_segment(
+              x = as.numeric(factor(df1[[sampID]])) - 0.25,
+              xend = as.numeric(factor(df1[[sampID]])) + 0.25,
+              y = df1[[abundance]],
+              yend = df1[[abundance]],
+              ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(as.numeric(df1[[abundance]]), 4))),
+              na.rm = TRUE) +
+            
+            ggplot2::geom_point(
+              x = as.numeric(factor(df1[[sampID]])),
+              y = df1[[abundance]],
+              ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(as.numeric(df1[[abundance]]), 4))),
+              color = NA,
+              na.rm = TRUE)
           
-          ggplot2::geom_point(
-            x = as.numeric(factor(df[[sampID]])),
-            y = df[[abundance]],
-            ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(df[[abundance]], 4))),
-            color = NA,
-            na.rm = TRUE)
+          if(length(unique(trellData$data_value[[sampID]])) > 8){
+            plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5))
+          }
+          if(length(unique(trellData$data_value[[sampID]])) > 20){
+            plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+              ggplot2::xlab(sampID)
+          }
+          
+          if(exists("setlims1")){
+            plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims1)
+          }
+          
+        } else {
+          
+          plot_out2 <- plot_base +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
+                                                               hjust = 0,
+                                                               vjust = 0.5)) +
+            ggplot2::labs(x = NULL, fill = NULL, color = NULL) +
+            
+            ggplot2::geom_segment(
+              x = as.numeric(factor(df1[[sampID]])) - 0.25,
+              xend = as.numeric(factor(df1[[sampID]])) + 0.25,
+              y = df1[[abundance]],
+              yend = df1[[abundance]],
+              ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(as.numeric(df1[[abundance]]), 4))),
+              na.rm = TRUE) +
+            
+            ggplot2::geom_point(
+              x = as.numeric(factor(df1[[sampID]])),
+              y = df1[[abundance]],
+              ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(as.numeric(df1[[abundance]]), 4))),
+              color = NA,
+              na.rm = TRUE)
+          
+          if(length(unique(trellData$data_value[[sampID]])) > 8){
+            plot_out2 <- plot_out2 + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5))
+          }
+          if(length(unique(trellData$data_value[[sampID]])) > 20){
+            plot_out2 <- plot_out2 + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+              ggplot2::xlab(sampID)
+          }
+          
+          if(exists("setlims1")){
+            plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims1)
+          }
+          
+        }
         
-        if(length(unique(trellData$data_value[[sampID]])) > 8){
-          plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5))
-        }
-        if(length(unique(trellData$data_value[[sampID]])) > 20){
-          plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
-            ggplot2::xlab(sampID)
-        }
-        
-        if(exists("setlims")){
-          plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
-        }
+        # plot_out <- plot_base +
+        #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
+        #                                                      hjust = 0,
+        #                                                      vjust = 0.5)) +
+        #   ggplot2::labs(x = NULL, fill = NULL, color = NULL) +
+        #   
+        #   ggplot2::geom_segment(
+        #     x = as.numeric(factor(df1[[sampID]])) - 0.25,
+        #     xend = as.numeric(factor(df1[[sampID]])) + 0.25,
+        #     y = df1[[abundance]],
+        #     yend = df1[[abundance]],
+        #     ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(as.numeric(df1[[abundance]]), 4))),
+        #     na.rm = TRUE) +
+        #   
+        #   ggplot2::geom_point(
+        #     x = as.numeric(factor(df1[[sampID]])),
+        #     y = df1[[abundance]],
+        #     ggplot2::aes(text = paste(paste(abundance, ":", sep = ""), signif(as.numeric(df1[[abundance]]), 4))),
+        #     color = NA,
+        #     na.rm = TRUE)
+        # 
+        # if(length(unique(trellData$data_value[[sampID]])) > 8){
+        #   plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 5))
+        # }
+        # if(length(unique(trellData$data_value[[sampID]])) > 20){
+        #   plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+        #     ggplot2::xlab(sampID)
+        # }
+        # 
+        # if(exists("setlims1")){
+        #   plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims1)
+        # }
       
-        # return(plot_out)
-      # }))
     }
     
     #### Foldchange Global ####
@@ -1054,23 +1009,21 @@ format_plot <- function(trellData, ...) {
       
       
       data <- trellData$comp_stats
-      # print(rank(trellData$comp_stats[[foldchange]]))
-      # data <- dplyr::mutate(data, rank = paste(rank(trellData$data_value[[abundance]]),"/", nrow(data), sep = ""))
-      # print(data)
       
-      # output_df <- data.frame(unique(as.character(trellData$comp_stats[[panel_variable]])), stringsAsFactors = FALSE)
-      # colnames(output_df) <- panel_variable
+      if(!(panel_variable %in% colnames(trellData$comp_stats))) stop(
+        paste(
+          "Panel variable for foldchange_global must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)
+      ))
       
-      # All_plots[["foldchange_global"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
-        rows <- data[[panel_variable]] == panel
-        df <- data[rows,]
+        rows <- as.character(data[[panel_variable]]) == panel
+        df2 <- data[rows,]
         
         if(!is.null(lims$max) || 
            !is.null(lims$min) ||
            !is.null(lims$range)){
           
-          increment <- set_increment(df[[foldchange]])
-          setlims <- set_ylimits(df[[foldchange]],
+          increment <- set_increment(df2[[foldchange]])
+          setlims2 <- set_ylimits(df2[[foldchange]],
                                  increment,
                                  y_range = lims$range,
                                  y_max = lims$max,
@@ -1078,7 +1031,7 @@ format_plot <- function(trellData, ...) {
                                  include_zero = FALSE)
         }
     
-        if(exists("plot_out")){
+        if(plot_type[1] != "foldchange_global"){
           plot_out2 <- plot_base + 
             ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330,
                                                                hjust = 0,
@@ -1086,26 +1039,26 @@ format_plot <- function(trellData, ...) {
             ggplot2::labs(x = NULL)   +
             
             ggplot2::geom_segment(
-              x = as.numeric(factor(df[[comps]])) - 0.25,
-              xend = as.numeric(factor(df[[comps]])) + 0.25,
-              y = df[[foldchange]],
-              yend = df[[foldchange]],
+              x = as.numeric(factor(df2[[comps]])) - 0.25,
+              xend = as.numeric(factor(df2[[comps]])) + 0.25,
+              y = df2[[foldchange]],
+              yend = df2[[foldchange]],
               ggplot2::aes(text = #paste(
-                             paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
-              # paste("Rank:", df[["rank"]]),
+                             paste(paste(foldchange, ":", sep = ""), signif(as.numeric(df2[[foldchange]]), 4))),
+              # paste("Rank:", df2[["rank"]]),
               # sep = "\n")),
               na.rm = TRUE) +
             
             ggplot2::geom_point(
-              x = as.numeric(factor(df[[comps]])),
-              y = df[[foldchange]],
-              ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
+              x = as.numeric(factor(df2[[comps]])),
+              y = df2[[foldchange]],
+              ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(as.numeric(df2[[foldchange]]), 4))),
               color = NA,
               na.rm = TRUE)
           
           
-          if(exists("setlims")){
-            plot_out2 <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+          if(exists("setlims2")){
+            plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims2)
           }
         } else {
           plot_out <- plot_base + 
@@ -1115,26 +1068,26 @@ format_plot <- function(trellData, ...) {
             ggplot2::labs(x = NULL)   +
             
             ggplot2::geom_segment(
-              x = as.numeric(factor(df[[comps]])) - 0.25,
-              xend = as.numeric(factor(df[[comps]])) + 0.25,
-              y = df[[foldchange]],
-              yend = df[[foldchange]],
+              x = as.numeric(factor(df2[[comps]])) - 0.25,
+              xend = as.numeric(factor(df2[[comps]])) + 0.25,
+              y = df2[[foldchange]],
+              yend = df2[[foldchange]],
               ggplot2::aes(text = #paste(
-                             paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
-              # paste("Rank:", df[["rank"]]),
+                             paste(paste(foldchange, ":", sep = ""), signif(as.numeric(df2[[foldchange]]), 4))),
+              # paste("Rank:", df2[["rank"]]),
               # sep = "\n")),
               na.rm = TRUE) +
             
             ggplot2::geom_point(
-              x = as.numeric(factor(df[[comps]])),
-              y = df[[foldchange]],
-              ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
+              x = as.numeric(factor(df2[[comps]])),
+              y = df2[[foldchange]],
+              ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(as.numeric(df2[[foldchange]]), 4))),
               color = NA,
               na.rm = TRUE)
           
           
-          if(exists("setlims")){
-            plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+          if(exists("setlims2")){
+            plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims2)
           }
         }
             
@@ -1145,26 +1098,26 @@ format_plot <- function(trellData, ...) {
         #   ggplot2::labs(x = NULL)   +
         #   
         #   ggplot2::geom_segment(
-        #     x = as.numeric(factor(df[[comps]])) - 0.25,
-        #     xend = as.numeric(factor(df[[comps]])) + 0.25,
-        #     y = df[[foldchange]],
-        #     yend = df[[foldchange]],
+        #     x = as.numeric(factor(df2[[comps]])) - 0.25,
+        #     xend = as.numeric(factor(df2[[comps]])) + 0.25,
+        #     y = df2[[foldchange]],
+        #     yend = df2[[foldchange]],
         #     ggplot2::aes(text = #paste(
-        #       paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
-        #       # paste("Rank:", df[["rank"]]),
+        #       paste(paste(foldchange, ":", sep = ""), signif(df2[[foldchange]], 4))),
+        #       # paste("Rank:", df2[["rank"]]),
         #       # sep = "\n")),
         #     na.rm = TRUE) +
         #   
         #   ggplot2::geom_point(
-        #     x = as.numeric(factor(df[[comps]])),
-        #     y = df[[foldchange]],
-        #     ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4))),
+        #     x = as.numeric(factor(df2[[comps]])),
+        #     y = df2[[foldchange]],
+        #     ggplot2::aes(text = paste(paste(foldchange, ":", sep = ""), signif(df2[[foldchange]], 4))),
         #     color = NA,
         #     na.rm = TRUE)
         # 
         # 
-        # if(exists("setlims")){
-        #   plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+        # if(exists("setlims2")){
+        #   plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims2)
         # }
         
         # return(plot_out)
@@ -1200,40 +1153,44 @@ format_plot <- function(trellData, ...) {
           group <- "Group"
         }
         
-        # output_df <- data.frame(unique(
-        #   as.character(trellData$summary_stats[[panel_variable]]), stringsAsFactors = FALSE))
-        # colnames(output_df) <- panel_variable
-        
-        # All_plots[["missing_bar"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
           rows <- as.character(trellData$summary_stats[[panel_variable]]) == panel
-          df <- trellData$summary_stats[rows,]
+          df3 <- trellData$summary_stats[rows,]
           totals <- data.frame(pmartR::get_group_table(trellData), stringsAsFactors = FALSE)
           
           colnames(totals) <- c(group, "Total_Group_Counts")
-          df <- dplyr::left_join(df, totals, by = group)
+          df3 <- dplyr::left_join(df3, totals, by = group)
           
-          df$Missing <-  df[["Total_Group_Counts"]] - df[["Count"]]
-          df$Non_Missing <- df[["Count"]]
+          df3$Missing <-  df3[["Total_Group_Counts"]] - df3[["Count"]]
+          df3$Non_Missing <- df3[["Count"]]
           
-          df <- reshape2::melt(df, 
-                               id.vars = colnames(df)[!stringr::str_detect(colnames(df), "Missing")], 
+          df3 <- reshape2::melt(df3, 
+                               id.vars = colnames(df3)[!stringr::str_detect(colnames(df3), "Missing")], 
                                value.name = "y",
                                variable.name = "Data")
           
           
-          groupgraphs <- suppressWarnings(purrr::map(unique(df[[group]]), function(dfgr){
+          groupgraphs <- suppressWarnings(purrr::map(unique(df3[[group]]), function(df3gr){
             
-            rows <- df[[group]] == dfgr
-            dfsm <- df[rows,]
+            rows <- df3[[group]] == df3gr
+            df3sm <- df3[rows,c("y", "Data", group, "Total_Group_Counts")]
             
-            miss <- dfsm$Data == "Missing"
-            dfsm$y[miss] <- sum(dfsm$y[miss])
-            dfsm$y[!miss] <- sum(dfsm$y[!miss])
+            miss <- df3sm$Data == "Missing"
+            df3sm$y[miss] <- sum(df3sm$y[miss])
+            df3sm$y[!miss] <- sum(df3sm$y[!miss])
             
-            dup <- nrow(dfsm)/2
-            dfsm[["Total_Group_Counts"]] <- dfsm[["Total_Group_Counts"]]*dup
+            dup <- nrow(df3sm)/2
+            df3sm[["Total_Group_Counts"]] <- df3sm[["Total_Group_Counts"]]*dup
             
-            setlims <- NULL
+            df3sm <- unique.array(df3sm)
+            
+            df3sm <- dplyr::arrange(df3sm, Data, y)
+            
+            df3sm[["Data"]] <- as.character(df3sm[["Data"]])
+            df3sm[["Data"]] <- factor(df3sm[["Data"]], levels = c("Missing", "Non_Missing"))
+            df3sm[["y"]] <- as.integer(df3sm[["y"]])
+            df3sm[["Total_Group_Counts"]] <- as.integer(df3sm[["Total_Group_Counts"]])
+            
+            setlims3 <- NULL
             
             if(is.null(lims$max)){
               lims$max <- 1
@@ -1242,58 +1199,53 @@ format_plot <- function(trellData, ...) {
               lims$min <- 0
             }
             
-            increment <- set_increment(dfsm[["y"]])
-            setlims <- set_ylimits(dfsm[["y"]],
+            increment <- set_increment(as.numeric(df3sm[["y"]]))
+            setlims3 <- set_ylimits(as.numeric(df3sm[["y"]]),
                                    increment,
                                    y_max = lims$max,
                                    y_min = lims$min,
                                    include_zero = FALSE)
             
-            texty <- paste(
+            texty1 <- paste(
               paste(
                 paste(paste(group, ":", sep = ""),
-                unique(dfsm[[group]])),
-                paste("Count:", unique(dfsm[["y"]])), 
+                      df3sm[[group]]),
+                paste("Count:", df3sm[["y"]]), 
                 sep = "\n"),
-              paste("Status:", unique(dfsm[["Data"]])),
+              paste("Status:", df3sm[["Data"]]),
               sep = "\n")
-            
-            if(exists("plot_out")){
               
-            } else {
-              
-            }
+              plot <- ggplot2::ggplot() +
+                ggplot2::theme_bw() +
+                ggplot2::geom_col(
+                  ggplot2::aes(
+                               x = df3sm[[group]],
+                               y = df3sm[["y"]],
+                               fill = df3sm[["Data"]],
+                               order = df3sm[["Data"]],
+                               text = texty1),
+                  position = "fill") +
+                ggplot2::labs(x = NULL, y = NULL, fill = NULL) +
+                ggplot2::scale_y_continuous(
+                  sec.axis = ggplot2::sec_axis(
+                    ~.*max(df3sm[["Total_Group_Counts"]]),
+                    name = "", 
+                    breaks = c(seq(from = 0,
+                                   to = max(df3sm[["Total_Group_Counts"]]) - round(max(df3sm[["Total_Group_Counts"]])/10),
+                                   by = round(max(df3sm[["Total_Group_Counts"]])/10)+1),
+                               max(df3sm[["Total_Group_Counts"]])
+                    )),
+                  expand = c(0,0)) +
+                ggplot2::scale_x_discrete(expand = c(0,0)) + 
+                ggplot2::coord_cartesian(ylim = setlims3)
             
-            plot_out <- ggplot2::ggplot() +
-              ggplot2::geom_col(
-                ggplot2::aes(text = texty,
-                x = unique(dfsm[[group]]),
-                y = unique(dfsm[["y"]]),
-                fill = unique(dfsm[["Data"]])),
-                position = "fill") +
-              ggplot2::theme_bw() +
-              ggplot2::labs(x = NULL, y = NULL, fill = NULL) +
-              ggplot2::scale_y_continuous(
-                sec.axis = ggplot2::sec_axis(
-                  ~.*max(dfsm[["Total_Group_Counts"]]),
-                  name = "", 
-                  breaks = c(seq(from = 0,
-                                 to = max(dfsm[["Total_Group_Counts"]]) - round(max(dfsm[["Total_Group_Counts"]])/10),
-                                 by = round(max(dfsm[["Total_Group_Counts"]])/10)+1),
-                             max(dfsm[["Total_Group_Counts"]])
-                  )),
-                expand = c(0,0)) +
-              ggplot2::scale_x_discrete(expand = c(0,0)) + 
-              ggplot2::coord_cartesian(ylim = setlims)
-            
-            
-            return(plot_out)
+            return(plot)
             
           }))
           
           if (interactive){
   
-            if(exists("plot_out")){
+            if(plot_type[1] != "missing_bar"){
               plotlys <- purrr::map(groupgraphs, function(plot) plotly::ggplotly(plot, tooltip = "text"))
               plot_out2 <- plotly::subplot(plotlys, margin = 0.05)
             } else{
@@ -1301,12 +1253,10 @@ format_plot <- function(trellData, ...) {
               plot_out <- plotly::subplot(plotlys, margin = 0.05)
             }
             
-            # plotlys <- purrr::map(groupgraphs, function(plot) plotly::ggplotly(plot, tooltip = "text"))
-            # plot <- plotly::subplot(plotlys, margin = 0.05)
   
           } else {
               
-            if(exists("plot_out")){
+            if(plot_type[1] != "missing_bar"){
               plot <- ggpubr::ggarrange(plotlist = groupgraphs, common.legend = TRUE)
               plot_out2 <- ggpubr::annotate_figure(plot, 
                                               right = ggpubr::text_grob("Count", size = 8, rot = 270), 
@@ -1317,17 +1267,9 @@ format_plot <- function(trellData, ...) {
                                               right = ggpubr::text_grob("Count", size = 8, rot = 270), 
                                               left = ggpubr::text_grob("Proportion", size = 8, rot = 90))
             }
-            
-            # plot <- ggpubr::ggarrange(plotlist = groupgraphs, common.legend = TRUE)
-            # plot <- ggpubr::annotate_figure(plot, 
-            #                                 right = ggpubr::text_grob("Count", size = 8, rot = 270), 
-            #                                 left = ggpubr::text_grob("Proportion", size = 8, rot = 90))
   
           }
   
-          # return(plot)
-          
-        # }))
       } else {
         
         if ("Group_DF" %in% colnames(trellData$data_values)){
@@ -1335,40 +1277,46 @@ format_plot <- function(trellData, ...) {
         } else {
           group <- "Group"
         }
-        
-        # output_df <- data.frame(unique(
-        #   as.character(trellData$data_values[[panel_variable]]), stringsAsFactors = FALSE))
-        # colnames(output_df) <- panel_variable
-        
-        # All_plots[["missing_bar"]] <- suppressWarnings(purrr::map(output_df[[panel_variable]], function(panel){
-          rows <- trellData$data_values[[panel_variable]] == panel
-          df <- trellData$data_values[rows,]
+         rows <- as.character(trellData$data_values[[panel_variable]]) == panel
+          df3 <- trellData$data_values[rows,]
           
-          Count <- data.frame(table(df[complete.cases(df),]$Group))
+          Count <- data.frame(table(df3[complete.cases(df3),]$Group))
           totals <- data.frame(pmartR::get_group_table(trellData), stringsAsFactors = FALSE)
-          n_rep <- length(unique(df[[pmartR::get_edata_cname(trellData)]]))
+          n_rep <- length(unique(df3[[pmartR::get_edata_cname(trellData)]]))
           
           totals$Freq <- totals$Freq * n_rep
           
           colnames(Count) <- c(group, "Count")
           colnames(totals) <- c(group, "Total_Group_Counts")
-          df <- dplyr::left_join(df, Count, by = group)
-          df <- dplyr::left_join(df, totals, by = group)
+          df3 <- dplyr::left_join(df3, Count, by = group)
+          df3 <- dplyr::left_join(df3, totals, by = group)
           
-          df$Missing <-  df[["Total_Group_Counts"]] - df[["Count"]]
-          df$Non_Missing <- df[["Count"]]
+          df3$Missing <-  df3[["Total_Group_Counts"]] - df3[["Count"]]
+          df3$Non_Missing <- df3[["Count"]]
           
-          df <- reshape2::melt(df, 
-                               id.vars = colnames(df)[!stringr::str_detect(colnames(df), "Missing")],
+          df3 <- reshape2::melt(df3, 
+                               id.vars = colnames(df3)[!stringr::str_detect(colnames(df3), "Missing")],
                                value.name = "y",
                                variable.name = "Data")
           
           
-          groupgraphs <- purrr::map(unique(df[[group]]), function(dfgr){
-            rows <- df[[group]] == dfgr
-            dfsm <- df[rows,]
+          groupgraphs <- purrr::map(unique(df3[[group]]), function(df3gr){
+            rows <- df3[[group]] == df3gr
+            df3sm <- df3[rows, c("y", "Data", group, "Total_Group_Counts")]
+            df3sm <- unique.array(df3sm )
             
-            setlims <- NULL
+            df3sm <- dplyr::arrange(df3sm, Data, y)
+            
+            df3sm[["Data"]] <- as.character(df3sm[["Data"]])
+            df3sm[["Data"]] <- factor(df3sm[["Data"]], levels = c("Missing", "Non_Missing"))
+            
+            if(any(is.na(df3sm[["y"]]))) {
+              print(df3sm)
+              df3sm[["y"]][is.na(df3sm[["y"]])] <- 0
+              df3sm[["y"]][df3sm[["Data"]] == "Missing"] <- df3sm[["Total_Group_Counts"]][df3sm[["Data"]] == "Missing"]
+            }
+            
+            setlims3 <- NULL
             
             if(is.null(lims$max)){
               lims$max <- 1
@@ -1377,41 +1325,52 @@ format_plot <- function(trellData, ...) {
               lims$min <- 0
             }
   
-            increment <- set_increment(dfsm[["y"]])
-            setlims <- set_ylimits(dfsm[["y"]],
+            increment <- set_increment(as.numeric(df3sm[["y"]]))
+            setlims3 <- set_ylimits(as.numeric(df3sm[["y"]]),
                                    increment,
                                    y_max = lims$max,
                                    y_min = lims$min,
                                    include_zero = FALSE)
             
-            plot_out <- ggplot2::ggplot() +
+            texty1 <- paste(
+              paste(
+                paste(paste(group, ":", sep = ""),
+                      df3sm[[group]]),
+                paste("Count:", df3sm[["y"]]), 
+                sep = "\n"),
+              paste("Status:", df3sm[["Data"]]),
+              sep = "\n")
+            
+            plot <- ggplot2::ggplot() +
               ggplot2::theme_bw() +
-              ggplot2::geom_col(ggplot2::aes(x = unique(dfsm[[group]]),
-                                             y = unique(dfsm[["y"]]),
-                                             fill = unique(dfsm[["Data"]])),
+              ggplot2::geom_col(ggplot2::aes(x = df3sm[[group]],
+                                             y = df3sm[["y"]],
+                                             fill = df3sm[["Data"]],
+                                             order = df3sm[["Data"]],
+                                             text = texty1),
                                 position = "fill") +
               ggplot2::labs(x = NULL, y = NULL, fill = NULL) +
               ggplot2::scale_y_continuous(
                 sec.axis = ggplot2::sec_axis(
-                  ~.*max(dfsm[["Total_Group_Counts"]]),
+                  ~.*max(df3sm[["Total_Group_Counts"]]),
                   name = "", 
                   breaks = c(seq(from = 0,
-                                 to = max(dfsm[["Total_Group_Counts"]]) - round(max(dfsm[["Total_Group_Counts"]])/10),
-                                 by = round(max(dfsm[["Total_Group_Counts"]])/10)+1),
-                             max(dfsm[["Total_Group_Counts"]])
+                                 to = max(df3sm[["Total_Group_Counts"]]) - round(max(df3sm[["Total_Group_Counts"]])/10),
+                                 by = round(max(df3sm[["Total_Group_Counts"]])/10)+1),
+                             max(df3sm[["Total_Group_Counts"]])
                   )),
                 expand = c(0,0)) +
               ggplot2::scale_x_discrete(expand = c(0,0)) +
-              ggplot2::coord_cartesian(ylim = setlims)
+              ggplot2::coord_cartesian(ylim = setlims3)
             
-            return(plot_out)
+            return(plot)
             
           })
           
           
           if (interactive){
             
-            if(exists("plot_out")){
+            if(plot_type[1] != "missing_bar"){
               plotlys <- purrr::map(groupgraphs, function(plot) plotly::ggplotly(plot, tooltip = "text"))
               plot_out2 <- plotly::subplot(plotlys, margin = 0.05)
             } else{
@@ -1419,12 +1378,9 @@ format_plot <- function(trellData, ...) {
               plot_out <- plotly::subplot(plotlys, margin = 0.05)
             }
             
-            # plotlys <- purrr::map(groupgraphs, function(plot) plotly::ggplotly(plot, tooltip = "text"))
-            # plot <- plotly::subplot(plotlys, margin = 0.05)
-            
           } else {
             
-            if(exists("plot_out")){
+            if(plot_type[1] != "missing_bar"){
               plot <- ggpubr::ggarrange(plotlist = groupgraphs, common.legend = TRUE)
               plot_out2 <- ggpubr::annotate_figure(plot, 
                                                    right = ggpubr::text_grob("Count", size = 8, rot = 270), 
@@ -1436,8 +1392,6 @@ format_plot <- function(trellData, ...) {
                                                   left = ggpubr::text_grob("Proportion", size = 8, rot = 90))
             }
           
-        #   return(plot)
-        # }))
       }
       }
     }
@@ -1468,42 +1422,31 @@ format_plot <- function(trellData, ...) {
         
         pal <- grDevices::colorRampPalette(c("red", "yellow"))
         
-        # all_df <- trellData$data_values[c(abundance,
-        #                                      group,
-        #                                      pmartR::get_fdata_cname(trellData),
-        #                                      pmartR::get_edata_cname(trellData),
-        #                                      panel_variable)]
-        # 
-        # output_df <- tidyr::nest(output_df, -!!rlang::sym(panel_variable))
-        # 
-        # All_plots[["abundance_heatmap"]] <- suppressWarnings(purrr::map(output_df$data, function(df){
-        
-          df <- trellData$data_values[as.character(trellData$data_values[[panel_variable]]) == panel,]
+          df4 <- trellData$data_values[as.character(trellData$data_values[[panel_variable]]) == panel,]
           
-          df[[pmartR::get_fdata_cname(trellData)]] <- ordered(
-            df[[pmartR::get_fdata_cname(trellData)]], 
-            levels = rev(sort(unique(df[[pmartR::get_fdata_cname(trellData)]]))))
+          df4[[pmartR::get_fdata_cname(trellData)]] <- ordered(
+            df4[[pmartR::get_fdata_cname(trellData)]], 
+            levels = rev(sort(unique(df4[[pmartR::get_fdata_cname(trellData)]]))))
           
-          df[[pmartR::get_edata_cname(trellData)]] <- ordered(
-            df[[pmartR::get_edata_cname(trellData)]], 
-            levels = rev(sort(unique(df[[pmartR::get_edata_cname(trellData)]]))))
+          df4[[pmartR::get_edata_cname(trellData)]] <- ordered(
+            df4[[pmartR::get_edata_cname(trellData)]], 
+            levels = rev(sort(unique(df4[[pmartR::get_edata_cname(trellData)]]))))
           
-          
-          texty <- paste(
+          texty2 <- paste(
             paste(
               paste(paste(pmartR::get_edata_cname(trellData), ":", sep = ""),
-                    df[[pmartR::get_edata_cname(trellData)]]),
+                    df4[[pmartR::get_edata_cname(trellData)]]),
               paste(paste(pmartR::get_fdata_cname(trellData), ":", sep = ""),
-                    df[[pmartR::get_fdata_cname(trellData)]]), sep = "\n"),
-            paste(paste(abundance, ":", sep = ""), signif(df[[abundance]], 4)),
+                    df4[[pmartR::get_fdata_cname(trellData)]]), sep = "\n"),
+            paste(paste(abundance, ":", sep = ""), signif(as.numeric(df4[[abundance]]), 4)),
             sep = "\n")
   
-          if (exists("plot_out")){
+          if (plot_type[1] != "abundance_heatmap"){
             plot_out2 <- ggplot2::ggplot() +
-              ggplot2::geom_tile(ggplot2::aes(text = texty,
-                                              fill = df[[abundance]],
-                                              x = df[[pmartR::get_fdata_cname(trellData)]],
-                                              y = df[[pmartR::get_edata_cname(trellData)]])) +
+              ggplot2::geom_tile(ggplot2::aes(text = texty2,
+                                              fill = df4[[abundance]],
+                                              x = df4[[pmartR::get_fdata_cname(trellData)]],
+                                              y = df4[[pmartR::get_edata_cname(trellData)]])) +
               ggplot2::scale_fill_gradientn(abundance, colours = pal(50)) +
               ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
                              axis.ticks = ggplot2::element_blank(),
@@ -1516,7 +1459,7 @@ format_plot <- function(trellData, ...) {
                              legend.title = ggplot2::element_text(size = 8)) +
               ggplot2::xlab("")
             
-            if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+            if (length(unique(df4[[pmartR::get_edata_cname(trellData)]])) > 35){
               plot_out2 <- plot_out2 + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
                 ggplot2::ylab(pmartR::get_edata_cname(trellData))
             } else {
@@ -1524,7 +1467,7 @@ format_plot <- function(trellData, ...) {
                 ggplot2::ylab("")
             }
             
-            if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+            if (length(unique(df4[[pmartR::get_fdata_cname(trellData)]])) > 35){
               plot_out2 <- plot_out2 + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab(pmartR::get_fdata_cname(trellData))
             } else {
@@ -1532,11 +1475,12 @@ format_plot <- function(trellData, ...) {
                 ggplot2::xlab("")
             }
           } else {
+            
             plot_out <- ggplot2::ggplot() +
-              ggplot2::geom_tile(ggplot2::aes(text = texty,
-                                              fill = df[[abundance]],
-                                              x = df[[pmartR::get_fdata_cname(trellData)]],
-                                              y = df[[pmartR::get_edata_cname(trellData)]])) +
+              ggplot2::geom_tile(ggplot2::aes(text = texty2,
+                                              fill = df4[[abundance]],
+                                              x = df4[[pmartR::get_fdata_cname(trellData)]],
+                                              y = df4[[pmartR::get_edata_cname(trellData)]])) +
               ggplot2::scale_fill_gradientn(abundance, colours = pal(50)) +
               ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
                              axis.ticks = ggplot2::element_blank(),
@@ -1549,7 +1493,7 @@ format_plot <- function(trellData, ...) {
                              legend.title = ggplot2::element_text(size = 8)) +
               ggplot2::xlab("")
             
-            if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+            if (length(unique(df4[[pmartR::get_edata_cname(trellData)]])) > 35){
               plot_out <- plot_out + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
                 ggplot2::ylab(pmartR::get_edata_cname(trellData))
             } else {
@@ -1557,7 +1501,7 @@ format_plot <- function(trellData, ...) {
                 ggplot2::ylab("")
             }
             
-            if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+            if (length(unique(df4[[pmartR::get_fdata_cname(trellData)]])) > 35){
               plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab(pmartR::get_fdata_cname(trellData))
             } else {
@@ -1567,10 +1511,10 @@ format_plot <- function(trellData, ...) {
           }
           
           # heatmap <- ggplot2::ggplot() +
-          #   ggplot2::geom_tile(ggplot2::aes(text = texty,
-          #     fill = df[[abundance]],
-          #     x = df[[pmartR::get_fdata_cname(trellData)]],
-          #     y = df[[pmartR::get_edata_cname(trellData)]])) +
+          #   ggplot2::geom_tile(ggplot2::aes(text = texty2,
+          #     fill = df4[[abundance]],
+          #     x = df4[[pmartR::get_fdata_cname(trellData)]],
+          #     y = df4[[pmartR::get_edata_cname(trellData)]])) +
           #   ggplot2::scale_fill_gradientn(abundance, colours = pal(50)) +
           #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
           #                  axis.ticks = ggplot2::element_blank(),
@@ -1583,7 +1527,7 @@ format_plot <- function(trellData, ...) {
           #                  legend.title = ggplot2::element_text(size = 8)) +
           #   ggplot2::xlab("")
           # 
-          # if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+          # if (length(unique(df4[[pmartR::get_edata_cname(trellData)]])) > 35){
           #   heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
           #     ggplot2::ylab(pmartR::get_edata_cname(trellData))
           # } else {
@@ -1591,7 +1535,7 @@ format_plot <- function(trellData, ...) {
           #     ggplot2::ylab("")
           # }
           # 
-          # if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+          # if (length(unique(df4[[pmartR::get_fdata_cname(trellData)]])) > 35){
           #   heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
           #     ggplot2::xlab(pmartR::get_fdata_cname(trellData))
           # } else {
@@ -1621,29 +1565,30 @@ format_plot <- function(trellData, ...) {
         
         pal <- grDevices::colorRampPalette(c("red", "yellow"))
         
-        # output_df <- trellData$comp_stats[c(foldchange, 
+        # output_df5 <- trellData$comp_stats[c(foldchange, 
         #                                     "Comparison", 
         #                                     pmartR::get_edata_cname(trellData),  
         #                                     panel_variable)]
         # 
-        # output_df <- tidyr::nest(output_df, -!!rlang::sym(panel_variable))
+        # output_df5 <- tidyr::nest(output_df5, -!!rlang::sym(panel_variable))
         # 
-        # All_plots[["foldchange_heatmap"]] <- suppressWarnings(purrr::map(output_df$data, function(df){
+        # All_plots[["foldchange_heatmap"]] <- suppressWarnings(purrr::map(output_df5$data, function(df5){
         
-        df <- trellData$comp_stats[trellData$comp_stats[[panel_variable]] == panel,]
+        df5 <- trellData$comp_stats[as.character(trellData$comp_stats[[panel_variable]]) == panel,]
           
-          texty <- paste(
+          texty3 <- paste(
             paste(
               paste(paste(pmartR::get_edata_cname(trellData), ":", sep = ""),
-                  df[[pmartR::get_edata_cname(trellData)]]),
-              paste("Comparison:", df[["Comparison"]]), sep = "\n"),
-            paste(paste(foldchange, ":", sep = ""), signif(df[[foldchange]], 4)),
+                  df5[[pmartR::get_edata_cname(trellData)]]),
+              paste("Comparison:", df5[["Comparison"]]), sep = "\n"),
+            paste(paste(foldchange, ":", sep = ""), signif(as.numeric(df5[[foldchange]]), 4)),
             sep = "\n")
           
-          if(exists("plot_out")){
+          if(plot_type[1] != "foldchange_heatmap"){
+            
             plot_out2 <- ggplot2::ggplot(
-              df, 
-              ggplot2::aes(text = texty,
+              df5, 
+              ggplot2::aes(text = texty3,
                            x = ordered(!!rlang::sym("Comparison"),
                                        levels = rev(sort(unique(!!rlang::sym("Comparison"))))),
                            y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
@@ -1661,7 +1606,7 @@ format_plot <- function(trellData, ...) {
                              axis.ticks = ggplot2::element_blank(),
                              legend.title = ggplot2::element_text(size = 8))
             
-            if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+            if (length(unique(df5[[pmartR::get_edata_cname(trellData)]])) > 35){
               plot_out2 <- plot_out2 + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
                 ggplot2::ylab(pmartR::get_edata_cname(trellData))
             } else {
@@ -1669,17 +1614,19 @@ format_plot <- function(trellData, ...) {
                 ggplot2::ylab("")
             }
             
-            if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+            if (length(unique(df5[[pmartR::get_fdata_cname(trellData)]])) > 35){
               plot_out2 <- plot_out2 + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab(pmartR::get_fdata_cname(trellData))
             } else {
               plot_out2 <- plot_out2 + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
                 ggplot2::xlab("")
             }
+            
           } else {
+            
             plot_out <- ggplot2::ggplot(
-              df, 
-              ggplot2::aes(text = texty,
+              df5, 
+              ggplot2::aes(text = texty3,
                            x = ordered(!!rlang::sym("Comparison"),
                                        levels = rev(sort(unique(!!rlang::sym("Comparison"))))),
                            y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
@@ -1697,7 +1644,7 @@ format_plot <- function(trellData, ...) {
                              axis.ticks = ggplot2::element_blank(),
                              legend.title = ggplot2::element_text(size = 8))
             
-            if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+            if (length(unique(df5[[pmartR::get_edata_cname(trellData)]])) > 35){
               plot_out <- plot_out + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
                 ggplot2::ylab(pmartR::get_edata_cname(trellData))
             } else {
@@ -1705,7 +1652,7 @@ format_plot <- function(trellData, ...) {
                 ggplot2::ylab("")
             }
             
-            if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+            if (length(unique(df5[[pmartR::get_fdata_cname(trellData)]])) > 35){
               plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab(pmartR::get_fdata_cname(trellData))
             } else {
@@ -1713,46 +1660,6 @@ format_plot <- function(trellData, ...) {
                 ggplot2::xlab("")
             }
           }
-          
-          # heatmap <- ggplot2::ggplot(
-          #   df, 
-          #   ggplot2::aes(text = texty,
-          #     x = ordered(!!rlang::sym("Comparison"),
-          #                 levels = rev(sort(unique(!!rlang::sym("Comparison"))))),
-          #     y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
-          #                 levels = rev(sort(unique(!!rlang::sym(pmartR::get_edata_cname(trellData)))))))) +
-          #   ggplot2::geom_tile(ggplot2::aes(fill = !!rlang::sym(foldchange))) +
-          #   ggplot2::scale_fill_gradientn(foldchange, colours = pal(50)) +
-          #   ggplot2::xlab("") +  ggplot2::ylab("") +
-          #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90),
-          #                  axis.ticks = ggplot2::element_blank(),
-          #                  plot.title = ggplot2::element_text(size=2)) +
-          #   ggplot2::theme_bw() + 
-          #   ggplot2::scale_x_discrete(expand = c(0, 0)) +
-          #   ggplot2::scale_y_discrete(expand = c(0, 0)) +
-          #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6), 
-          #                  axis.ticks = ggplot2::element_blank(),
-          #                  legend.title = ggplot2::element_text(size = 8))
-          # 
-          # if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
-          #   heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
-          #     ggplot2::ylab(pmartR::get_edata_cname(trellData))
-          # } else {
-          #   heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_text(size = 6)) +
-          #     ggplot2::ylab("")
-          # }
-          # 
-          # if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
-          #   heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
-          #     ggplot2::xlab(pmartR::get_fdata_cname(trellData))
-          # } else {
-          #   heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
-          #     ggplot2::xlab("")
-          # }
-          
-          
-          # return(heatmap)
-        # }))
       }
     }
     
@@ -1773,40 +1680,40 @@ format_plot <- function(trellData, ...) {
           abundance <- grep("abundance", colnames(trellData$data_values), value = T)
           pal <- grDevices::colorRampPalette(c("red", "yellow"))
           
-          # output_df <- trellData$data_values[c(abundance,
+          # output_df6 <- trellData$data_values[c(abundance,
           #                                      pmartR::get_fdata_cname(trellData),
           #                                      pmartR::get_edata_cname(trellData),
           #                                      panel_variable)]
-          # output_df <- tidyr::nest(output_df, -!!rlang::sym(panel_variable))
-          # All_plots[["presence_heatmap"]] <- suppressWarnings(purrr::map(output_df$data, function(df){
+          # output_df6 <- tidyr::nest(output_df6, -!!rlang::sym(panel_variable))
+          # All_plots[["presence_heatmap"]] <- suppressWarnings(purrr::map(output_df6$data, function(df6){
             
-            df <- trellData$data_values[trellData$data_values[[panel_variable]] == panel,]
+            df6 <- trellData$data_values[as.character(trellData$data_values[[panel_variable]]) == panel,]
             
-            df <- tidyr::nest(df, -c(!!rlang::sym(pmartR::get_edata_cname(trellData)),
+            df6 <- tidyr::nest(df6, -c(!!rlang::sym(pmartR::get_edata_cname(trellData)),
                                      !!rlang::sym(pmartR::get_fdata_cname(trellData))))
-            df <- dplyr::mutate(df, Biomolecule_Presence = purrr::map_lgl(df$data, function(dfdat){
-              !all(is.na(dfdat[[abundance]]))
+            df6 <- dplyr::mutate(df6, Biomolecule_Presence = purrr::map_lgl(df6$data, function(df6dat){
+              !all(is.na(df6dat[[abundance]]))
             }))
             
-            df[["Biomolecule_Presence"]] <- gsub(TRUE, "Present", df[["Biomolecule_Presence"]])
-            df[["Biomolecule_Presence"]] <- gsub(FALSE, "Absent", df[["Biomolecule_Presence"]])
+            df6[["Biomolecule_Presence"]] <- gsub(TRUE, "Present", df6[["Biomolecule_Presence"]])
+            df6[["Biomolecule_Presence"]] <- gsub(FALSE, "Absent", df6[["Biomolecule_Presence"]])
             
             
-            texty <- paste(
+            texty4 <- paste(
               paste(
                 paste(paste(pmartR::get_edata_cname(trellData), ":", sep = ""),
-                      df[[pmartR::get_edata_cname(trellData)]]),
+                      df6[[pmartR::get_edata_cname(trellData)]]),
                 paste(paste(pmartR::get_fdata_cname(trellData), ":", sep = ""),
-                      df[[pmartR::get_fdata_cname(trellData)]]), sep = "\n"),
-              paste("Biomolecule_Presence:", df[["Biomolecule_Presence"]]),
+                      df6[[pmartR::get_fdata_cname(trellData)]]), sep = "\n"),
+              paste("Biomolecule_Presence:", df6[["Biomolecule_Presence"]]),
               sep = "\n")
             
             
-            if(exists("plot_out")){
+            if(plot_type[1] != "presence_heatmap"){
               
               plot_out2 <- ggplot2::ggplot(
-                df,
-                ggplot2::aes(text = texty,
+                df6,
+                ggplot2::aes(text = texty4,
                              x = ordered(!!rlang::sym(pmartR::get_fdata_cname(trellData)),
                                          levels = rev(sort(unique(!!rlang::sym(pmartR::get_fdata_cname(trellData)))))),
                              y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
@@ -1823,7 +1730,7 @@ format_plot <- function(trellData, ...) {
                 ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6),
                                axis.ticks = ggplot2::element_blank())
               
-              if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+              if (length(unique(df6[[pmartR::get_edata_cname(trellData)]])) > 35){
                 plot_out2 <- plot_out2 + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
                   ggplot2::ylab(pmartR::get_edata_cname(trellData))
               } else {
@@ -1831,7 +1738,7 @@ format_plot <- function(trellData, ...) {
                   ggplot2::ylab("")
               }
               
-              if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+              if (length(unique(df6[[pmartR::get_fdata_cname(trellData)]])) > 35){
                 plot_out2 <- plot_out2 + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
                   ggplot2::xlab(pmartR::get_fdata_cname(trellData))
               } else {
@@ -1842,8 +1749,8 @@ format_plot <- function(trellData, ...) {
             } else {
               
               plot_out <- ggplot2::ggplot(
-                df,
-                ggplot2::aes(text = texty,
+                df6,
+                ggplot2::aes(text = texty4,
                              x = ordered(!!rlang::sym(pmartR::get_fdata_cname(trellData)),
                                          levels = rev(sort(unique(!!rlang::sym(pmartR::get_fdata_cname(trellData)))))),
                              y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
@@ -1860,7 +1767,7 @@ format_plot <- function(trellData, ...) {
                 ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6),
                                axis.ticks = ggplot2::element_blank())
               
-              if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+              if (length(unique(df6[[pmartR::get_edata_cname(trellData)]])) > 35){
                 plot_out <- plot_out + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
                   ggplot2::ylab(pmartR::get_edata_cname(trellData))
               } else {
@@ -1868,7 +1775,7 @@ format_plot <- function(trellData, ...) {
                   ggplot2::ylab("")
               }
               
-              if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+              if (length(unique(df6[[pmartR::get_fdata_cname(trellData)]])) > 35){
                 plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
                   ggplot2::xlab(pmartR::get_fdata_cname(trellData))
               } else {
@@ -1879,8 +1786,8 @@ format_plot <- function(trellData, ...) {
             }
             
             # heatmap <- ggplot2::ggplot(
-            #   df,
-            #   ggplot2::aes(text = texty,
+            #   df6,
+            #   ggplot2::aes(text = texty4,
             #     x = ordered(!!rlang::sym(pmartR::get_fdata_cname(trellData)),
             #                 levels = rev(sort(unique(!!rlang::sym(pmartR::get_fdata_cname(trellData)))))),
             #     y = ordered(!!rlang::sym(pmartR::get_edata_cname(trellData)),
@@ -1897,7 +1804,7 @@ format_plot <- function(trellData, ...) {
             #   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 6),
             #                  axis.ticks = ggplot2::element_blank())
             # 
-            # if (length(unique(df[[pmartR::get_edata_cname(trellData)]])) > 35){
+            # if (length(unique(df6[[pmartR::get_edata_cname(trellData)]])) > 35){
             #   heatmap <- heatmap + ggplot2::theme(axis.text.y = ggplot2::element_blank()) +
             #     ggplot2::ylab(pmartR::get_edata_cname(trellData))
             # } else {
@@ -1905,20 +1812,194 @@ format_plot <- function(trellData, ...) {
             #     ggplot2::ylab("")
             # }
             # 
-            # if (length(unique(df[[pmartR::get_fdata_cname(trellData)]])) > 35){
+            # if (length(unique(df6[[pmartR::get_fdata_cname(trellData)]])) > 35){
             #   heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
             #     ggplot2::xlab(pmartR::get_fdata_cname(trellData))
             # } else {
             #   heatmap <- heatmap + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
             #     ggplot2::xlab("")
             # }
-            
-            return(heatmap)
+            # 
+            # return(heatmap)
             
           # }))
         # }
       }
     }
+    
+    #### Abundance Boxplot ####
+    if("abundance_boxplot" %in% plot_type){
+      
+      lims <- graphlims[["abundance_boxplot"]]
+      
+      if ("Group_DF" %in% colnames(trellData$data_values)) {
+        group_df_name <- "Group_DF"
+      } else {
+        group_df_name <- "Group"
+      }
+      
+      abundance <- grep("abundance",
+                        colnames(trellData$data_values),
+                        value = TRUE)
+      
+      plotter <- trellData$data_values
+      
+      if(!is.null(lims$scale) && lims$scale == "fixed"){
+        
+        increment <- set_increment(plotter[[abundance]])
+        setlims4 <- set_ylimits(plotter[[abundance]],
+                               increment,
+                               y_range = lims$range,
+                               y_max = lims$max,
+                               y_min = lims$min,
+                               include_zero = FALSE)
+      }
+      
+      # output_df <- plotter %>% tidyr::nest(-panel_variable)
+      # 
+      # All_plots[["abundance_boxplot"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
+      
+      # All_plots[["abundance_boxplot"]] <- vector(mode = "list", length = length(output_df[[panel_variable]]))
+      # 
+      # All_plots[["abundance_boxplot"]] <- suppressWarnings(foreach::foreach(i=1:length(output_df[[panel_variable]]))%dopar%{
+      #   
+      # cat(paste("abundance_boxplot:", i, "/", length(output_df[[panel_variable]]), "plots\n"),
+      #     file="log.trelliVis.txt", append=TRUE)
+      # nestedData <- output_df$data[[i]]
+      
+      nestedData <- plotter[as.character(plotter[[panel_variable]]) == panel,]
+      
+      ## Set hover, excluding the panel_variable ##
+      nestedData_value <- add_plot_features(trellData,
+                                            nestedData,
+                                            p_val = p_val,
+                                            panel_variable = panel_variable,
+                                            value_panel_y_axis = abundance)  ### Take out of function later 
+      
+      # Make ggplots #
+      if(!exists("setlims4")){
+        
+        increment <- set_increment(nestedData_value[[abundance]])
+        setlims4 <- set_ylimits(nestedData_value[[abundance]],
+                               increment,
+                               y_range = lims$range,
+                               y_max = lims$max,
+                               y_min = lims$min,
+                               include_zero = FALSE)
+      }
+      
+      if (plot_type[1] != "abundance_boxplot"){
+        
+        plot_out2 <- ggplot2::ggplot() +
+          ggplot2::theme_bw() +
+          ggplot2::theme(legend.position='none',
+                         axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+          ggplot2::xlab(group_df_name) + 
+          ggplot2::ylab(abundance) +
+          ggplot2::labs(color = "", fill = "") +
+          
+          ggplot2::geom_point(
+            ggplot2::aes(
+              text = gsub(", ", "\n", nestedData_value[["text"]]),
+              x = as.character(nestedData_value[[group_df_name]]),
+              y = nestedData_value[[abundance]],
+              fill = nestedData_value[[group_df_name]]),
+            position = "jitter",
+            size = 2,
+            color = "black",
+            na.rm = TRUE, 
+            alpha = 0.7) +
+          
+          ggplot2::geom_boxplot(
+            ggplot2::aes(
+              x = as.character(nestedData_value[[group_df_name]]),
+              y = nestedData_value[[abundance]],
+              fill = nestedData_value[[group_df_name]]),
+            alpha = 0.2,
+            position = "dodge2",
+            na.rm = TRUE) +
+          ggplot2::labs(x = NULL) +
+
+          ggplot2::coord_cartesian(ylim = setlims4)
+        
+      } else {
+        
+        plot_out <- ggplot2::ggplot() +
+          ggplot2::theme_bw() +
+          ggplot2::theme(legend.position='none',
+                         axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+          ggplot2::xlab(group_df_name) + 
+          ggplot2::ylab(abundance) +
+          ggplot2::labs(color = "", fill = "") +
+          
+          ggplot2::geom_point(
+            ggplot2::aes(
+              text = gsub(", ", "\n", nestedData_value[["text"]]),
+              x = as.character(nestedData_value[[group_df_name]]),
+              y = nestedData_value[[abundance]],
+              fill = nestedData_value[[group_df_name]]),
+            position = "jitter",
+            size = 2,
+            color = "black",
+            na.rm = TRUE, 
+            alpha = 0.7) +
+          
+          ggplot2::geom_boxplot(
+            ggplot2::aes(
+              x = as.character(nestedData_value[[group_df_name]]),
+              y = nestedData_value[[abundance]],
+              fill = nestedData_value[[group_df_name]]),
+            alpha = 0.2,
+            position = "dodge2",
+            na.rm = TRUE) +
+          ggplot2::labs(x = NULL) + 
+          
+          ggplot2::coord_cartesian(ylim = setlims4)
+        
+        # if (!is.null(lims[[1]])){
+        #   plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims4)
+        # }
+        
+      }
+      
+      # plot_value <- ggplot2::ggplot() +
+      #   ggplot2::theme_bw() +
+      #   ggplot2::theme(legend.position='none',
+      #                  axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+      #   ggplot2::xlab(group_df_name) + 
+      #   ggplot2::ylab(abundance) +
+      #   ggplot2::labs(color = "", fill = "") +
+      #   
+      #   ggplot2::geom_point(
+      #     ggplot2::aes(
+      #       text = gsub(", ", "\n", nestedData_value[["text"]]),
+      #       x = as.character(nestedData_value[[group_df_name]]),
+      #       y = nestedData_value[[abundance]],
+      #       fill = nestedData_value[[group_df_name]]),
+      #     position = "jitter",
+      #     size = 2,
+      #     color = "black",
+      #     na.rm = TRUE, 
+      #     alpha = 0.7) +
+      #   
+      #   ggplot2::geom_boxplot(
+      #     ggplot2::aes(
+      #       x = as.character(nestedData_value[[group_df_name]]),
+      #       y = nestedData_value[[abundance]],
+      #       fill = nestedData_value[[group_df_name]]),
+      #     alpha = 0.2,
+      #     position = "dodge2",
+      #     na.rm = TRUE) +
+      #   ggplot2::labs(x = NULL)
+      # 
+      # if (!is.null(lims[[1]])){
+      #   plot_value <- plot_value + ggplot2::coord_cartesian(ylim = setlims4)
+      # }
+      
+      #   return(plot_value)
+      # }))
+    }
+    
     
     #### Foldchange bar ####
     if("foldchange_bar" %in% plot_type){
@@ -1933,13 +2014,19 @@ format_plot <- function(trellData, ...) {
       
       plotter <- trellData$comp_stats
       
+      if(!is.null(panel_variable) && !(panel_variable %in% colnames(trellData$comp_stats))) stop(
+        paste(
+          c("Panel variable for foldchange_bar must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)), 
+          collapse = " "
+        ))
+      
       if(!is.null(lims$scale) && lims$scale == "fixed"){
         
         setter <- plotter[["Fold_change"]] +
           (0.55 * plotter[["Fold_change"]])
         
         increment <- set_increment(setter)
-        setlims <- set_ylimits(setter,
+        setlims5 <- set_ylimits(setter,
                                increment,
                                y_range = lims$range,
                                y_max = lims$max,
@@ -1967,7 +2054,7 @@ format_plot <- function(trellData, ...) {
       
       # All_plots[["foldchange_bar"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
       
-      nestedData <- plotter[plotter[[panel_variable]] == panel]
+      nestedData <- plotter[as.character(plotter[[panel_variable]]) == panel,]
         
         ## Add border color, hover text, and label text to dataframe for plotting ##
         nestedData_comps <- add_plot_features(trellData,
@@ -1980,16 +2067,13 @@ format_plot <- function(trellData, ...) {
         
         # Make ggplots #
         
-        if(!is.null(lims$scale) && lims$scale != "fixed" ||
-           !is.null(lims$max) ||
-           !is.null(lims$min) ||
-           !is.null(lims$range)){
+        if(!exists("setlims5")){
           
           setter <- nestedData_comps[["Fold_change"]] +
             (0.55 * nestedData_comps[["Fold_change"]])
           
           increment <- set_increment(setter)
-          setlims <- set_ylimits(setter,
+          setlims5 <- set_ylimits(setter,
                                  increment,
                                  y_range = lims$range,
                                  y_max = lims$max,
@@ -1997,7 +2081,7 @@ format_plot <- function(trellData, ...) {
                                  include_zero = TRUE)
         }
         
-        if(exists("plot_out")){
+        if(plot_type[1] != "foldchange_bar"){
           
           plot_out2 <- ggplot2::ggplot() + 
             ggplot2::theme_bw() +
@@ -2007,7 +2091,7 @@ format_plot <- function(trellData, ...) {
             ggplot2::xlab("Comparison") + 
             ggplot2::ylab("Fold_change") 
           
-          if (pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps)){
+          if ((pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps))){
             
             plot_out2 <- plot_out2 + ggplot2::geom_col(
               ggplot2::aes(
@@ -2032,6 +2116,46 @@ format_plot <- function(trellData, ...) {
                 axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab("Biomolecules")
             }
+          } else {
+            
+            plot_out2 <- plot_out2 + ggplot2::geom_col(
+              ggplot2::aes(
+                text = gsub(", ", "\n", nestedData_comps[["text"]]),
+                x = as.character(nestedData_comps[["Comparison"]]),
+                y = as.numeric(nestedData_comps[["Fold_change"]]),
+                fill = as.character(nestedData_comps[["Comparison"]])
+              ),
+              color = nestedData_comps[["bord"]],
+              position = "dodge2",
+              size = 1,
+              na.rm = TRUE) +
+              ggplot2::labs(fill = "", color = "", x = NULL) +
+              ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+              ggplot2::theme(legend.position = "none")
+            
+            if (plot_text){
+              
+              textcomps <- nestedData_comps
+              textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
+              
+              plot_out2 <-  plot_out2 + ggplot2::geom_text(
+                ggplot2::aes(
+                  x = as.character(textcomps[["Comparison"]]),
+                  y = textcomps[["Fold_change"]] + 
+                    (0.5 * textcomps[["Fold_change"]]), 
+                  label = gsub(", ", "\n", textcomps[["labels"]])),
+                color = "black"
+              )
+            }
+          }
+            
+
+          plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims5)
+          
+          if (interactive){
+            plot_out2 <- plot_out2 + ggplot2::theme(legend.position = "none")
+          }
+
           
         } else {
           
@@ -2068,267 +2192,309 @@ format_plot <- function(trellData, ...) {
                 axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab("Biomolecules")
             }
-          
-          }
-        }
         
-        
-        # plot_comps <- ggplot2::ggplot() + 
-        #   ggplot2::theme_bw() +
-        #   ggplot2::geom_hline(yintercept = 0) +
-        #   ggplot2::theme(
-        #                  axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-        #   ggplot2::xlab("Comparison") + 
-        #   ggplot2::ylab("Fold_change") 
-        # 
-        # if (pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps)){
-        #   
-        #   plot_comps <- plot_comps + ggplot2::geom_col(
-        #     ggplot2::aes(
-        #       text = gsub(", ", "\n", nestedData_comps[["text"]]),
-        #       x = nestedData_comps[[pmartR::get_edata_cname(trellData)]],
-        #       y = as.numeric(nestedData_comps[["Fold_change"]]),
-        #       fill = as.character(nestedData_comps[["Comparison"]]),
-        #       color = nestedData_comps[["bord"]]),
-        #     position = "dodge2",
-        #     size = 1,
-        #     na.rm = TRUE) +
-        #     ggplot2::labs(fill = "", color = "", x = NULL) +
-        #     ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black"), guide = FALSE)
-        #   
-        #   if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 8){
-        #     plot_comps <- plot_comps + ggplot2::theme(
-        #       axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 5))
-        #   }
-        #   
-        #   if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 21){
-        #     plot_comps <- plot_comps + ggplot2::theme(
-        #       axis.text.x = ggplot2::element_blank()) +
-        #       ggplot2::xlab("Biomolecules")
-        #   }
           
-        } else {
-          
-          plot_comps <- plot_comps + ggplot2::geom_col(
-            ggplot2::aes(
-              text = gsub(", ", "\n", nestedData_comps[["text"]]),
-              x = as.character(nestedData_comps[["Comparison"]]),
-              y = as.numeric(nestedData_comps[["Fold_change"]]),
-              fill = as.character(nestedData_comps[["Comparison"]])
-              ),
-            color = nestedData_comps[["bord"]],
-            position = "dodge2",
-            size = 1,
-            na.rm = TRUE) +
-            ggplot2::labs(fill = "", color = "", x = NULL) +
-            ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
-            ggplot2::theme(legend.position = "none")
-          
-          if (plot_text){
+          } else {
             
-            textcomps <- nestedData_comps
-            textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
-            
-            plot_comps <-  plot_comps + ggplot2::geom_text(
+            plot_out <- plot_out + ggplot2::geom_col(
               ggplot2::aes(
-                x = as.character(textcomps[["Comparison"]]),
-                y = textcomps[["Fold_change"]] + 
-                  (0.5 * textcomps[["Fold_change"]]), 
-                label = gsub(", ", "\n", textcomps[["labels"]])),
-              color = "black"
-            )
+                text = gsub(", ", "\n", nestedData_comps[["text"]]),
+                x = as.character(nestedData_comps[["Comparison"]]),
+                y = as.numeric(nestedData_comps[["Fold_change"]]),
+                fill = as.character(nestedData_comps[["Comparison"]])
+              ),
+              color = nestedData_comps[["bord"]],
+              position = "dodge2",
+              size = 1,
+              na.rm = TRUE) +
+              ggplot2::labs(fill = "", color = "", x = NULL) +
+              ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+              ggplot2::theme(legend.position = "none")
+            
+            if (plot_text){
+              
+              textcomps <- nestedData_comps
+              textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
+              
+              plot_out <-  plot_out + ggplot2::geom_text(
+                ggplot2::aes(
+                  x = as.character(textcomps[["Comparison"]]),
+                  y = textcomps[["Fold_change"]] + 
+                    (0.5 * textcomps[["Fold_change"]]), 
+                  label = gsub(", ", "\n", textcomps[["labels"]])),
+                color = "black"
+              )
+            }
           }
+            
+          plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims5)
+          
+          if (interactive){
+            plot_out <- plot_out + ggplot2::theme(legend.position = "none")
+          }
+        }
+          
+          # if(exists("plot_out")){
+          # 
+          #   plot_out2 <- plot_out2 + ggplot2::geom_col(
+          #     ggplot2::aes(
+          #       text = gsub(", ", "\n", nestedData_comps[["text"]]),
+          #       x = as.character(nestedData_comps[["Comparison"]]),
+          #       y = as.numeric(nestedData_comps[["Fold_change"]]),
+          #       fill = as.character(nestedData_comps[["Comparison"]])
+          #       ),
+          #     color = nestedData_comps[["bord"]],
+          #     position = "dodge2",
+          #     size = 1,
+          #     na.rm = TRUE) +
+          #     ggplot2::labs(fill = "", color = "", x = NULL) +
+          #     ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+          #     ggplot2::theme(legend.position = "none")
+          #   
+          #   if (plot_text){
+          #     
+          #     textcomps <- nestedData_comps
+          #     textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
+          #     
+          #     plot_out2 <-  plot_out2 + ggplot2::geom_text(
+          #       ggplot2::aes(
+          #         x = as.character(textcomps[["Comparison"]]),
+          #         y = textcomps[["Fold_change"]] + 
+          #           (0.5 * textcomps[["Fold_change"]]), 
+          #         label = gsub(", ", "\n", textcomps[["labels"]])),
+          #       color = "black"
+          #     )
+          #   }
+          # 
+          # if (!is.null(lims[[1]])){
+          #   plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims)
+          # }
+          # 
+          # if (interactive){
+          #   plot_out2 <- plot_out2 + ggplot2::theme(legend.position = "none")
+          # }
+        
+        # else {
+        #   
+        #     plot_out <- plot_out + ggplot2::geom_col(
+        #       ggplot2::aes(
+        #         text = gsub(", ", "\n", nestedData_comps[["text"]]),
+        #         x = as.character(nestedData_comps[["Comparison"]]),
+        #         y = as.numeric(nestedData_comps[["Fold_change"]]),
+        #         fill = as.character(nestedData_comps[["Comparison"]])
+        #       ),
+        #       color = nestedData_comps[["bord"]],
+        #       position = "dodge2",
+        #       size = 1,
+        #       na.rm = TRUE) +
+        #       ggplot2::labs(fill = "", color = "", x = NULL) +
+        #       ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+        #       ggplot2::theme(legend.position = "none")
+        #     
+        #     if (plot_text){
+        #       
+        #       textcomps <- nestedData_comps
+        #       textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
+        #       
+        #       plot_out <-  plot_out + ggplot2::geom_text(
+        #         ggplot2::aes(
+        #           x = as.character(textcomps[["Comparison"]]),
+        #           y = textcomps[["Fold_change"]] + 
+        #             (0.5 * textcomps[["Fold_change"]]), 
+        #           label = gsub(", ", "\n", textcomps[["labels"]])),
+        #         color = "black"
+        #       )
+        #     }
+        #   
+        #   if (!is.null(lims[[1]])){
+        #     plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+        #   }
+        #   
+        #   if (interactive){
+        #     plot_out <- plot_out + ggplot2::theme(legend.position = "none")
+        #   }
           
         }
-  
-        if (!is.null(lims[[1]])){
-          plot_comps <- plot_comps + ggplot2::coord_cartesian(ylim = setlims)
-        }
-        
-        if (interactive){
-          plot_comps <- plot_comps + ggplot2::theme(legend.position = "none")
-        }
-        
       #   return(plot_comps)
       # }))
-    }
-    
-    #### Abundance Boxplot ####
-    if("abundance_boxplot" %in% plot_type){
-      
-      lims <- graphlims[["abundance_boxplot"]]
-      
-      if ("Group_DF" %in% colnames(trellData$data_values)) {
-        group_df_name <- "Group_DF"
-      } else {
-        group_df_name <- "Group"
-      }
-      
-      abundance <- grep("abundance",
-                        colnames(trellData$data_values),
-                        value = TRUE)
-      
-      plotter <- trellData$data_values
-      
-      if(!is.null(lims$scale) && lims$scale == "fixed"){
-        
-        increment <- set_increment(plotter[[abundance]])
-        setlims <- set_ylimits(plotter[[abundance]],
-                               increment,
-                               y_range = lims$range,
-                               y_max = lims$max,
-                               y_min = lims$min,
-                               include_zero = FALSE)
-      }
-      
-      # output_df <- plotter %>% tidyr::nest(-panel_variable)
-      # 
-      # All_plots[["abundance_boxplot"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
-      
-      # All_plots[["abundance_boxplot"]] <- vector(mode = "list", length = length(output_df[[panel_variable]]))
-      # 
-      # All_plots[["abundance_boxplot"]] <- suppressWarnings(foreach::foreach(i=1:length(output_df[[panel_variable]]))%dopar%{
-      #   
-        # cat(paste("abundance_boxplot:", i, "/", length(output_df[[panel_variable]]), "plots\n"),
-        #     file="log.trelliVis.txt", append=TRUE)
-        # nestedData <- output_df$data[[i]]
-      
-        nestedData <- plotter[plotter[[panel_variable]] == panel]
-      
-        ## Set hover, excluding the panel_variable ##
-        nestedData_value <- add_plot_features(trellData,
-                                              nestedData,
-                                              p_val = p_val,
-                                              panel_variable = panel_variable,
-                                              value_panel_y_axis = abundance)  ### Take out of function later 
-        
-        # Make ggplots #
-        if((!is.null(lims$scale) && lims$scale != "fixed") ||
-           !is.null(lims$max) ||
-           !is.null(lims$min) ||
-           !is.null(lims$range)){
-          increment <- set_increment(nestedData_value[[abundance]])
-          setlims <- set_ylimits(nestedData_value[[abundance]],
-                                 increment,
-                                 y_range = lims$range,
-                                 y_max = lims$max,
-                                 y_min = lims$min,
-                                 include_zero = FALSE)
-        }
-        
-        if (exists("plot_out")){
-          
-          plot_out2 <- ggplot2::ggplot() +
-            ggplot2::theme_bw() +
-            ggplot2::theme(legend.position='none',
-                           axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-            ggplot2::xlab(group_df_name) + 
-            ggplot2::ylab(abundance) +
-            ggplot2::labs(color = "", fill = "") +
-            
-            ggplot2::geom_point(
-              ggplot2::aes(
-                text = gsub(", ", "\n", nestedData_value[["text"]]),
-                x = as.character(nestedData_value[[group_df_name]]),
-                y = nestedData_value[[abundance]],
-                fill = nestedData_value[[group_df_name]]),
-              position = "jitter",
-              size = 2,
-              color = "black",
-              na.rm = TRUE, 
-              alpha = 0.7) +
-            
-            ggplot2::geom_boxplot(
-              ggplot2::aes(
-                x = as.character(nestedData_value[[group_df_name]]),
-                y = nestedData_value[[abundance]],
-                fill = nestedData_value[[group_df_name]]),
-              alpha = 0.2,
-              position = "dodge2",
-              na.rm = TRUE) +
-            ggplot2::labs(x = NULL)
-          
-          if (!is.null(lims[[1]])){
-            plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims)
-          }
-          
-        } else {
-          
-          plot_out <- ggplot2::ggplot() +
-            ggplot2::theme_bw() +
-            ggplot2::theme(legend.position='none',
-                           axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-            ggplot2::xlab(group_df_name) + 
-            ggplot2::ylab(abundance) +
-            ggplot2::labs(color = "", fill = "") +
-            
-            ggplot2::geom_point(
-              ggplot2::aes(
-                text = gsub(", ", "\n", nestedData_value[["text"]]),
-                x = as.character(nestedData_value[[group_df_name]]),
-                y = nestedData_value[[abundance]],
-                fill = nestedData_value[[group_df_name]]),
-              position = "jitter",
-              size = 2,
-              color = "black",
-              na.rm = TRUE, 
-              alpha = 0.7) +
-            
-            ggplot2::geom_boxplot(
-              ggplot2::aes(
-                x = as.character(nestedData_value[[group_df_name]]),
-                y = nestedData_value[[abundance]],
-                fill = nestedData_value[[group_df_name]]),
-              alpha = 0.2,
-              position = "dodge2",
-              na.rm = TRUE) +
-            ggplot2::labs(x = NULL)
-          
-          if (!is.null(lims[[1]])){
-            plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
-          }
-          
-        }
-        
-        # plot_value <- ggplot2::ggplot() +
-        #   ggplot2::theme_bw() +
-        #   ggplot2::theme(legend.position='none',
-        #                  axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-        #   ggplot2::xlab(group_df_name) + 
-        #   ggplot2::ylab(abundance) +
-        #   ggplot2::labs(color = "", fill = "") +
-        #   
-        #   ggplot2::geom_point(
-        #     ggplot2::aes(
-        #       text = gsub(", ", "\n", nestedData_value[["text"]]),
-        #       x = as.character(nestedData_value[[group_df_name]]),
-        #       y = nestedData_value[[abundance]],
-        #       fill = nestedData_value[[group_df_name]]),
-        #     position = "jitter",
-        #     size = 2,
-        #     color = "black",
-        #     na.rm = TRUE, 
-        #     alpha = 0.7) +
-        #   
-        #   ggplot2::geom_boxplot(
-        #     ggplot2::aes(
-        #       x = as.character(nestedData_value[[group_df_name]]),
-        #       y = nestedData_value[[abundance]],
-        #       fill = nestedData_value[[group_df_name]]),
-        #     alpha = 0.2,
-        #     position = "dodge2",
-        #     na.rm = TRUE) +
-        #   ggplot2::labs(x = NULL)
-        # 
-        # if (!is.null(lims[[1]])){
-        #   plot_value <- plot_value + ggplot2::coord_cartesian(ylim = setlims)
-        # }
-        
-      #   return(plot_value)
-      # }))
-        }
 
     
+    # #### Abundance Boxplot ####
+    # if("abundance_boxplot" %in% plot_type){
+    #   
+    #   lims <- graphlims[["abundance_boxplot"]]
+    #   
+    #   if ("Group_DF" %in% colnames(trellData$data_values)) {
+    #     group_df_name <- "Group_DF"
+    #   } else {
+    #     group_df_name <- "Group"
+    #   }
+    #   
+    #   abundance <- grep("abundance",
+    #                     colnames(trellData$data_values),
+    #                     value = TRUE)
+    #   
+    #   plotter <- trellData$data_values
+    #   
+    #   if(!is.null(lims$scale) && lims$scale == "fixed"){
+    #     
+    #     increment <- set_increment(plotter[[abundance]])
+    #     setlims <- set_ylimits(plotter[[abundance]],
+    #                            increment,
+    #                            y_range = lims$range,
+    #                            y_max = lims$max,
+    #                            y_min = lims$min,
+    #                            include_zero = FALSE)
+    #   }
+    #   
+    #   # output_df <- plotter %>% tidyr::nest(-panel_variable)
+    #   # 
+    #   # All_plots[["abundance_boxplot"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
+    #   
+    #   # All_plots[["abundance_boxplot"]] <- vector(mode = "list", length = length(output_df[[panel_variable]]))
+    #   # 
+    #   # All_plots[["abundance_boxplot"]] <- suppressWarnings(foreach::foreach(i=1:length(output_df[[panel_variable]]))%dopar%{
+    #   #   
+    #     # cat(paste("abundance_boxplot:", i, "/", length(output_df[[panel_variable]]), "plots\n"),
+    #     #     file="log.trelliVis.txt", append=TRUE)
+    #     # nestedData <- output_df$data[[i]]
+    #   
+    #     nestedData <- plotter[as.character(plotter[[panel_variable]]) == panel,]
+    #   
+    #     ## Set hover, excluding the panel_variable ##
+    #     nestedData_value <- add_plot_features(trellData,
+    #                                           nestedData,
+    #                                           p_val = p_val,
+    #                                           panel_variable = panel_variable,
+    #                                           value_panel_y_axis = abundance)  ### Take out of function later 
+    #     
+    #     # Make ggplots #
+    #     if((!is.null(lims$scale) && lims$scale != "fixed") ||
+    #        !is.null(lims$max) ||
+    #        !is.null(lims$min) ||
+    #        !is.null(lims$range)){
+    #       increment <- set_increment(nestedData_value[[abundance]])
+    #       setlims <- set_ylimits(nestedData_value[[abundance]],
+    #                              increment,
+    #                              y_range = lims$range,
+    #                              y_max = lims$max,
+    #                              y_min = lims$min,
+    #                              include_zero = FALSE)
+    #     }
+    #     
+    #     if (exists("plot_out")){
+    #       
+    #       plot_out2 <- ggplot2::ggplot() +
+    #         ggplot2::theme_bw() +
+    #         ggplot2::theme(legend.position='none',
+    #                        axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+    #         ggplot2::xlab(group_df_name) + 
+    #         ggplot2::ylab(abundance) +
+    #         ggplot2::labs(color = "", fill = "") +
+    #         
+    #         ggplot2::geom_point(
+    #           ggplot2::aes(
+    #             text = gsub(", ", "\n", nestedData_value[["text"]]),
+    #             x = as.character(nestedData_value[[group_df_name]]),
+    #             y = nestedData_value[[abundance]],
+    #             fill = nestedData_value[[group_df_name]]),
+    #           position = "jitter",
+    #           size = 2,
+    #           color = "black",
+    #           na.rm = TRUE, 
+    #           alpha = 0.7) +
+    #         
+    #         ggplot2::geom_boxplot(
+    #           ggplot2::aes(
+    #             x = as.character(nestedData_value[[group_df_name]]),
+    #             y = nestedData_value[[abundance]],
+    #             fill = nestedData_value[[group_df_name]]),
+    #           alpha = 0.2,
+    #           position = "dodge2",
+    #           na.rm = TRUE) +
+    #         ggplot2::labs(x = NULL)
+    #       
+    #       if (!is.null(lims[[1]])){
+    #         plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims)
+    #       }
+    #       
+    #     } else {
+    #       
+    #       plot_out <- ggplot2::ggplot() +
+    #         ggplot2::theme_bw() +
+    #         ggplot2::theme(legend.position='none',
+    #                        axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+    #         ggplot2::xlab(group_df_name) + 
+    #         ggplot2::ylab(abundance) +
+    #         ggplot2::labs(color = "", fill = "") +
+    #         
+    #         ggplot2::geom_point(
+    #           ggplot2::aes(
+    #             text = gsub(", ", "\n", nestedData_value[["text"]]),
+    #             x = as.character(nestedData_value[[group_df_name]]),
+    #             y = nestedData_value[[abundance]],
+    #             fill = nestedData_value[[group_df_name]]),
+    #           position = "jitter",
+    #           size = 2,
+    #           color = "black",
+    #           na.rm = TRUE, 
+    #           alpha = 0.7) +
+    #         
+    #         ggplot2::geom_boxplot(
+    #           ggplot2::aes(
+    #             x = as.character(nestedData_value[[group_df_name]]),
+    #             y = nestedData_value[[abundance]],
+    #             fill = nestedData_value[[group_df_name]]),
+    #           alpha = 0.2,
+    #           position = "dodge2",
+    #           na.rm = TRUE) +
+    #         ggplot2::labs(x = NULL)
+    #       
+    #       if (!is.null(lims[[1]])){
+    #         plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
+    #       }
+    #       
+    #     }
+    #     
+    #     # plot_value <- ggplot2::ggplot() +
+    #     #   ggplot2::theme_bw() +
+    #     #   ggplot2::theme(legend.position='none',
+    #     #                  axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
+    #     #   ggplot2::xlab(group_df_name) + 
+    #     #   ggplot2::ylab(abundance) +
+    #     #   ggplot2::labs(color = "", fill = "") +
+    #     #   
+    #     #   ggplot2::geom_point(
+    #     #     ggplot2::aes(
+    #     #       text = gsub(", ", "\n", nestedData_value[["text"]]),
+    #     #       x = as.character(nestedData_value[[group_df_name]]),
+    #     #       y = nestedData_value[[abundance]],
+    #     #       fill = nestedData_value[[group_df_name]]),
+    #     #     position = "jitter",
+    #     #     size = 2,
+    #     #     color = "black",
+    #     #     na.rm = TRUE, 
+    #     #     alpha = 0.7) +
+    #     #   
+    #     #   ggplot2::geom_boxplot(
+    #     #     ggplot2::aes(
+    #     #       x = as.character(nestedData_value[[group_df_name]]),
+    #     #       y = nestedData_value[[abundance]],
+    #     #       fill = nestedData_value[[group_df_name]]),
+    #     #     alpha = 0.2,
+    #     #     position = "dodge2",
+    #     #     na.rm = TRUE) +
+    #     #   ggplot2::labs(x = NULL)
+    #     # 
+    #     # if (!is.null(lims[[1]])){
+    #     #   plot_value <- plot_value + ggplot2::coord_cartesian(ylim = setlims)
+    #     # }
+    #     
+    #   #   return(plot_value)
+    #   # }))
+    #     }
+    # 
+    # 
     #######
     #######
     
@@ -2351,17 +2517,17 @@ format_plot <- function(trellData, ...) {
         
         if(stringr::str_detect(typenames[1], "heatmap")){
           
-          plot_out <- plotly::ggplotly(plot_out + ggplot2::theme(legend.position = "none"), 
-                                                tooltip = c("text"))
+          plot_out <- plot_out + ggplot2::theme(legend.position = "none")
+          plot_out <- plotly::ggplotly(plot_out, tooltip = c("text"))
           plot_out <- plot_out %>% plotly::layout(plot_bgcolor='grey',
                                                   xaxis = list(showgrid = F),
                                                   yaxis = list(showgrid = F))
           
         }
-        if(stringr::str_detect(typenames[2], "heatmap")){
+        if(exists("plot_out2") && stringr::str_detect(typenames[2], "heatmap")){
           
-          plot_out2 <- plotly::ggplotly(plot_out2 + ggplot2::theme(legend.position = "none"), 
-                                       tooltip = c("text"))
+          plot_out2 <- plot_out2 + ggplot2::theme(legend.position = "none")
+          plot_out2 <- plotly::ggplotly(plot_out2, tooltip = c("text"))
           plot_out2 <- plot_out2 %>% plotly::layout(plot_bgcolor='grey',
                                                   xaxis = list(showgrid = F),
                                                   yaxis = list(showgrid = F))
@@ -2371,13 +2537,14 @@ format_plot <- function(trellData, ...) {
       }
       
       if(exists("plot_out2")){
-        
+        plot_out <- plotly::ggplotly(plot_out, tooltip = "text")
+        plot_out2 <- plotly::ggplotly(plot_out2, tooltip = "text")
         out_plot <- plotly::subplot(plot_out, plot_out2, 
                                     nrows = 2, margin = 0.10, 
                                     titleX = TRUE, titleY = TRUE)
         return(out_plot)
       } else {
-        return(plotly::ggplotly(plot_out))
+        return(plotly::ggplotly(plot_out, tooltip = "text"))
       }
       
     } else {
@@ -2404,104 +2571,10 @@ format_plot <- function(trellData, ...) {
   }
   colnames(pvs) <- panel_variable
   
-  pvs <- mutate(pvs, panel = map_plot(pvs[[panel_variable]], function(panel) suppressWarnings(generate_plots(panel))))
-  
-  # 
-  # if(nrow(pvs) == 0){
-  #   pvs <- data.frame(unique(as.character(trellData$data_values[[panel_variable]])))
-  # }
-  # 
-  # colnames(pvs) <- panel_variable
-  # 
-  # pvs <- dplyr::mutate(pvs, panel = trelliscopejs::pmap_plot(All_plots, function(abundance_global = NULL, 
-  #                                                                         foldchange_global = NULL, 
-  #                                                                         missing_bar = NULL, 
-  #                                                                         abundance_heatmap = NULL, 
-  #                                                                         foldchange_heatmap = NULL, 
-  #                                                                         presence_heatmap = NULL, 
-  #                                                                         abundance_boxplot = NULL, 
-  #                                                                         foldchange_bar = NULL){
-  #   
-  #   plots <- list(
-  #     abundance_global = abundance_global,
-  #     foldchange_global = foldchange_global,
-  #     abundance_heatmap = abundance_heatmap,
-  #     foldchange_heatmap = foldchange_heatmap,
-  #     presence_heatmap = presence_heatmap,
-  #     missing_bar = missing_bar,
-  #     abundance_boxplot = abundance_boxplot,
-  #     foldchange_bar = foldchange_bar)
-  #   
-  #   plots <- plots[-which(sapply(plots, is.null))]
-  #   
-  #   if(interactive == FALSE){
-  #     if (length(plot_type) > 3){
-  # 
-  #       out_plot <- patchwork::wrap_plots(plots)
-  #       
-  #     } else if (length(plot_type) == 3) {
-  #       
-  #       out_plot <- ggpubr::ggarrange(plotlist = plots,
-  #                                     ncol = 2,
-  #                                     nrow = 2
-  #       )
-  #       
-  #     } else if (length(plot_type) == 2) {
-  #       
-  #       out_plot <- ggpubr::ggarrange(plotlist = plots,
-  #                                     ncol = 1,
-  #                                     nrow = 2
-  #       )
-  #       
-  #     } else {
-  #       out_plot <- ggpubr::ggarrange(plotlist = plots,
-  #                                     ncol = 1,
-  #                                     nrow = 1
-  #       )
-  #     }
-  #   } else {
-  #     
-  #     if (any(stringr::str_detect(names(plots), "heatmap"))){
-  #       heatplots <- names(plots)[stringr::str_detect(names(plots), "heatmap")]
-  #       plots[heatplots] <- purrr::map(heatplots, function(heatitem){
-  #         plots[[heatitem]] <- plotly::ggplotly(plots[[heatitem]] + ggplot2::theme(legend.position = "none"), 
-  #                                               tooltip = c("text"))
-  #         plots[[heatitem]] <- plots[[heatitem]] %>% plotly::layout(plot_bgcolor='grey',
-  #                                                                   xaxis = list(showgrid = F),
-  #                                                                   yaxis = list(showgrid = F))
-  #         return(plots[[heatitem]])
-  #       })
-  #     }
-  #     
-  #     if (length(plot_type) > 6){
-  #       out_plot <- plotly::subplot(plots, nrows = 3, margin = 0.10, titleX = TRUE, titleY = TRUE)
-  #     } else if (length(plot_type) < 6 && length(plot_type) != 1) {
-  #       out_plot <- plotly::subplot(plots, nrows = 2, margin = 0.10, titleX = TRUE, titleY = TRUE)
-  #     } else {
-  #       out_plot <- plotly::ggplotly(plots[[1]])
-  #     }
-  #     
-  #     for(num in 1:length(out_plot$x$data)){
-  #       out_plot$x$data[[num]]$text <- gsub(
-  #         "nested(\\w|[[:punct:]])+[[:space:]]+(\\w|[[:punct:]])+<br \\/>", 
-  #         "", 
-  #         out_plot$x$data[[num]]$text)
-  #       out_plot$x$data[[num]]$text <- gsub(
-  #         "as.\\w+\\(",
-  #         "", 
-  #         out_plot$x$data[[num]]$text)
-  #       out_plot$x$data[[num]]$text <- gsub(
-  #         "nested.+", 
-  #         "", 
-  #         out_plot$x$data[[num]]$text)
-  # 
-  #     }
-  #     
-  #     
-  #   }
-  #   
-  #   return(out_plot)
-  # }))
+  pvs <- dplyr::mutate(pvs, 
+                       panel = trelliscopejs::map_plot(
+                         pvs[[panel_variable]], 
+                         function(panel) suppressWarnings(generate_plots(panel))))
   
   return(pvs)
   
@@ -3118,8 +3191,8 @@ list_y_limits <- function(plot_type, y_limits){
       plotlims[1:length(plot_type)] <- list(limlist)
       
     } else if (is.numeric(y_limits) && length(y_limits) == 2){
-      limlist[["min"]] <- y_limits[1]
-      limlist[["max"]] <- y_limits[2]
+      limlist[["min"]] <- min(y_limits)
+      limlist[["max"]] <- max(y_limits)
       plotlims[1:length(plot_type)] <- list(limlist)
       
       #### Handles lists of y_limit input
@@ -3134,6 +3207,17 @@ list_y_limits <- function(plot_type, y_limits){
       if (length(y_limits) != length(plot_type)) stop(
         "Lists in y_limits must be the same length as plot_type. Refer to examples in ?trelliVis().")
       
+      if (any(duplicated(names(y_limits)))) stop(
+        paste("List inputs may not have duplicate names. Use a list of lists to specify different plot y_limits. Duplicate names:",
+              names(y_limits)[duplicated(names(y_limits))])
+      )  
+      
+      if (any(!(names(y_limits) %in% plot_type))) stop(
+        paste("Names in y_limits should match plot_type. plot_type:",
+              paste(plot_type, collapse = ", "))
+      )
+      
+      y_limits <- y_limits[plot_type]
       plotlims <- y_limits[unlist(lists)]
       
       if(!is.null(plotlims) && length(plotlims) > 1){
@@ -3310,6 +3394,9 @@ set_ylimits <- function(yvalues, increment, ...){
   if (!is.null(y_min) && !is.null(y_max)){
     maxi <- y_max
     mini <- y_min
+    
+    if(maxi < mini) stop ("Invalid max and min. Max < Min")
+    
     return(c(mini, maxi))
   } else if( !is.null(y_range) && !is.null(y_min)){
     mini <- y_min
@@ -3369,7 +3456,6 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
 #' @param mapping_col String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.
-#' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
 #' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #'
 #'
@@ -3382,7 +3468,7 @@ data_cogs <- function(...) {
 .data_cogs <- function(nested_plot = NULL, omicsData = NULL, 
                        omicsStats = NULL,
                       p_val = 0.05,
-                      mapping_col = NULL, panel_variable = NULL, 
+                      mapping_col = NULL,
                       try_URL = FALSE){
   
   
@@ -3478,7 +3564,7 @@ data_cogs <- function(...) {
   if(is.null(uniqueID)){
     uniqueID <- attributes(omicsStats)$cnames$edata_cname
   }
-  # panel_variable <- names(nested_plot[1])
+  panel_variable <- names(nested_plot[1])
   
   tictoc::toc()
 
@@ -3503,15 +3589,16 @@ data_cogs <- function(...) {
   
   tictoc::tic("Additional stats/emeta")
   ## Stats Data Cogs ##
-  if (!is.null(stats)){
-    uniqlist <- stats[[uniqueID]]
-    if (!is.null(e_meta)){
-      joiner <- merge(stats, e_meta)
+  if (!is.null(trellData$comp_stats)){
+    
+    if (!is.null(trellData$data_values)){
+      joiner <- dplyr::left_join(trellData$comp_stats, trellData$data_values)
     } else {
-      joiner <- stats
+      joiner <- trellData$comp_stats
     }
   
     uniqlist <- joiner[[uniqueID]]
+    
     panel_list <- joiner[[panel_variable]]
     
     addcogs <- data.frame(uniqlist)
@@ -3563,9 +3650,9 @@ data_cogs <- function(...) {
   } else {
     # omicsData only #
     # if e_meta #
-    if (!is.null(e_meta)){
-      uniqlist <- e_meta[[uniqueID]]
-      panel_list <- e_meta[[panel_variable]]
+    if (!is.null(trellData$data_values) && attr(trellData, "meta_info")){
+      uniqlist <- trellData$data_values[[uniqueID]]
+      panel_list <- trellData$data_values[[panel_variable]]
       if (!identical(uniqlist, panel_list) & !is.null(panel_list)){
         addcogs <-  data.frame(uniqlist, panel_list)
         colnames(addcogs) <- c(uniqueID, panel_variable)
@@ -3594,7 +3681,7 @@ data_cogs <- function(...) {
   ## Type Specifc Cognostics ##
   
   ## pepData ##
-  if ("pepData" %in% attr(nested_plot, "parent_class")){
+  if ("pepData" %in% attr(trellData, "parent_class")){
 
     if (!is.null(e_meta) & !is.null(mapping_col)){
       
@@ -3615,7 +3702,7 @@ data_cogs <- function(...) {
       }
       
       # Try to find Protein URL #
-      if ((try_URL == TRUE)){
+      if ((try_URL)){
         URLlist <- e_meta[[mapping_col]]
         searchname <- stringr::str_extract(URLlist, "[A-Z0-9]+_[A-Z]+")
         if (all(is.na(searchname))){
@@ -3633,7 +3720,7 @@ data_cogs <- function(...) {
       }
     
     ## proData ##
-  } else if ("proData" %in% attr(nested_plot, "parent_class")){
+  } else if ("proData" %in% attr(trellData, "parent_class")){
     
     # Degenerate peptides #
     if (!is.null(e_meta) & !is.null(mapping_col)){
@@ -3660,7 +3747,7 @@ data_cogs <- function(...) {
     }
     
     # Try to find Protein URL #
-    if (try_URL == TRUE){
+    if (try_URL){
       searchname <- stringr::str_extract(uniqlist, "[A-Z0-9]+_[A-Z]+")
       if (all(is.na(searchname))){
         searchname <- stringr::str_extract(uniqlist, "[A-Z0-9]{6,}")
@@ -3677,10 +3764,10 @@ data_cogs <- function(...) {
     }
     
     ## lipidData ##
-  } else if ("lipidData" %in% attr(nested_plot, "parent_class")){
+  } else if ("lipidData" %in% attr(trellData, "parent_class")){
     
     # Search LipidMaps with the lipid name #
-    if (try_URL == TRUE){
+    if (try_URL){
       searchname <- gsub(" ", "", uniqlist)
       searchname <- gsub(":", " ", searchname) %>% 
         stringr::str_remove_all("[[:punct:]]")
@@ -3697,10 +3784,10 @@ data_cogs <- function(...) {
     }
     
     ## metabData ##  
-  } else if ("metabData" %in% attr(nested_plot, "parent_class")){
+  } else if ("metabData" %in% attr(trellData, "parent_class")){
     
     # PubChem URL #
-    if (try_URL == TRUE){
+    if (try_URL){
       searchlink <- paste(
         "https://pubchem.ncbi.nlm.nih.gov/compound/",
         uniqlist,
@@ -3735,22 +3822,18 @@ data_cogs <- function(...) {
           #   cat(unique(levels(panel_dat)[panel_dat]), sep = ", "))
           datalist[colnum] <- toString(unique(levels(panel_dat)[panel_dat]))
           # Takes mean of numeric columns, includes numeric strings not in cnames #
-        } else if ((is.numeric(panel_dat) | 
+        } else if ((is.numeric(panel_dat) |
                     !any(is.na(as.numeric(stats::na.omit(panel_dat))))) &&
-                   !(names(panel_dat) %in% attr(omicsStats, "cnames")) && 
+                   !(names(panel_dat) %in% attr(omicsStats, "cnames")) &&
                    !stringr::str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")&&
                    !stringr::str_detect(names(panel_data[colnum]), "Is_degenerate")){
-          changecol[colnum] <- TRUE
-          datalist[colnum] <- mean(as.numeric(stats::na.omit(panel_dat)))
-          
+          datalist[colnum] <- toString(unique(panel_dat))
           # Takes logicals, returns TRUE if any TRUE #
         } else if (!any(is.na(as.logical(panel_dat)))){
           datalist[colnum] <- as.character(
             any(as.logical(panel_dat)))
         } else {
           # Cats characters, other #
-          # datalist[colnum] <- capture.output(
-          #   cat(unique(panel_dat), sep = ", "))
           datalist[colnum] <- toString(unique(panel_dat))
         }
       }
@@ -3759,7 +3842,7 @@ data_cogs <- function(...) {
     }
       panelcogs <- data.frame(lapply(rbind(datalist), unlist))
       colnames(panelcogs) <- colnames(panel_data)
-      colnames(panelcogs[changecol]) <- paste(colnames(panelcogs[changecol]), "_mean")
+      # colnames(panelcogs[changecol]) <- paste(colnames(panelcogs[changecol]), "_mean")
       return(panelcogs)
 
     
@@ -3788,8 +3871,7 @@ data_cogs <- function(...) {
   nested_plot <- suppressWarnings(dplyr::left_join(nested_plot, allcogs))
   
   tictoc::toc()
-  
-  
+
   return(nested_plot)
 }
 
@@ -3812,6 +3894,7 @@ data_cogs <- function(...) {
 #' @param plot_text Disable plot text
 #' @param y_limits Y limits 
 #' @param plot_type plots for plotting
+#' @param self_contained Should display be generated in document? Defaults to FALSE
 #'
 #' @author Rachel Richardson
 #' @export
@@ -3825,7 +3908,8 @@ trelliVis <- function(...) {
                        try_URL = FALSE, trelli_name = NULL,
                        trelli_path_out = "TrelliDisplay", 
                        plot_text = FALSE, interactive = FALSE,
-                       y_limits = NULL, plot_type = NULL) {
+                       y_limits = NULL, plot_type = NULL,
+                       self_contained = FALSE) {
   
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
@@ -3861,6 +3945,13 @@ trelliVis <- function(...) {
                                     length(omicsData))) stop(
                                       "Panel variable must be specified for each index in omicsStats/omicsData"
                                     )
+
+  # Check plot_type is a character strings of length 2
+  if (!is.null(plot_type) && 
+      ((class(plot_type) != "character" || 
+        !(length(plot_type) == 1 || length(plot_type) == 2)))) stop(
+          "Plot_type must be a character string with length of either one or two.")
+  
   # If lists of omicsData or trellData are used with mapping col, #
   # make sure panel variables are specified for both #
   if ((class(omicsData) == "list" | 
@@ -3972,16 +4063,15 @@ trelliVis <- function(...) {
       list(nested_plot,
            omicsData,
            omicsStats, 
-           panel_variable,
            mapping_col),
-      function(nest, dat, stat, pan, map){
-        suppressWarnings(data_cogs(nested_plot = nest, 
-                  omicsData = dat,  
-                  omicsStats = stat,
-                  p_val = p_val,
-                  mapping_col = map, 
-                  panel_variable = pan, 
-                  try_URL = try_URL))
+      function(nest, dat, stat, map){
+        suppressWarnings(data_cogs(
+          nested_plot = nest,
+          omicsData = dat,
+          omicsStats = stat,
+          p_val = p_val,
+          mapping_col = map,
+          try_URL = try_URL))
         })
 
     tictoc::toc()
@@ -4025,10 +4115,10 @@ trelliVis <- function(...) {
     
     nested_plot <- format_plot(trellData = trellData, 
                                p_val = p_val,
-                               panel_variable = panel_variable, 
                                plot_type = plot_type,
                                plot_text = plot_text,
                                y_limits = y_limits,
+                               panel_variable = panel_variable,
                                interactive = interactive)
     tictoc::toc()
     
@@ -4040,7 +4130,6 @@ trelliVis <- function(...) {
                                omicsStats = omicsStats, 
                                p_val = p_val, 
                                mapping_col = mapping_col, 
-                               panel_variable = panel_variable, 
                                try_URL = try_URL))
     
     tictoc::toc()
@@ -4048,15 +4137,38 @@ trelliVis <- function(...) {
     tictoc::tic("Pipe into trelliscope")
     
     # Generate trelliscope display #
-    out <- nest_plot_cog %>%
-      trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
-                  path = as.character(trelli_path_out), 
-                  thumb = TRUE,
-                  state = list(
-                    sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                    labels = list(names(nest_plot_cog[1])))
-                  )
-    tictoc::toc()
+    if(self_contained){
+      out <- nest_plot_cog %>%
+        trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
+                                   self_contained = TRUE, 
+                                   thumb = TRUE,
+                                   state = list(
+                                     sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                     labels = list(names(nest_plot_cog[1])))
+        )
+    } else {
+      
+      out <- nest_plot_cog %>%
+        trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
+                                   path = as.character(trelli_path_out), 
+                                   thumb = TRUE,
+                                   state = list(
+                                     sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                     labels = list(names(nest_plot_cog[1])))
+        )
+      
+    }
+     
+    # # Generate trelliscope display #
+    # out <- nest_plot_cog %>%
+    #   trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
+    #               path = as.character(trelli_path_out), 
+    #               thumb = TRUE,
+    #               state = list(
+    #                 sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+    #                 labels = list(names(nest_plot_cog[1])))
+    #               )
+    # tictoc::toc()
     
     return(out)
   }

@@ -32,6 +32,8 @@ trelliVis(...)
 \item{y_limits}{Y limits}
 
 \item{plot_type}{plots for plotting}
+
+\item{self_contained}{Should display be generated in document? Defaults to FALSE}
 }
 \description{
 Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
