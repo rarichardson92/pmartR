@@ -2091,12 +2091,12 @@ format_plot <- function(trellData, ...) {
             ggplot2::xlab("Comparison") + 
             ggplot2::ylab("Fold_change") 
           
-          if ((pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps))){
-            
+          # if ((pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps))){
+
             plot_out2 <- plot_out2 + ggplot2::geom_col(
               ggplot2::aes(
                 text = gsub(", ", "\n", nestedData_comps[["text"]]),
-                x = nestedData_comps[[pmartR::get_edata_cname(trellData)]],
+                x = as.character(nestedData_comps[[pmartR::get_edata_cname(trellData)]]),
                 y = as.numeric(nestedData_comps[["Fold_change"]]),
                 fill = as.character(nestedData_comps[["Comparison"]]),
                 color = nestedData_comps[["bord"]]),
@@ -2105,49 +2105,50 @@ format_plot <- function(trellData, ...) {
               na.rm = TRUE) +
               ggplot2::labs(fill = "", color = "", x = NULL) +
               ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black"), guide = FALSE)
-            
+
             if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 8){
               plot_out2 <- plot_out2 + ggplot2::theme(
                 axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 5))
             }
-            
+
             if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 21){
               plot_out2 <- plot_out2 + ggplot2::theme(
                 axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab("Biomolecules")
             }
-          } else {
-            
-            plot_out2 <- plot_out2 + ggplot2::geom_col(
-              ggplot2::aes(
-                text = gsub(", ", "\n", nestedData_comps[["text"]]),
-                x = as.character(nestedData_comps[["Comparison"]]),
-                y = as.numeric(nestedData_comps[["Fold_change"]]),
-                fill = as.character(nestedData_comps[["Comparison"]])
-              ),
-              color = nestedData_comps[["bord"]],
-              position = "dodge2",
-              size = 1,
-              na.rm = TRUE) +
-              ggplot2::labs(fill = "", color = "", x = NULL) +
-              ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
-              ggplot2::theme(legend.position = "none")
-            
+          # # } else {
+          #   
+          #   plot_out2 <- plot_out2 + ggplot2::geom_col(
+          #     ggplot2::aes(
+          #       text = gsub(", ", "\n", nestedData_comps[["text"]]),
+          #       x = as.character(nestedData_comps[["Comparison"]]),
+          #       y = as.numeric(nestedData_comps[["Fold_change"]]),
+          #       fill = as.character(nestedData_comps[["Comparison"]])
+          #     ),
+          #     color = nestedData_comps[["bord"]],
+          #     position = "dodge2",
+          #     size = 1,
+          #     na.rm = TRUE) +
+          #     ggplot2::labs(fill = "", color = "", x = NULL) +
+          #     ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+          #     ggplot2::theme(legend.position = "none")
+          #   
             if (plot_text){
-              
+
               textcomps <- nestedData_comps
               textcomps[["Fold_change"]][is.na(textcomps[["Fold_change"]])] <- 0
-              
+
               plot_out2 <-  plot_out2 + ggplot2::geom_text(
                 ggplot2::aes(
-                  x = as.character(textcomps[["Comparison"]]),
-                  y = textcomps[["Fold_change"]] + 
-                    (0.5 * textcomps[["Fold_change"]]), 
+                  x = as.character(nestedData_comps[[pmartR::get_edata_cname(trellData)]]),
+                  y = (max(abs(setlims5)) -
+                    (0.20 * max(abs(setlims5)))) * 
+                    sign(abs(max(setlims5)) - abs(min(setlims5))),
                   label = gsub(", ", "\n", textcomps[["labels"]])),
                 color = "black"
               )
             }
-          }
+          # # }
             
 
           plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims5)
@@ -2167,12 +2168,12 @@ format_plot <- function(trellData, ...) {
             ggplot2::xlab("Comparison") + 
             ggplot2::ylab("Fold_change") 
           
-          if (pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps)){
-            
+          # if (pmartR::get_edata_cname(trellData) %in% colnames(nestedData_comps)){
+
             plot_out <- plot_out + ggplot2::geom_col(
               ggplot2::aes(
                 text = gsub(", ", "\n", nestedData_comps[["text"]]),
-                x = nestedData_comps[[pmartR::get_edata_cname(trellData)]],
+                x = as.character(nestedData_comps[[pmartR::get_edata_cname(trellData)]]),
                 y = as.numeric(nestedData_comps[["Fold_change"]]),
                 fill = as.character(nestedData_comps[["Comparison"]]),
                 color = nestedData_comps[["bord"]]),
@@ -2181,35 +2182,35 @@ format_plot <- function(trellData, ...) {
               na.rm = TRUE) +
               ggplot2::labs(fill = "", color = "", x = NULL) +
               ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black"), guide = FALSE)
-            
+
             if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 8){
               plot_out <- plot_out + ggplot2::theme(
                 axis.text.x = ggplot2::element_text(angle = 330, hjust = 0, size = 5))
             }
-            
+
             if (length(unique(nestedData_comps[[pmartR::get_edata_cname(trellData)]])) > 21){
               plot_out <- plot_out + ggplot2::theme(
                 axis.text.x = ggplot2::element_blank()) +
                 ggplot2::xlab("Biomolecules")
             }
-        
-          
-          } else {
+
+          # 
+          # } else {
             
-            plot_out <- plot_out + ggplot2::geom_col(
-              ggplot2::aes(
-                text = gsub(", ", "\n", nestedData_comps[["text"]]),
-                x = as.character(nestedData_comps[["Comparison"]]),
-                y = as.numeric(nestedData_comps[["Fold_change"]]),
-                fill = as.character(nestedData_comps[["Comparison"]])
-              ),
-              color = nestedData_comps[["bord"]],
-              position = "dodge2",
-              size = 1,
-              na.rm = TRUE) +
-              ggplot2::labs(fill = "", color = "", x = NULL) +
-              ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
-              ggplot2::theme(legend.position = "none")
+            # plot_out <- plot_out + ggplot2::geom_col(
+            #   ggplot2::aes(
+            #     text = gsub(", ", "\n", nestedData_comps[["text"]]),
+            #     x = as.character(nestedData_comps[["Comparison"]]),
+            #     y = as.numeric(nestedData_comps[["Fold_change"]]),
+            #     fill = as.character(nestedData_comps[["Comparison"]])
+            #   ),
+            #   color = nestedData_comps[["bord"]],
+            #   position = "dodge2",
+            #   size = 1,
+            #   na.rm = TRUE) +
+            #   ggplot2::labs(fill = "", color = "", x = NULL) +
+            #   ggplot2::scale_color_manual(values = c("grey40" = "grey40", "black" = "black")) + 
+            #   ggplot2::theme(legend.position = "none")
             
             if (plot_text){
               
@@ -2218,14 +2219,15 @@ format_plot <- function(trellData, ...) {
               
               plot_out <-  plot_out + ggplot2::geom_text(
                 ggplot2::aes(
-                  x = as.character(textcomps[["Comparison"]]),
-                  y = textcomps[["Fold_change"]] + 
-                    (0.5 * textcomps[["Fold_change"]]), 
+                  x = as.character(nestedData_comps[[pmartR::get_edata_cname(trellData)]]),
+                  y = (max(abs(setlims5)) -
+                         (0.20 * max(abs(setlims5)))) * 
+                    sign(abs(max(setlims5)) - abs(min(setlims5))),
                   label = gsub(", ", "\n", textcomps[["labels"]])),
                 color = "black"
               )
             }
-          }
+          # }
             
           plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims5)
           
@@ -2319,182 +2321,6 @@ format_plot <- function(trellData, ...) {
       # }))
 
     
-    # #### Abundance Boxplot ####
-    # if("abundance_boxplot" %in% plot_type){
-    #   
-    #   lims <- graphlims[["abundance_boxplot"]]
-    #   
-    #   if ("Group_DF" %in% colnames(trellData$data_values)) {
-    #     group_df_name <- "Group_DF"
-    #   } else {
-    #     group_df_name <- "Group"
-    #   }
-    #   
-    #   abundance <- grep("abundance",
-    #                     colnames(trellData$data_values),
-    #                     value = TRUE)
-    #   
-    #   plotter <- trellData$data_values
-    #   
-    #   if(!is.null(lims$scale) && lims$scale == "fixed"){
-    #     
-    #     increment <- set_increment(plotter[[abundance]])
-    #     setlims <- set_ylimits(plotter[[abundance]],
-    #                            increment,
-    #                            y_range = lims$range,
-    #                            y_max = lims$max,
-    #                            y_min = lims$min,
-    #                            include_zero = FALSE)
-    #   }
-    #   
-    #   # output_df <- plotter %>% tidyr::nest(-panel_variable)
-    #   # 
-    #   # All_plots[["abundance_boxplot"]] <- suppressWarnings(purrr::map(output_df$data, function(nestedData) {
-    #   
-    #   # All_plots[["abundance_boxplot"]] <- vector(mode = "list", length = length(output_df[[panel_variable]]))
-    #   # 
-    #   # All_plots[["abundance_boxplot"]] <- suppressWarnings(foreach::foreach(i=1:length(output_df[[panel_variable]]))%dopar%{
-    #   #   
-    #     # cat(paste("abundance_boxplot:", i, "/", length(output_df[[panel_variable]]), "plots\n"),
-    #     #     file="log.trelliVis.txt", append=TRUE)
-    #     # nestedData <- output_df$data[[i]]
-    #   
-    #     nestedData <- plotter[as.character(plotter[[panel_variable]]) == panel,]
-    #   
-    #     ## Set hover, excluding the panel_variable ##
-    #     nestedData_value <- add_plot_features(trellData,
-    #                                           nestedData,
-    #                                           p_val = p_val,
-    #                                           panel_variable = panel_variable,
-    #                                           value_panel_y_axis = abundance)  ### Take out of function later 
-    #     
-    #     # Make ggplots #
-    #     if((!is.null(lims$scale) && lims$scale != "fixed") ||
-    #        !is.null(lims$max) ||
-    #        !is.null(lims$min) ||
-    #        !is.null(lims$range)){
-    #       increment <- set_increment(nestedData_value[[abundance]])
-    #       setlims <- set_ylimits(nestedData_value[[abundance]],
-    #                              increment,
-    #                              y_range = lims$range,
-    #                              y_max = lims$max,
-    #                              y_min = lims$min,
-    #                              include_zero = FALSE)
-    #     }
-    #     
-    #     if (exists("plot_out")){
-    #       
-    #       plot_out2 <- ggplot2::ggplot() +
-    #         ggplot2::theme_bw() +
-    #         ggplot2::theme(legend.position='none',
-    #                        axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-    #         ggplot2::xlab(group_df_name) + 
-    #         ggplot2::ylab(abundance) +
-    #         ggplot2::labs(color = "", fill = "") +
-    #         
-    #         ggplot2::geom_point(
-    #           ggplot2::aes(
-    #             text = gsub(", ", "\n", nestedData_value[["text"]]),
-    #             x = as.character(nestedData_value[[group_df_name]]),
-    #             y = nestedData_value[[abundance]],
-    #             fill = nestedData_value[[group_df_name]]),
-    #           position = "jitter",
-    #           size = 2,
-    #           color = "black",
-    #           na.rm = TRUE, 
-    #           alpha = 0.7) +
-    #         
-    #         ggplot2::geom_boxplot(
-    #           ggplot2::aes(
-    #             x = as.character(nestedData_value[[group_df_name]]),
-    #             y = nestedData_value[[abundance]],
-    #             fill = nestedData_value[[group_df_name]]),
-    #           alpha = 0.2,
-    #           position = "dodge2",
-    #           na.rm = TRUE) +
-    #         ggplot2::labs(x = NULL)
-    #       
-    #       if (!is.null(lims[[1]])){
-    #         plot_out2 <- plot_out2 + ggplot2::coord_cartesian(ylim = setlims)
-    #       }
-    #       
-    #     } else {
-    #       
-    #       plot_out <- ggplot2::ggplot() +
-    #         ggplot2::theme_bw() +
-    #         ggplot2::theme(legend.position='none',
-    #                        axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-    #         ggplot2::xlab(group_df_name) + 
-    #         ggplot2::ylab(abundance) +
-    #         ggplot2::labs(color = "", fill = "") +
-    #         
-    #         ggplot2::geom_point(
-    #           ggplot2::aes(
-    #             text = gsub(", ", "\n", nestedData_value[["text"]]),
-    #             x = as.character(nestedData_value[[group_df_name]]),
-    #             y = nestedData_value[[abundance]],
-    #             fill = nestedData_value[[group_df_name]]),
-    #           position = "jitter",
-    #           size = 2,
-    #           color = "black",
-    #           na.rm = TRUE, 
-    #           alpha = 0.7) +
-    #         
-    #         ggplot2::geom_boxplot(
-    #           ggplot2::aes(
-    #             x = as.character(nestedData_value[[group_df_name]]),
-    #             y = nestedData_value[[abundance]],
-    #             fill = nestedData_value[[group_df_name]]),
-    #           alpha = 0.2,
-    #           position = "dodge2",
-    #           na.rm = TRUE) +
-    #         ggplot2::labs(x = NULL)
-    #       
-    #       if (!is.null(lims[[1]])){
-    #         plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims)
-    #       }
-    #       
-    #     }
-    #     
-    #     # plot_value <- ggplot2::ggplot() +
-    #     #   ggplot2::theme_bw() +
-    #     #   ggplot2::theme(legend.position='none',
-    #     #                  axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
-    #     #   ggplot2::xlab(group_df_name) + 
-    #     #   ggplot2::ylab(abundance) +
-    #     #   ggplot2::labs(color = "", fill = "") +
-    #     #   
-    #     #   ggplot2::geom_point(
-    #     #     ggplot2::aes(
-    #     #       text = gsub(", ", "\n", nestedData_value[["text"]]),
-    #     #       x = as.character(nestedData_value[[group_df_name]]),
-    #     #       y = nestedData_value[[abundance]],
-    #     #       fill = nestedData_value[[group_df_name]]),
-    #     #     position = "jitter",
-    #     #     size = 2,
-    #     #     color = "black",
-    #     #     na.rm = TRUE, 
-    #     #     alpha = 0.7) +
-    #     #   
-    #     #   ggplot2::geom_boxplot(
-    #     #     ggplot2::aes(
-    #     #       x = as.character(nestedData_value[[group_df_name]]),
-    #     #       y = nestedData_value[[abundance]],
-    #     #       fill = nestedData_value[[group_df_name]]),
-    #     #     alpha = 0.2,
-    #     #     position = "dodge2",
-    #     #     na.rm = TRUE) +
-    #     #   ggplot2::labs(x = NULL)
-    #     # 
-    #     # if (!is.null(lims[[1]])){
-    #     #   plot_value <- plot_value + ggplot2::coord_cartesian(ylim = setlims)
-    #     # }
-    #     
-    #   #   return(plot_value)
-    #   # }))
-    #     }
-    # 
-    # 
     #######
     #######
     
@@ -3472,8 +3298,6 @@ data_cogs <- function(...) {
                       try_URL = FALSE){
   
   
-  tictoc::tic("Initial checks")
-  
   if(class(omicsData) == "list" & length(omicsData) == 1){
     omicsData <- omicsData[[1]]
   } else if (class(omicsData) == "list") stop (
@@ -3541,34 +3365,14 @@ data_cogs <- function(...) {
     message(paste("Notice: mapping_col is not used for omicsData of class", class(omicsData)))
   }
 
-  
-  tictoc::toc()
-  
-  tictoc::tic("Fill")
-  ## Fill null variables as needed ##
-
-  # if (is.null(nested_plot)){
-  #   trellData = as.trellData(omicsData, omicsStats)
-  #   # recursive for lists #
-  #   if(class(trellData) == "list"){
-  #     nested_plot <- purrr::map(trellData, format_plot)
-  #     nestlist <- purrr::pmap(list(nested_plot, omicsData, omicsStats), data_cogs)
-  #     return(nestlist)
-  #   } else {
-  #     nested_plot <- format_plot(trellData)
-  #   }
-  # }
-
   ## Assign unique ID, then panel variable ##
   uniqueID <- attributes(omicsData)$cnames$edata_cname
   if(is.null(uniqueID)){
     uniqueID <- attributes(omicsStats)$cnames$edata_cname
   }
   panel_variable <- names(nested_plot[1])
-  
-  tictoc::toc()
 
-  tictoc::tic("orig dat")
+  # tictoc::tic("orig dat")
   
   trellData <- as.trellData(omicsData, omicsStats)
   
@@ -3585,9 +3389,9 @@ data_cogs <- function(...) {
                                     trellData$summary_stats)
   }
   
-  tictoc::toc()
+  # tictoc::toc()
   
-  tictoc::tic("Additional stats/emeta")
+  # tictoc::tic("Additional stats/emeta")
   ## Stats Data Cogs ##
   if (!is.null(trellData$comp_stats)){
     
@@ -3674,10 +3478,10 @@ data_cogs <- function(...) {
     }
   }
   
-  tictoc::toc()
+  # tictoc::toc()
   
   
-  tictoc::tic("additional cognostics")
+  # tictoc::tic("additional cognostics")
   ## Type Specifc Cognostics ##
   
   ## pepData ##
@@ -3799,9 +3603,9 @@ data_cogs <- function(...) {
     }
   }
 
-  tictoc::toc()
+  # tictoc::toc()
   
-  tictoc::tic("joining with nested data - map")
+  # tictoc::tic("joining with nested data - map")
   
   allcogs <- suppressWarnings(dplyr::left_join(addOrigCogs, addcogs) %>% 
                                 dplyr::group_by_at(panel_variable) %>% 
@@ -3850,27 +3654,27 @@ data_cogs <- function(...) {
   
   ))
   
-  tictoc::toc()
+  # tictoc::toc()
   
 
-  tictoc::tic("rbind")
+  # tictoc::tic("rbind")
   transcogs <- do.call(dplyr::bind_rows, transcogs)
   
   # transcogs <- data.table::rbindlist(transcogs)
   allcogs$data <- NULL
   # allcogs <- data.table::data.table(allcogs)
   
-  tictoc::toc()
+  # tictoc::toc()
   
-  tictoc::tic("cbind")
+  # tictoc::tic("cbind")
   allcogs <- cbind(allcogs, transcogs)
-  tictoc::toc()
-  tictoc::tic("leftjoin")
+  # tictoc::toc()
+  # tictoc::tic("leftjoin")
   # nested_plot <- allcogs[nested_plot]
   
   nested_plot <- suppressWarnings(dplyr::left_join(nested_plot, allcogs))
   
-  tictoc::toc()
+  # tictoc::toc()
 
   return(nested_plot)
 }
@@ -4079,15 +3883,17 @@ trelliVis <- function(...) {
     # Generate trelliscope display #
     tictoc::tic("Pipe into trelliscope")
     
-    purrr::map2(nest_plot_cog_list, 
-              trelli_name, function(display, name){
-                trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                  path = as.character(trelli_path_out), thumb = TRUE, state = list(
-                    sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                    labels = list(names(display[1]))))
-    })
+    out <- purrr::map2(nest_plot_cog_list, 
+                trelli_name, function(display, name){
+                  trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
+                    path = as.character(trelli_path_out), thumb = TRUE, state = list(
+                      sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
+                      labels = list(names(display[1]))))
+      })
     
     tictoc::toc()
+    
+    return(out[[1]])
     
   # Where not a pep/pro pair: #
   } else {
@@ -4168,7 +3974,7 @@ trelliVis <- function(...) {
     #                 sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
     #                 labels = list(names(nest_plot_cog[1])))
     #               )
-    # tictoc::toc()
+    tictoc::toc()
     
     return(out)
   }
