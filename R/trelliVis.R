@@ -2670,14 +2670,11 @@ data_cogs <- function(...) {
     message(paste("Notice: mapping_col is not used for omicsData of class", class(omicsData)))
   }
 
-  ## Assign unique ID, then panel variable ##
-  uniqueID <- attributes(omicsData)$cnames$edata_cname
-  if(is.null(uniqueID)){
-    uniqueID <- attributes(omicsStats)$cnames$edata_cname
-  }
-  panel_variable <- names(nested_plot[1])
-  
   trellData <- as.trellData(omicsData, omicsStats)
+  
+  ## Assign unique ID, then panel variable ##
+  uniqueID <- pmartR::get_edata_cname(trellData)
+  panel_variable <- names(nested_plot[1])
   
   if (!is.null(trellData$data_values) & !is.null(trellData$comp_stats)){
     addOrigCogs <- suppressWarnings(dplyr::left_join(trellData$data_values, 
@@ -2962,7 +2959,6 @@ data_cogs <- function(...) {
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.
 #' @param omicsFormat Output of as.trellData() function
 #' @param p_val Numeric that specifies p-value for significance calculations. Default is 0.05.
-#' @param mapping_col String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
 #' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #' @param trelli_name String: name of display, or list of names where a list is provided for omicsData and omicsStats
@@ -2980,8 +2976,8 @@ trelliVis <- function(...) {
 }
 
 .trelliVis <- function(omicsData = NULL, omicsStats = NULL,
-                       omicsFormat = NULL, p_val = 0.05, 
-                       mapping_col = NULL, panel_variable = NULL, 
+                       omicsFormat = NULL, p_val = 0.05,
+                       panel_variable = NULL, 
                        try_URL = FALSE, trelli_name = NULL,
                        trelli_path_out = "TrelliDisplay", 
                        plot_text = FALSE, interactive = FALSE,
@@ -3025,16 +3021,6 @@ trelliVis <- function(...) {
                                       "Panel variable must be specified for each index in omicsStats/omicsData"
                                     )
   
-  # If lists of omicsData or trellData are used with mapping col, #
-  # make sure panel variables are specified for both #
-  if ((class(omicsData) == "list" | 
-       class(omicsStats) == "list") && 
-      !is.null(mapping_col) && 
-      length(mapping_col) != max(length(omicsStats), 
-                                    length(omicsData))) stop(
-                                      "mapping_col must be specified for each index in omicsStats/omicsData"
-                                    )
-  
   # Check check if try_URL is boolean of length 1 #
   if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
     "try_URL must be a TRUE/FALSE of length 1")  
@@ -3059,21 +3045,20 @@ trelliVis <- function(...) {
     trellData <- omicsFormat
   }
   
-  
-  # Fill plot type
-  if (is.null(plot_type)){
-    if(is.null(trellData$comp_stats)){
-      plot_type <- "abundance_boxplot"
-    } else if (is.null(trellData$data_values)){
-      plot_type <- "foldchange_bar"
-    } else {
-      plot_type <- list("abundance_boxplot", "foldchange_bar")
-    }
-  }
-  
-  
   # If a pep/pro pair is listed, act on each item #
   if(class(trellData) == "list"){
+    
+    
+    # Fill plot type
+    if (is.null(plot_type)){
+      if(is.null(trellData[[1]]$comp_stats)){
+        plot_type <- "abundance_boxplot"
+      } else if (is.null(trellData[[1]]$data_values)){
+        plot_type <- "foldchange_bar"
+      } else {
+        plot_type <- list("abundance_boxplot", "foldchange_bar")
+      }
+    }
     
     
     if (!pmartR::get_data_norm(trellData[[1]]) &&
@@ -3131,16 +3116,13 @@ trelliVis <- function(...) {
     if (is.null(panel_variable)){
       panel_variable <- rep(list(NULL), length(trellData))
     }
-    if (is.null(mapping_col)){
-      mapping_col <- rep(list(NULL), length(trellData))
-    }
     
     # Nest data and generate trelliscope plots #
     
     tictoc::tic("format plot")
     
     nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
-
+      
       nest_out <- purrr::map(plot_type, function(types){
         format_plot(trellData = pairedplotter, 
                     p_val = p_val,
@@ -3163,12 +3145,8 @@ trelliVis <- function(...) {
           nested_plot,
            omicsData,
            omicsStats, 
-           mapping_col,
            rev(trelli_name)),
       function(trell, nests, dat, stat, map, links){
-        # print(length(nests))
-        # print(trelli_name)
-        # print(plot_type)
         cog_out2 <- purrr::map2(nests, links, function(nest, link){
           cog_out <- suppressWarnings(data_cogs(
             nested_plot = nest,
@@ -3221,6 +3199,17 @@ trelliVis <- function(...) {
   # Where not a pep/pro pair: #
   } else {
     
+    # Fill plot type
+    if (is.null(plot_type)){
+      if(is.null(trellData$comp_stats)){
+        plot_type <- "abundance_boxplot"
+      } else if (is.null(trellData$data_values)){
+        plot_type <- "foldchange_bar"
+      } else {
+        plot_type <- list("abundance_boxplot", "foldchange_bar")
+      }
+    }
+    
     if (!pmartR::get_data_norm(trellData) &&
         (is.null(attributes(trellData)$isobaric_info$norm_info$is_normalized) || #### update helper function
          attributes(trellData)$isobaric_info$norm_info$is_normalized != TRUE)) stop(
@@ -3252,8 +3241,6 @@ trelliVis <- function(...) {
       tictoc::toc()
       
       tictoc::tic("generate auto cogs")
-      
-      print(nested_plot)
       
       # Generate default cognostics #
       nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
@@ -3293,6 +3280,5 @@ trelliVis <- function(...) {
       return(out)
       })
     return(displays)
-    # return(displays[[1]])
   }
 }
