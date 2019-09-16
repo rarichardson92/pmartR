@@ -15,8 +15,6 @@ trelliVis(...)
 
 \item{p_val}{Numeric that specifies p-value for significance calculations. Default is 0.05.}
 
-\item{mapping_col}{String: For associated proData/pepData - name of column in peptide data with protein information. Default is NULL.}
-
 \item{panel_variable}{String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.}
 
 \item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.}

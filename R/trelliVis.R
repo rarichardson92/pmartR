@@ -2574,8 +2574,6 @@ set_ylimits <- function(yvalues, increment, ...){
   return(c(mini, maxi))
 }
 
-
-
 #' @name data_cogs
 #' @rdname data_cogs
 #' @title Plot pairwise comparisons and data values in trellData object
@@ -2583,61 +2581,23 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
 #' @param nested_plot A nested table generated from trellData using formatplot()
-#' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
-#' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
+#' @param trellData A nested table generated from trellData using formatplot()
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
-#' @param mapping_col String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.
 #' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #'
 #'
 #' @author Rachel Richardson
 #' @export
+
+
 data_cogs <- function(...) {
   .data_cogs( ...)
 }
 
-.data_cogs <- function(nested_plot = NULL, omicsData = NULL, 
-                       omicsStats = NULL,
-                      p_val = 0.05,
-                      mapping_col = NULL,
-                      try_URL = FALSE){
-  
-  
-  if(class(omicsData) == "list" & length(omicsData) == 1){
-    omicsData <- omicsData[[1]]
-  } else if (class(omicsData) == "list") stop (
-    "Lists are not supported for data_cogs omicsData input"
-  )
-  if(class(omicsStats) == "list" & length(omicsStats) == 1){
-    omicsStats <- omicsStats[[1]]
-  } else if (class(omicsStats) == "list") stop (
-    "Lists are not supported for data_cogs omicsStats input"
-  )
-  
-  ## Switch Stats and Omics data as appropriate ##
-  if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
-    omicsStats <- omicsData
-    omicsData <- NULL
-  }
-  
-  if (!is.null(omicsStats) && 
-      !is.null(omicsData) && 
-      inherits(omicsStats, c("proData", "pepData", 
-                             "metabData", "lipidData")) &&
-      inherits(omicsData, 'statRes')){
-    temp <- omicsStats
-    omicsStats <- omicsData
-    omicsData <- temp
-    rm(temp)
-  }
-  
-  validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
-  
-  ## Moniker Variables ##
-  e_data <- omicsData$e_data
-  f_data <- omicsData$f_data
-  e_meta <- omicsData$e_meta
-  stats <- omicsStats$Full_results
+.data_cogs <- function(nested_plot,
+                       trellData,
+                       p_val = 0.05,
+                       try_URL = FALSE){
   
   ## Variable checks ##
   
@@ -2649,304 +2609,372 @@ data_cogs <- function(...) {
   if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
     "try_URL must be a TRUE/FALSE of length 1")  
   
-  # Ensure mapping_col is length one #
-  if(!is.null(mapping_col) && length(mapping_col) != 1) stop(
-    "mapping_col must be a string of length 1")  
-  
-  # Ensure mapping_col is only called where e_meta exists #
-  if(!is.null(mapping_col) && is.null(e_meta)) stop(
-    "No e_meta data for mapping_col to be called on. 
-    Using mapping_col requires e_meta in omicsData.")  
-  
-  # Ensure mapping_col is in emeta #
-  if(!is.null(mapping_col) && 
-     inherits(omicsData, "pepData") && 
-     !(mapping_col %in% colnames(e_meta))) stop(
-    "Invalid entry: mapping_col must be in the column names of pepData e_meta.")  
-  
-  # Warn in mapping_col is used where data is not pro/pep #
-  if(!is.null(mapping_col) && 
-     !inherits(omicsData, c("pepData", "proData"))){
-    message(paste("Notice: mapping_col is not used for omicsData of class", class(omicsData)))
-  }
-
-  trellData <- as.trellData(omicsData, omicsStats)
-  
   ## Assign unique ID, then panel variable ##
   uniqueID <- pmartR::get_edata_cname(trellData)
-  panel_variable <- names(nested_plot[1])
+  panel_variable <- colnames(nested_plot)[1]
+  parent_dat <- attr(trellData, "parent_class")
   
-  if (!is.null(trellData$data_values) & !is.null(trellData$comp_stats)){
-    addOrigCogs <- suppressWarnings(dplyr::left_join(trellData$data_values, 
-                                                     trellData$comp_stats))
-    addOrigCogs <- suppressWarnings(dplyr::left_join(addOrigCogs, 
-                                                     trellData$summary_stats))
-
-  } else if (!is.null(trellData$data_values)){
-    addOrigCogs <- trellData$data_values
-  } else {
-    addOrigCogs <- suppressWarnings(dplyr::left_join(trellData$comp_stats, 
-                                    trellData$summary_stats))
-  }
   
-  # tictoc::toc()
-  
-  # tictoc::tic("Additional stats/emeta")
-  ## Stats Data Cogs ##
   if (!is.null(trellData$comp_stats)){
-    
-    if (!is.null(trellData$data_values)){
-      joiner <- suppressWarnings(dplyr::left_join(trellData$comp_stats, trellData$data_values))
-    } else {
-      joiner <- trellData$comp_stats
-    }
-  
-    uniqlist <- joiner[[uniqueID]]
-    panel_list <- joiner[[panel_variable]]
-    
-    addcogs <- data.frame(uniqlist)
-    colnames(addcogs) <- uniqueID
-    
-    if(any(stringr::str_detect(names(joiner), "P_value_G"))){
-      
-      pvalg <- data.frame(t(joiner[stringr::str_detect(names(joiner), "P_value_G")]))
-      colnames(pvalg) <- substring(colnames(pvalg), 2)
-      Sig_G_p_value <- as.factor(uniqlist %in% uniqlist[as.numeric(names(
-        dplyr::select_if(pvalg, function(x) any(x < p_val & !is.na(x)))
-      ))])
-      
-      addcogs[["Sig_G_p_value"]] <- trelliscopejs::cog(Sig_G_p_value, desc = "Boolean for significant G test p-values,
-      where TRUE indicates that the p-value is < 0.05 and is grounds for 
-      rejecting the null hypothesis (independence of missing data).")
-      
-    }
-    
-    if(any(stringr::str_detect(names(joiner), "P_value_T"))){
-      
-      pvalt <- data.frame(t(joiner[stringr::str_detect(names(joiner), "P_value_T")]))
-      colnames(pvalt) <- substring(colnames(pvalt), 2)
-      Sig_T_p_value <- as.factor(uniqlist %in% uniqlist[as.numeric(names(
-        dplyr::select_if(pvalt, function(x) any(x < p_val & !is.na(x)))
-      ))])
-      
-      addcogs[["Sig_T_p_value"]] <- trelliscopejs::cog(Sig_T_p_value, desc = "Boolean for significant T test p-values,
-      where TRUE indicates that the p-value is < 0.05 and is grounds for 
-      rejecting the null hypothesis (no significant 
-      difference between groups).")
-      
-    }
-    
-    if (!identical(uniqlist, panel_list)){
-      addcogs[[panel_variable]] <- panel_list
-    }
+    stats <- TRUE
+    trell_comp <- trellData$comp_stats
+    trell_summ <- trellData$summary_stats
   } else {
-    # omicsData only #
-    # if e_meta #
-    if (!is.null(trellData$data_values) && attr(trellData, "meta_info")){
-      uniqlist <- trellData$data_values[[uniqueID]]
-      panel_list <- trellData$data_values[[panel_variable]]
-      if (!identical(uniqlist, panel_list) & !is.null(panel_list)){
-        addcogs <-  data.frame(uniqlist, panel_list)
-        colnames(addcogs) <- c(uniqueID, panel_variable)
-      } else {
-        addcogs <-  data.frame(uniqlist)
-        colnames(addcogs) <- uniqueID
-      }
-    # no emeta #
+    stats <- FALSE
+  }
+  if (!is.null(trellData$data_values)){
+    values <- TRUE
+    trell_values <- trellData$data_values
+  } else {
+    values <- FALSE
+  }
+  
+  if("pepData" %in% parent_dat && 
+     !is.null(pmartR::get_emeta_cname(trellData)) &&
+     values){
+    peppro <- unique(trell_values[c(uniqueID, 
+                                    pmartR::get_emeta_cname(trellData))])
+    if(any(duplicated(peppro[[uniqueID]]))){
+      degen <- peppro[[uniqueID]][duplicated(peppro[[uniqueID]])]
     } else {
-      uniqlist <- e_data[[uniqueID]]
-      panel_list <- e_data[[panel_variable]]
-      if (!identical(uniqlist, panel_list) & !is.null(panel_list)){
-        addcogs <-  data.frame(uniqlist, panel_list)
-        colnames(addcogs) <- c(uniqueID, panel_variable)
-      } else {
-        addcogs <-  data.frame(uniqlist)
-        colnames(addcogs) <- uniqueID
-      }
+      degen <- NULL
     }
   }
   
-  # tictoc::toc()
-  
-  
-  # tictoc::tic("additional cognostics")
-  ## Type Specifc Cognostics ##
-  
-  ## pepData ##
-  if ("pepData" %in% attr(trellData, "parent_class")){
-
-    if (!is.null(e_meta) & !is.null(mapping_col)){
-      
-      # Degenerate Peptides #
-      pepcol <- attr(omicsData, "cnames")$edata_cname
-      mapcols <- e_meta[c(pepcol, mapping_col)]
-      mapcols <- unique(mapcols)
-      
-      peps <- mapcols[pepcol]
-      degenpep <- peps[which(duplicated(peps)==TRUE),]
-      Is_degenerate <- as.factor(
-        purrr::map(peps, function(pep) pep %in% degenpep)[[pepcol]])
-      
-        # Add to dataframe #
-      addcogs <- data.frame(
-        addcogs,
-        as.data.frame(Is_degenerate))
-      }
-      
-      # Try to find Protein URL #
-      if ((try_URL)){
-        URLlist <- e_meta[[mapping_col]]
-        searchname <- stringr::str_extract(URLlist, "[A-Z0-9]+_[A-Z]+")
-        if (all(is.na(searchname))){
-          searchname <- stringr::str_extract(URLlist, "[A-Z0-9]{6,}")
-        }
-        if (!all(is.na(searchname))){
-          searchlink <- paste('https://www.uniprot.org/uniprot/', 
-                              searchname, sep = "")
-        }
-        addcogs <- data.frame(
-          addcogs,
-          Protein_URL = trelliscopejs::cog_href(searchlink, 
-                                 desc = "UniProt lookup using PRIDE ID 
-                               or Entry name (XXXX_XXXX)"))
-      }
-    
-    ## proData ##
-  } else if ("proData" %in% attr(trellData, "parent_class")){
-    
-    # Degenerate peptides #
-    if (!is.null(e_meta) & !is.null(mapping_col)){
-      
-      # Degenerate Peptides #
-      procol <- attr(omicsData, "cnames")$edata_cname
-      mapcols <- e_meta[c(procol, mapping_col)]
-      mapcols <- unique(mapcols)
-      
-      peps <- mapcols[mapping_col]
-      degenpep <- peps[which(duplicated(peps)==TRUE),]
-      mapcols[mapping_col] <- purrr::map(peps, function(pep) pep %in% degenpep)[[mapping_col]]
-      mapcols <- mapcols %>% nest(-procol)
-      mapcols <- dplyr::mutate(mapcols, 
-                        n_degenerate = purrr::map_int(mapcols$data, function(propeps){
-                          sum(propeps[[mapping_col]])
-                          }))
-      mapcols$data <- NULL
-      
-      # Add to dataframe #
-      addcogs <- suppressWarnings(dplyr::left_join(
-        addcogs,
-        mapcols))
-    }
-    
-    # Try to find Protein URL #
-    if (try_URL){
-      searchname <- stringr::str_extract(uniqlist, "[A-Z0-9]+_[A-Z]+")
-      if (all(is.na(searchname))){
-        searchname <- stringr::str_extract(uniqlist, "[A-Z0-9]{6,}")
-      }
-      if (!all(is.na(searchname))){
-        searchlink <- paste('https://www.uniprot.org/uniprot/', 
-                            searchname, sep = "")
-      }
-      addcogs <- data.frame(
-        addcogs,
-        Protein_URL = trelliscopejs::cog_href(searchlink, 
-                               desc = "UniProt lookup using PRIDE ID 
-                                 or Entry name (XXXX_XXXX)"))
-    }
-    
-    ## lipidData ##
-  } else if ("lipidData" %in% attr(trellData, "parent_class")){
-    
-    # Search LipidMaps with the lipid name #
-    if (try_URL){
-      searchname <- gsub(" ", "", uniqlist)
-      searchname <- gsub(":", " ", searchname) %>% 
-        stringr::str_remove_all("[[:punct:]]")
-      searchname <- gsub(" ", ":", searchname)
-      searchlink <- paste(
-        'https://www.lipidmaps.org/data/structure/LMSDFuzzySearch.php?Name=',
-        unlist(searchname), 
-        sep = "")
-      
-      addcogs <- data.frame(
-        addcogs,
-        Lipid_Map_Hits = trelliscopejs::cog_href(searchlink, 
-                                  desc = "Lipid Maps hits for uniqueID name"))
-    }
-    
-    ## metabData ##  
-  } else if ("metabData" %in% attr(trellData, "parent_class")){
-    
-    # PubChem URL #
-    if (try_URL){
-      searchlink <- paste(
-        "https://pubchem.ncbi.nlm.nih.gov/compound/",
-        uniqlist,
-        sep = "")
-      addcogs <- data.frame(
-        addcogs,
-        PubChem_URL = trelliscopejs::cog_href(searchlink,
-                               desc = "PubChem page for uniqueID name"))
-    }
-  }
-
-  # tictoc::toc()
-  
-  # tictoc::tic("joining with nested data - map")
-  
-  allcogs <- suppressWarnings(dplyr::left_join(addOrigCogs, addcogs) %>% 
-                                dplyr::group_by_at(panel_variable) %>% 
-                                tidyr::nest())
-
-  transcogs <- list(purrr::map(allcogs$data, function(panel_data){
-    if (nrow(panel_data) >1 ){
-      datalist <-  list()
-      changecol <- c(rep(FALSE, ncol(panel_data)))
-      for (colnum in 1:ncol(panel_data)){
-        panel_dat <- unlist(panel_data[colnum])
+  out <- dplyr::mutate(
+    nested_plot,
+    cogs = trelliscopejs::map_cog(
+      as.character(nested_plot[[panel_variable]]),
+      function(panel){
         
-        # Cat of factor columns that are not T/F #
-        if (is.factor(panel_dat) && 
-            !stringr::str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value") &&
-            !stringr::str_detect(names(panel_data[colnum]), "Is_degenerate")){
-          # datalist[colnum] <- capture.output(
-          #   cat(unique(levels(panel_dat)[panel_dat]), sep = ", "))
-          datalist[colnum] <- toString(unique(levels(panel_dat)[panel_dat]))
-          # Takes mean of numeric columns, includes numeric strings not in cnames #
-        } else if ((is.numeric(panel_dat) |
-                    !any(is.na(as.numeric(stats::na.omit(panel_dat))))) &&
-                   !(names(panel_dat) %in% attr(omicsStats, "cnames")) &&
-                   !stringr::str_detect(names(panel_data[colnum]), "Sig_[TG]_p_value")&&
-                   !stringr::str_detect(names(panel_data[colnum]), "Is_degenerate")){
-          datalist[colnum] <- toString(unique(panel_dat))
-          # Takes logicals, returns TRUE if any TRUE #
-        } else if (!any(is.na(as.logical(panel_dat)))){
-          datalist[colnum] <- as.character(
-            any(as.logical(panel_dat)))
+        # 
+        if(!is.null(pmartR::get_emeta_cname(trellData))){
+          joiner <- c(uniqueID, pmartR::get_emeta_cname(trellData))
         } else {
-          # Cats characters, other #
-          datalist[colnum] <- toString(unique(panel_dat))
+          joiner <- uniqueID
         }
-      }
-    } else {
-      return(panel_data)
-    }
-      panelcogs <- data.frame(lapply(rbind(datalist), unlist))
-      colnames(panelcogs) <- colnames(panel_data)
-      # colnames(panelcogs[changecol]) <- paste(colnames(panelcogs[changecol]), "_mean")
-      return(panelcogs)
-
-    
-  }
+        
+        ## Generate slice trelldata into panel rows and create merged df of all dfs
+        if (values && stats){
+          panel_values <- trell_values[as.character(trell_values[[panel_variable]]) == panel,]
+          panel_comp <- trell_comp[as.character(trell_comp[[panel_variable]]) == panel,]
+          panel_summ <- trell_summ[as.character(trell_summ[[panel_variable]]) == panel,]
+          
+          byvc  <- colnames(panel_values)[colnames(panel_values) %in% colnames(panel_comp)]
+          bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
+          
+          addOrigCogs <- dplyr::left_join(panel_values, 
+                                          panel_comp, 
+                                          by = byvc)
+          addOrigCogs <- dplyr::left_join(addOrigCogs,
+                                          panel_summ,
+                                          by = unique(c(byvc, bycs, "Group")))
+          
+        } else if (!is.null(trellData$data_values)){
+          panel_values <- trell_values[trell_values[[panel_variable]] == panel,]
+          addOrigCogs <- panel_values
+          
+        } else {
+          panel_comp <- trell_comp[trell_comp[[panel_variable]] == panel,]
+          panel_summ <- trell_summ[trell_summ[[panel_variable]] == panel,]
+          bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
+          
+          addOrigCogs <- dplyr::left_join(panel_comp,
+                                          panel_summ,
+                                          by = unique(c(bycs, "Group")))
+        }
+        cogs <- addOrigCogs
+        
+        if(stats){
+          stat_test <- attr(trellData, "statistical_test")
+          if(stat_test == "combined"){
+            cogs <- dplyr::mutate(
+              cogs, 
+              Sig_T_p_value = purrr::map_lgl(
+                cogs[["P_value_T"]],
+                function(value) !(value > p_val) && !is.na(value)),
+              Sig_G_p_value = purrr::map_lgl(
+                cogs[["P_value_G"]],
+                function(value) !(value > p_val) && !is.na(value)))
+          } else if (stat_test == "anova"){
+            cogs <- dplyr::mutate(
+              cogs, 
+              Sig_T_p_value = purrr::map_lgl(
+                cogs[["P_value_T"]],
+                function(value) !(value > p_val) && !is.na(value)))
+          } else {
+            cogs <- dplyr::mutate(
+              cogs, 
+              Sig_G_p_value = purrr::map_lgl(
+                cogs[["P_value_G"]],
+                function(value) !(value > p_val) && !is.na(value)))
+          }
+        }
+        
+        if("pepData" %in% parent_dat){
+          if(!is.null(degen)){
+            cogs <- dplyr::mutate(
+              cogs,
+              Degenerate_peptide = purrr::map_lgl(
+                cogs[[uniqueID]],
+                function(peptide) peptide %in% degen))
+          }
+          
+          if(!is.null(try_URL) && 
+             !is.null(pmartR::get_emeta_cname(trellData))){
+            cogs <- dplyr::mutate(
+              cogs,
+              Protein_URL = purrr::map_chr(
+                cogs[[pmartR::get_emeta_cname(trellData)]],
+                function(protein){
+                  searchname <- stringr::str_extract(protein, "[A-Z0-9]+_[A-Z]+")
+                  if (is.na(searchname)){
+                    searchname <- stringr::str_extract(protein, "[A-Z0-9]{6,}")
+                  }
+                  if (!is.na(searchname)){
+                    searchlink <- paste('https://www.uniprot.org/uniprot/', 
+                                        searchname, sep = "")
+                    return(searchlink)
+                  } else {
+                    return("Could not extract protein name")
+                  }
+                }))
+          }
+        } else if ("proData" %in% parent_dat){
+          if(!is.null(try_URL)){
+            cogs <- dplyr::mutate(
+              cogs,
+              Protein_URL = purrr::map_chr(
+                cogs[[uniqueID]],
+                function(protein){
+                  searchname <- stringr::str_extract(protein, "[A-Z0-9]+_[A-Z]+")
+                  if (is.na(searchname)){
+                    searchname <- stringr::str_extract(protein, "[A-Z0-9]{6,}")
+                  }
+                  if (!is.na(searchname)){
+                    searchlink <- paste('https://www.uniprot.org/uniprot/', 
+                                        searchname, sep = "")
+                    return(searchlink)
+                  } else {
+                    return("Could not extract protein name")
+                  }
+                }))
+          }
+        } else if ("metabData" %in% parent_dat){
+          if(!is.null(try_URL)){
+            cogs <- dplyr::mutate(
+              cogs,
+              Metabolite_URL = purrr::map_chr(
+                cogs[[uniqueID]],
+                function(metabolite){
+                  searchlink <- paste(
+                    "https://pubchem.ncbi.nlm.nih.gov/compound/", 
+                    metabolite, 
+                    sep = "")
+                  return(searchlink)
+                }))
+          }
+          
+        } else if ("lipidData" %in% parent_dat){
+          
+          if(!is.null(try_URL)){
+            cogs <- dplyr::mutate(
+              cogs,
+              Lipid_Maps_Hits = purrr::map_chr(
+                cogs[[uniqueID]],
+                function(lipid){
+                  searchname <- gsub(" ", "", lipid)
+                  searchname <- gsub(":", " ", searchname)
+                  searchname <- stringr::str_remove_all(searchname, "[[:punct:]]")
+                  searchname <- gsub(" ", ":", searchname)
+                  searchlink <- paste(
+                    'https://www.lipidmaps.org/data/structure/LMSDFuzzySearch.php?Name=',
+                    searchname, 
+                    sep = "")
+                  return(searchlink)
+                }))
+          }
+        }
+        
+        abundance <- colnames(cogs)[stringr::str_detect(colnames(cogs), "abundance")]
+        
+        coltrans <- function(column){
+          ### Needs help from new function defining column attributes
+          if(column %in% c(joiner, 
+                           pmartR::get_fdata_cname(trellData),
+                           abundance,
+                           "Comparison", 
+                           "Flag", 
+                           "Count",
+                           "peps_per_pro",
+                           "n_peps_used",
+                           "Mean",
+                           "P_value_T",
+                           "P_value_G",
+                           "Fold_change",
+                           "Sig_T_p_value",
+                           "Sig_G_p_value",
+                           "Protein_URL",
+                           "Metabolite_URL",
+                           "Lipid_Maps_Hits")){
+            
+            if (column == "Comparison"){
+              return(trelliscopejs::cog(
+                toString(unique(cogs[[column]])),
+                desc = "Pairwise comparison(s)."))
+              
+            } else if (column == "Flag"){
+              return(trelliscopejs::cog(
+                toString(unique(cogs[[column]])),
+                desc = "Trend of foldchange difference, where 1 and -1 indicate positive or negative quantitative changes within a pairwise comparison and 2 and -2 indicate qualititative changes within a pairwise comparison."))
+              
+            } else if (column == "Count") {
+              x <- unique(cogs[[column]])
+              if (length(x) != length(unique(cogs[["Group"]]))){
+                x <- toString(rep(x, length(unique(cogs[["Group"]]))))
+              } else {
+                x <- toString(x)
+              }
+              return(trelliscopejs::cog(
+                x,
+                desc = "Number of sample observations in respective experimental groups."))
+              
+            } else if (column == "Protein_URL") {
+              if(toString(unique(cogs[[column]])) == "Could not extract protein name"){
+                return(trelliscopejs::cog(
+                  toString(unique(cogs[[column]])), desc = "Link to protein UniProt page"))
+              } else {
+                return(trelliscopejs::cog_href(
+                  toString(unique(cogs[[column]])),
+                  desc = "Link to protein UniProt page"))
+              }
+              
+            } else if (column == "Metabolite_URL") {
+              return(trelliscopejs::cog_href(
+                toString(unique(cogs[[column]])),
+                desc = "Link to metabolite PubChem page."))
+              
+            } else if (column == "Lipid_Maps_Hits") {
+              return(trelliscopejs::cog_href(
+                toString(unique(cogs[[column]])),
+                desc = "Link to Lipid Maps search of lipid species."))
+            } else if (column == "peps_per_pro"){
+              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+                return(trelliscopejs::cog(
+                  0,
+                  desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
+              }
+              return(trelliscopejs::cog(
+                suppressWarnings(as.numeric(mean(cogs[[column]]))),
+                desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
+              
+            } else if (column == "n_peps_used"){
+              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+                return(trelliscopejs::cog(
+                  0,
+                  desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
+              }
+              return(trelliscopejs::cog(
+                mean(suppressWarnings(as.numeric(cogs[[column]]))),
+                desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
+              
+            } else if (column == "Mean"){
+              return(trelliscopejs::cog(
+                toString(unique(cogs[[column]])),
+                desc = "Mean of abundances/intensities for experimental groups."))
+              
+            } else if (column == "Fold_change"){
+              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+                return(trelliscopejs::cog(
+                  0,
+                  desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
+              }
+              return(trelliscopejs::cog(
+                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
+              
+            } else if (column == "Sig_T_p_value") {
+              return(trelliscopejs::cog(
+                toString(any(cogs[[column]])),
+                desc = "Significant ANOVA results based on input p-value threshold (default == 0.05)."))
+              
+            } else if (column == "P_value_G") {
+              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+                return(trelliscopejs::cog(
+                  1,
+                  desc = "Mean G-test p-values (per panel). (Value of 1 == NA) "))
+              }
+              return(trelliscopejs::cog(
+                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                desc = "Mean G-test p-values (per panel)."))
+              
+            } else if (column == "P_value_T") {
+              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+                return(trelliscopejs::cog(
+                  1,
+                  desc = "Mean ANOVA p-values (per panel).  (Value of 1 == NA) "))
+              }
+              return(trelliscopejs::cog(
+                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                desc = "Mean ANOVA p-values (per panel)."))
+              
+            } else if (column == "Sig_G_p_value") {
+              return(trelliscopejs::cog(
+                toString(any(suppressWarnings(as.logical(cogs[[column]])))),
+                desc = "Significant G-test results based on input p-value threshold (default == 0.05)."))
+              
+            } else if (column == abundance) {
+              return(trelliscopejs::cog(
+                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                desc = "Average abundance/intensity of values."))
+              
+            } else {
+              return(trelliscopejs::cog(toString(unique(cogs[[column]])), desc = "User defined variable. (Categorical)"))
+            }
+            
+          } else if (is.numeric(cogs[[column]])){
+            if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+              return(trelliscopejs::cog(
+                0,
+                desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
+            }
+            return(trelliscopejs::cog(
+              mean(cogs[[column]], na.rm = TRUE), 
+              desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
+            
+          } else if (is.logical(cogs[[column]]) || 
+                     !any(is.na(suppressWarnings(as.logical(cogs[[column]]))))){
+            return(trelliscopejs::cog(toString(any(cogs[[column]])), 
+                                      desc = "User defined variable. (Categorical)"))
+            
+          } else if (is.character(cogs[[column]]) && 
+                     !any(is.na(suppressWarnings(as.numeric(cogs[[column]]))))){
+            if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+              return(trelliscopejs::cog(
+                0,
+                desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
+            }
+            return(trelliscopejs::cog(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 
+                                      desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
+            
+          } else {
+            return(trelliscopejs::cog(toString(unique(cogs[[column]])), 
+                                      desc = "User defined variable. (Categorical)"))
+          }
+        }
+        
+        cog_out <- cogs[1,]
+        for(col in colnames(cog_out)) {
+          cog_out[[col]] <- coltrans(col)
+        }
+         
+        cog_out[[panel_variable]] <- NULL
+        
+        return(cog_out)
+      }))
   
-  ))
-
-  transcogs <- do.call(dplyr::bind_rows, transcogs)
-  allcogs$data <- NULL
-  allcogs <- cbind(allcogs, transcogs)
-  nested_plot <- suppressWarnings(dplyr::left_join(nested_plot, allcogs))
-  return(nested_plot)
+  return(out)
+  
 }
 
 #' @name trelliVis
@@ -3119,7 +3147,7 @@ trelliVis <- function(...) {
     
     # Nest data and generate trelliscope plots #
     
-    tictoc::tic("format plot")
+    tictoc::tic("Generate plots")
     
     nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
       
@@ -3137,45 +3165,50 @@ trelliVis <- function(...) {
     
     tictoc::toc()
     
-    tictoc::tic("generate auto cogs") 
+    tictoc::tic("Generate auto cogs") 
     
     # Generate default cognostics #
     nest_plot_cog_list <- purrr::pmap(
       list(trellData,
           nested_plot,
-           omicsData,
-           omicsStats, 
-           rev(trelli_name)),
-      function(trell, nests, dat, stat, map, links){
-        cog_out2 <- purrr::map2(nests, links, function(nest, link){
-          cog_out <- suppressWarnings(data_cogs(
-            nested_plot = nest,
-            omicsData = dat,
-            omicsStats = stat,
-            p_val = p_val,
-            mapping_col = map,
-            try_URL = try_URL))
+          rev(trelli_name)),
+      function(trell, nests, links){
+        
+        cogs <- suppressWarnings(data_cogs(
+          nested_plot = nests[[1]],
+          trellData = trell,
+          p_val = p_val,
+          try_URL = try_URL))
+        
+        pan <- colnames(cogs)[1]
+        
+        cog_out <- purrr::map2(nests, links, function(nest, link){
+          cogs2 <- dplyr::mutate(nest, cogs = cogs$cogs)
           
           if (pmartR:::get_data_class(trell) == "pepData"){
-            cog_out <- dplyr::mutate(cog_out, 
-                                     Protein_display = trelliscopejs::cog_disp_filter(
-                                       link,
-                                       var = pmartR::get_emeta_cname(trell),
-                                       val = cog_out[[pmartR::get_emeta_cname(trell)]]
-                                     ))
+            
+            x <- trelliscopejs::cog_disp_filter(
+              link,
+              var = pan,
+              val = cogs2[[pan]],
+              desc = "Link to a display of the mapping protein."
+            )
+            x <- gsub(";type:select;val", ";type:regex;val", x)
+            cogs2 <- dplyr::mutate(cogs2, Protein_display = x)
+            
           } else {
-            cog_out <- dplyr::mutate(cog_out, 
-                                     Peptide_display = trelliscopejs::cog_disp_filter(
+            cogs2 <- dplyr::mutate(cogs2, Peptide_display = trelliscopejs::cog_disp_filter(
                                        link,
-                                       var =  pmartR::get_edata_cname(trell),
-                                       val = as.character(cog_out[[pmartR::get_edata_cname(trell)]])
+                                       var = pan,
+                                       val = cogs2[[pan]],
+                                       desc = "Link to a display with all associatated peptides."
                                      ))
           }
+          return(cogs2)
+        })
           
           return(cog_out)
           })
-        return(cog_out2)
-        })
         
     tictoc::toc()
     
@@ -3229,7 +3262,7 @@ trelliVis <- function(...) {
     
     displays <- purrr::map2(plot_type, trelli_name, function(types, names){
       
-      tictoc::tic("format plot")
+      tictoc::tic("Generate plots")
       
       nested_plot <- format_plot(trellData = trellData, 
                                  p_val = p_val,
@@ -3240,16 +3273,13 @@ trelliVis <- function(...) {
                                  interactive = interactive)
       tictoc::toc()
       
-      tictoc::tic("generate auto cogs")
+      tictoc::tic("Generate auto cogs")
       
       # Generate default cognostics #
       nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
-                                                  omicsData = omicsData, 
-                                                  omicsStats = omicsStats, 
+                                                  trellData = trellData,
                                                   p_val = p_val, 
-                                                  mapping_col = mapping_col, 
                                                   try_URL = try_URL))
-      
       tictoc::toc()
       
       tictoc::tic("Pipe into trelliscope")

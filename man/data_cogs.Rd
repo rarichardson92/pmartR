@@ -9,13 +9,9 @@ data_cogs(...)
 \arguments{
 \item{nested_plot}{A nested table generated from trellData using formatplot()}
 
-\item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
-
-\item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData.}
+\item{trellData}{A nested table generated from trellData using formatplot()}
 
 \item{p_val}{Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.}
-
-\item{mapping_col}{String: For proData - name of column with peptide information. For pepData - name of column with protein information. Default is NULL.}
 
 \item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.}
 }
