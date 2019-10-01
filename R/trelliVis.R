@@ -3015,9 +3015,16 @@ trelliVis <- function(...) {
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
   
+  if(is.null(omicsFormat) && is.null(omicsData) && is.null(omicsStats)) stop(
+    "At least one of omicsData, omicsStats, or omicsFormat must be populated."
+  )
+  
   #####
   ## Switch Stats and Omics data as appropriate ##
   #####
+  
+if(!is.null(omicsData) || !is.null(omicsStats)){
+  
   if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
     omicsStats <- omicsData
     omicsData <- NULL
@@ -3042,16 +3049,12 @@ trelliVis <- function(...) {
   
   # If lists of omicsData or trellData are used, make sure panel variables are specified for both #
   if ((class(omicsData) == "list" | 
-      class(omicsStats) == "list") && 
+       class(omicsStats) == "list") && 
       !is.null(panel_variable) && 
       length(panel_variable) != max(length(omicsStats), 
                                     length(omicsData))) stop(
                                       "Panel variable must be specified for each index in omicsStats/omicsData"
                                     )
-  
-  # Check check if try_URL is boolean of length 1 #
-  if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
-    "try_URL must be a TRUE/FALSE of length 1")  
   
   #####
   ## Modification for rollups that don't inherit pep info in emeta
@@ -3065,6 +3068,56 @@ trelliVis <- function(...) {
     omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
                                                                           omicsData[!vectorpro][[1]]$e_meta))
   }
+  
+  
+}
+  # if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
+  #   omicsStats <- omicsData
+  #   omicsData <- NULL
+  # }
+  # 
+  # if (!is.null(omicsStats) && 
+  #     !is.null(omicsData) && 
+  #     inherits(omicsStats, c("proData", "pepData", 
+  #                            "metabData", "lipidData")) &&
+  #     inherits(omicsData, 'statRes')){
+  #   temp <- omicsStats
+  #   omicsStats <- omicsData
+  #   omicsData <- temp
+  #   rm(temp)
+  # }
+  
+  
+  
+  # #####
+  # ## Check variable type/lenghts
+  # #####
+  # 
+  # # If lists of omicsData or trellData are used, make sure panel variables are specified for both #
+  # if ((class(omicsData) == "list" | 
+  #     class(omicsStats) == "list") && 
+  #     !is.null(panel_variable) && 
+  #     length(panel_variable) != max(length(omicsStats), 
+  #                                   length(omicsData))) stop(
+  #                                     "Panel variable must be specified for each index in omicsStats/omicsData"
+  #                                   )
+  
+  # Check check if try_URL is boolean of length 1 #
+  if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
+    "try_URL must be a TRUE/FALSE of length 1")  
+  
+  #####
+  ## Modification for rollups that don't inherit pep info in emeta
+  #####
+  # 
+  # #Adds e_meta of associated peptide data to associated protein data
+  # if(class(omicsData) == "list" &&
+  #    length(omicsData) != 1){
+  #   vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
+  #                  inherits(omicsData[2][[1]], "proData"))
+  #   omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
+  #                                                                         omicsData[!vectorpro][[1]]$e_meta))
+  # }
   
   if (is.null(omicsFormat)){
     # Re-format objects for plotting #
