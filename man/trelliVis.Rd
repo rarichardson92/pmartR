@@ -32,6 +32,8 @@ trelliVis(...)
 \item{plot_type}{plots for plotting}
 
 \item{self_contained}{Should display be generated in document? Defaults to FALSE}
+
+\item{custom_cog}{The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).}
 }
 \description{
 Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

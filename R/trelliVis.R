@@ -2584,7 +2584,7 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @param trellData A nested table generated from trellData using formatplot()
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
 #' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
-#'
+#' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #'
 #' @author Rachel Richardson
 #' @export
@@ -2597,7 +2597,8 @@ data_cogs <- function(...) {
 .data_cogs <- function(nested_plot,
                        trellData,
                        p_val = 0.05,
-                       try_URL = FALSE){
+                       try_URL = FALSE,
+                       custom_cog = NULL){
   
   ## Variable checks ##
   
@@ -2970,6 +2971,26 @@ data_cogs <- function(...) {
          
         cog_out[[panel_variable]] <- NULL
         
+        
+        # testcustom <- function(datasubset){
+        #   dplyr::tibble(
+        #     custom1 = trelliscopejs::cog(sign(mean(as.numeric(cogs[[abundance]]), na.rm = TRUE)), 
+        #                        desc = "Test custom cognostic 1"),
+        #     custom2 = trelliscopejs::cog(mean(as.numeric(cogs[[abundance]]), na.rm = TRUE), 
+        #                                  desc = "Test custom cognostic 2")
+        #   )
+        # }
+        # custom_cog <- "testcustom"
+        
+        if(!is.null(custom_cog)){ ## Run custom function on cogs using function name
+         x <- eval(parse(text = paste0(custom_cog, "(cogs)")))
+         if(is.data.frame(x) && nrow(x) == 1){
+           cog_out <- cbind(cog_out,x)
+         } else {
+           warning("Invalid result. Custom function on data subset is required to yeild a data.frame with nrow == 1. Custom function will not be used.")
+         }
+        }
+        
         return(cog_out)
       }))
   
@@ -2996,6 +3017,7 @@ data_cogs <- function(...) {
 #' @param y_limits Y limits 
 #' @param plot_type plots for plotting
 #' @param self_contained Should display be generated in document? Defaults to FALSE
+#' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #'
 #' @author Rachel Richardson
 #' @export
@@ -3010,7 +3032,8 @@ trelliVis <- function(...) {
                        trelli_path_out = "TrelliDisplay", 
                        plot_text = FALSE, interactive = FALSE,
                        y_limits = NULL, plot_type = NULL,
-                       self_contained = FALSE) {
+                       self_contained = FALSE,
+                       custom_cog = NULL) {
   
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
@@ -3245,7 +3268,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
           nested_plot = nests[[1]],
           trellData = trell,
           p_val = p_val,
-          try_URL = try_URL))
+          try_URL = try_URL,
+          custom_cog = custom_cog))
         
         pan <- colnames(cogs)[1]
         
@@ -3357,7 +3381,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
                                                   trellData = trellData,
                                                   p_val = p_val, 
-                                                  try_URL = try_URL))
+                                                  try_URL = try_URL,
+                                                  custom_cog = custom_cog))
       tictoc::toc()
       
       tictoc::tic("Pipe into trelliscope")
