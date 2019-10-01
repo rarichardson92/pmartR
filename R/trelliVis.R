@@ -3196,13 +3196,27 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     }
     if (is.null(panel_variable)){
       panel_variable <- rep(list(NULL), length(trellData))
+    } else {
+      if(!(panel_variable %in% c(colnames(trellData[[1]]$summary_stats),
+                               colnames(trellData[[1]]$comp_stats),
+                               colnames(trellData[[1]]$data_values)))) stop(
+                                 "Panel_variable in not present in input data columns."
+                               )
+      if(!(panel_variable %in% c(colnames(trellData[[2]]$summary_stats),
+                                 colnames(trellData[[2]]$comp_stats),
+                                 colnames(trellData[[2]]$data_values)))) stop(
+                                   "Panel_variable in not present in input data columns."
+                                 )
     }
     
     # Nest data and generate trelliscope plots #
     
     tictoc::tic("Generate plots")
     
+    group <- purrr::map(trellData, pmartR:::get_data_class)
+    
     nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
+      
       
       nest_out <- purrr::map(plot_type, function(types){
         format_plot(trellData = pairedplotter, 
@@ -3268,11 +3282,13 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     # Generate trelliscope display #
     tictoc::tic("Pipe into trelliscope")
     
-    out <- purrr::map2(nest_plot_cog_list, 
-                trelli_name, function(display1, name1){
+    out <- purrr::pmap(list(nest_plot_cog_list, 
+                trelli_name, group), function(display1, name1, grp){
                   purrr::map2(display1, name1, function(display, name){
                     trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                                               path = as.character(trelli_path_out), thumb = TRUE, state = list(
+                                               path = as.character(trelli_path_out), 
+                                               group = grp,
+                                               thumb = TRUE, state = list(
                                                  sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
                                                  labels = list(names(display[1]))))
                   })
@@ -3284,6 +3300,15 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
   # Where not a pep/pro pair: #
   } else {
+    
+    group <- pmartR:::get_data_class(trellData)
+    
+    #Check panel variable
+    if(!(panel_variable %in% c(colnames(trellData$summary_stats),
+                               colnames(trellData$comp_stats),
+                               colnames(trellData$data_values)))) stop(
+                                 "Panel_variable in not present in input data columns."
+                               )
     
     # Fill plot type
     if (is.null(plot_type)){
@@ -3353,11 +3378,11 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
           trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
                                      path = as.character(trelli_path_out), 
                                      thumb = TRUE,
+                                     group = group,
                                      state = list(
                                        sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
                                        labels = list(names(nest_plot_cog[1])))
           )
-        
       }
       tictoc::toc()
       return(out)
