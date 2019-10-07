@@ -9,8 +9,6 @@ format_plot(trellData, ...)
 \arguments{
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
 
-\item{...}{further arguments}
-
 \item{p_val}{Specifies p-value for setting graph border colors}
 
 \item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
@@ -22,6 +20,8 @@ format_plot(trellData, ...)
 \item{plot_type}{types of plots}
 
 \item{y_limits}{y-limits}
+
+\item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
 }
 \description{
 Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

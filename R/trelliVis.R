@@ -117,7 +117,8 @@ as.trellData <- function(...){
                      id.vars = uniqedatId,
                      value.name = value_name,
                      variable.name = sampID) %>%
-        dplyr::left_join(omicsData$f_data, by = sampID))
+        dplyr::left_join(omicsData$f_data, 
+                         by = sampID))
     
     # Adjust for class differences when read in for group_DF and data values #
     joingroupDF <- attr(omicsData, "group_DF")
@@ -136,7 +137,11 @@ as.trellData <- function(...){
     }
     
     # Join with group_DF
-    data_values <- suppressWarnings(dplyr::left_join(data_values, joingroupDF, by = sampID))
+    data_values <- suppressWarnings(
+      dplyr::left_join(data_values, 
+                       joingroupDF,
+                       by = dplyr::intersect(colnames(data_values), colnames(joingroupDF))))
+    
     
     # Join with e_meta if present #
     if(!is.null(omicsData$e_meta)) {
@@ -338,16 +343,14 @@ recursive_format <- function(...){
 .recursive_format <- function(omicsData = NULL, omicsStats = NULL){
 
   #--Both--#
-  if (!is.null(omicsData) & !is.null(omicsStats)) {
-    if(length(omicsData) != 1 & length(omicsStats) != 1) {
-
+  if (!is.null(omicsData) && !is.null(omicsStats)) {
+    if(length(omicsData) == 1 && length(omicsStats) == 1) {
+      plotterlist <- as.trellData(omicsData[[1]], omicsStats[[1]])
+      return(plotterlist)
+    } else {
       validate_omics_input(omicsData = omicsData, omicsStats = omicsStats)
       classlist <- omicsData %>% purrr::map(function(omics) attr(omics, which = "class"))
       plotterlist <- purrr::map2(omicsData, omicsStats, as.trellData)
-      
-    } else {
-      plotterlist <- as.trellData(omicsData[[1]], omicsStats[[1]])
-      return(plotterlist)
     }
     
     #--omicsData--#
@@ -397,8 +400,7 @@ validate_omics_input <- function(...){
 }
 
 .validate_omics_input <- function(omicsData = NULL, omicsStats = NULL){
-  
-  
+
   ## Checks and recursive for lists as input in as.trellData ##
   if ((class(omicsData) == "list") || (class(omicsStats) == "list")){
     
@@ -409,12 +411,18 @@ validate_omics_input <- function(...){
        )
     
     #--Both--#
-    if (!is.null(omicsData) & !is.null(omicsStats)) {
-      if(length(omicsData) != 1 & length(omicsStats) != 1) {
-        # Check that the list inputs are equal in length (1 and 1, or 2 and 2) #
-        if (length(omicsData) != length(omicsStats)) stop(
+    if (!is.null(omicsData) && !is.null(omicsStats)) {
+      
+      # Check that the list inputs are equal in length (1 and 1, or 2 and 2) #
+      if(length(omicsData) != length(omicsStats)) stop(
           "List length does not match; lists for omicsData amd omicsStats should contain
-          the same protien set(s) and peptide set(s).")
+          the same protien set(s) and peptide set(s)."
+      )
+      if(length(omicsData) != 1 && length(omicsStats) != 1) {
+        # # Check that the list inputs are equal in length (1 and 1, or 2 and 2) #
+        # if (length(omicsData) != length(omicsStats)) stop(
+        #   "List length does not match; lists for omicsData amd omicsStats should contain
+        #   the same protien set(s) and peptide set(s).")
         
         # Check that omicsData input is a list() not a c() of omics data #
         if (any(unlist(purrr::map(c(omicsData), is.data.frame)))) stop(
@@ -515,6 +523,11 @@ validate_omics_input <- function(...){
     }
   } else {
     
+    if((class(omicsData) == "list" && class(omicsStats) != "NULL") || 
+       (class(omicsData) != "NULL" && class(omicsStats) == "list")) stop(
+         "Dual input using lists in omicsData and omicsStats must be lists of equal length."
+       )
+
     ## Initial Checks  for non-lists ##
     # Make sure at least one of omicsData or omicsStats is present #
     if(is.null(omicsStats) && is.null(omicsData)) stop(
@@ -734,7 +747,7 @@ validate_omics_input <- function(...){
 #' @param interactive Should the plots be rendered as plotly objects?
 #' @param plot_type types of plots 
 #' @param y_limits y-limits
-#' @param ... further arguments
+#' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
 #'
 #' @author Rachel Richardson
 #' @export
@@ -748,65 +761,53 @@ format_plot <- function(trellData, ...) {
                          p_val = 0.05, 
                          plot_text = FALSE, 
                          y_limits = NULL,
-                         interactive = FALSE) {
+                         interactive = FALSE,
+                         custom_plot = NULL) {
  
   ## Input checks
-  
-  if(!is.null(plot_type) && !all(plot_type %in% c(
-                           "abundance_global", 
-                           "foldchange_global", 
-                           "missing_bar",
-                           "abundance_heatmap",
-                           "foldchange_heatmap",
-                           "presence_heatmap",
-                           "foldchange_bar",
-                           "abundance_boxplot"
-                           ))
-     ) stop(
-       "plot_type specified is not supported. Must be one of the following: abundance_boxplot, foldchange_bar, abundance_global, foldchange_global, missing_bar, abundance_heatmap, foldchange_heatmap, presence_heatmap, foldchange_bar, abundance_boxplot"
-       )
-  
-  if((length(interactive) != 1 || class(interactive) != "logical")) stop(
-    "interactive must be a logical of length 1."
-  )
-  
-  if((length(plot_text) != 1 || class(plot_text) != "logical")) stop(
-    "plot_text must be a logical of length 1."
-  )
-  
-  if(!is.null(p_val) && (length(p_val) != 1 || class(p_val) != "numeric")) stop(
-    "p_val must be a numeric of length 1."
-  )
-  
-  if(!inherits(trellData, "trellData")) stop(
-    "trellData input must be of class trellData"
-  )
-  
-  
-  
-  # list_y_limits handles y_limits checks
-  
-  ## End checks
-  
+ 
   if (is.null(panel_variable)){
-    panel_variable <- pmartR::get_edata_cname(trellData)
+    panel_variable <- attr(trellData, "cname")$edata_cname
+  }
+  
+  if (is.null(p_val)){
+    p_val <- 0.05
   }
    
+  validate_format_plot_input(
+    trellData = trellData, 
+    panel_variable = panel_variable, 
+    plot_type = plot_type, 
+    p_val = p_val, 
+    plot_text = plot_text, 
+    interactive = interactive,
+    custom_plot = custom_plot
+  )
   
-  if (panel_variable == pmartR::get_edata_cname(trellData) && stringr::str_detect(plot_type, "heatmap")) {
-    stop(
-      paste("Heatmaps require a panel_variable that is not the same as edata cname (Default panel_variable is set to edata cname). Current edata cname:", pmartR::get_edata_cname(trellData))
-    )
-  } 
-  
+  # list_y_limits handles y_limits checks
+
   ## Input digestion
-  graphlims <- list_y_limits(plot_type = plot_type, y_limits = y_limits)
+  if(!is.null(plot_type)){
+    graphlims <- list_y_limits(plot_type = plot_type, y_limits = y_limits)
+  } else if(!is.null(y_limits)){
+    warning("y-limits are not applied to custom plots.")
+  }
   
   
   generate_plots <- function(panel){
     
-    
-  
+    #### Custom Plot ####
+    if(!is.null(custom_plot)){
+      trellData2 <- trellData
+      if(!is.null(trellData2$data_value)){
+        trellData2$data_value <- trellData2$data_value[trellData2$data_value[[panel_variable]] == panel,]
+      }
+      if(!is.null(trellData2$comp_stats)){
+        trellData2$comp_stats <- trellData2$comp_stats[trellData2$comp_stats[[panel_variable]] == panel,]
+        trellData2$summary_stats <- trellData2$summary_stats[trellData2$summary_stats[[panel_variable]] == panel,]
+      }
+      plot_out <- eval(parse(text = paste0(custom_plot, "(trellData2)")))
+      }
     #### Abundance Global ####
     if("abundance_global" %in% plot_type){
       
@@ -895,7 +896,7 @@ format_plot <- function(trellData, ...) {
           if(exists("setlims1")){
             plot_out <- plot_out + ggplot2::coord_cartesian(ylim = setlims1)
           }
-      
+
     }
     
     #### Foldchange Global ####
@@ -1722,421 +1723,126 @@ format_plot <- function(trellData, ...) {
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.
 #' @param plot_text For comparisons only: TRUE/FALSE for p-value text above data
-#' @param plotly Should the plots be rendered as plotly objects?
-#' @param ... further arguments
-#' 
-#' @author Rachel Richardson
-
-
-# validate_format_plot_input <- function(...){
-#   .validate_format_plot_input(...)
-# }
-# 
-# .validate_format_plot_input <- function(trellData, 
-#                                   comps_y_limits = NULL, comps_y_range = NULL, 
-#                                   comps_y_max = NULL, comps_y_min = NULL, 
-#                                   comps_include_zero = NULL,
-#                                   value_y_limits = NULL, value_y_range = NULL, 
-#                                   value_y_max = NULL, value_y_min = NULL,
-#                                   value_include_zero = NULL,
-#                                   p_val = NULL,
-#                                   panel_variable = NULL, 
-#                                   comps_color_variable = NULL,
-#                                   comps_panel_x_axis = NULL, comps_panel_y_axis = NULL,
-#                                   value_color_variable = NULL,
-#                                   value_panel_x_axis = NULL, 
-#                                   value_panel_y_axis = NULL,
-#                                   value_plot_type = NULL, comps_plot_type = NULL,
-#                                   value_plot = NULL, comps_plot = NULL, 
-#                                   comps_text = NULL, plotly = NULL) {
-#   
-#   ##### Initial checks #####
-#   
-#   # Check if class is correct #
-#   if(!inherits(trellData, "trellData")) stop(
-#     "trellData must be of the class 'trellData'")
-#   
-#   if(!(is.null(p_val) && 
-#        is.null(plotly) &&
-#        is.null(comps_y_limits) &&
-#        is.null(comps_y_range) &&
-#        is.null(comps_y_max) &&
-#        is.null(comps_y_min) &&
-#        is.null(comps_include_zero) &&
-#        is.null(comps_plot) &&
-#        is.null(comps_text) &&
-#        is.null(comps_plot_type) &&
-#        is.null(value_y_limits) &&
-#        is.null(value_y_range) &&
-#        is.null(value_y_max) &&
-#        is.null(value_y_min) &&
-#        is.null(value_plot_type) &&
-#        is.null(value_include_zero) &&
-#        is.null(value_plot)
-#        )) {
-# 
-#     
-#     # Check if comp_stats is in trellData #
-#     if(is.null(trellData$comp_stats) && is.null(trellData$data_values)) stop(
-#       "No data values or comparison statistics in trellData to plot")
-#     
-#     # Check if comp_stats is in trellData (as above) #
-#     if(is.na(trellData$comp_stats) && is.na(trellData$data_values)) stop(
-#       "No data values or comparison statistics in trellData to plot")
-#     
-#     # Check check if p_val is numeric of length 1 #
-#     if(!is.numeric(p_val) || (length(p_val) != 1)) stop(
-#       "p_val must be a numeric of length 1")  
-#     
-#     # Check check if plotly is logical of length 1 #
-#     if(!is.logical(plotly) || (length(plotly) != 1)) stop(
-#       "plotly must be a logical (TRUE or FALSE) of length 1") 
-#     
-#     # Check check if comps_include_zero is logical of length 1 #
-#     if(!is.logical(comps_include_zero) || (length(comps_include_zero) != 1)) stop(
-#       "comps_include_zero must be a logical (TRUE or FALSE) of length 1") 
-#     
-#     # Check check if comps_plot is logical of length 1 #
-#     if(!is.logical(comps_plot) || (length(comps_plot) != 1)) stop(
-#       "comps_plot must be a logical (TRUE or FALSE) of length 1") 
-#     
-#     # Check check if comps_text is logical of length 1 #
-#     if(!is.logical(comps_text) || (length(comps_text) != 1)) stop(
-#       "comps_text must be a logical (TRUE or FALSE) of length 1") 
-#     
-#     # Check check if value_include_zero is logical of length 1 #
-#     if(!is.logical(value_include_zero) || (length(value_include_zero) != 1)) stop(
-#       "value_include_zero must be a logical (TRUE or FALSE) of length 1") 
-#     
-#     # Check check if value_plot is logical of length 1 #
-#     if(!is.logical(value_plot) || (length(value_plot) != 1)) stop(
-#       "value_plot must be a logical (TRUE or FALSE) of length 1") 
-#     
-#     
-#     # Check if y_limits or y_range have been selected correctly #
-#     if((!is.null(comps_y_limits) & !is.null(comps_y_range)) | 
-#        (!is.null(value_y_limits) & !is.null(value_y_range))) stop(
-#          "Input either y_limits or y_range parameters, but not both.")
-#     
-#     # --Comps-- #
-#     # Check if only one of comps_y_max and comps_y_min has been selected with comps_y_limits or comps_y_range #
-#     if(!is.null(comps_y_max) & 
-#        !is.null(comps_y_min) & 
-#        (!is.null(comps_y_range) | !is.null(comps_y_limits))) stop(
-#          "Cannot use both comps_y_min and comps_y_max with comps_y_range 
-#        or comps_y_limits parameters. Only one of comps_y_min or 
-#        comps_y_max can be used.")
-#     
-#     # Check if comps_y_limits is in acceptable strings and length == 1 #
-#     if ( !is.null(comps_y_limits)){
-#       if((length(comps_y_limits) != 1)) stop(
-#         "Parameter y_limits must have length = 1.")
-#       if(!(comps_y_limits %in% c("fixed", "free"))) stop(
-#         "Parameter y_limits must be input as either 'fixed' or 'free'.")
-#     }
-#     
-#     # Check if comps_y_range is positive, numeric and length == 1 #
-#     if (!is.null(comps_y_range)){
-#       if(!is.numeric(comps_y_range)) stop(
-#         "Parameter y_range must be numeric.")
-#       if(length(comps_y_range) != 1) stop(
-#         "Parameter y_range must have length = 1.")
-#       if(!(comps_y_range > 0)) stop(
-#         "Parameter y_range must be greater than zero.")
-#     }
-#     
-#     # Check if comps_y_max is numeric and length == 1 #
-#     if (!is.null(comps_y_max)){
-#       if(!is.numeric(comps_y_max)) stop(
-#         "Parameter y_max must be numeric.")
-#       if(length(comps_y_max) != 1) stop(
-#         "Parameter y_max must have length = 1.")
-#     }
-#     
-#     # Check if comps_y_min is numeric and length == 1 #
-#     if (!is.null(comps_y_min)){
-#       if(!is.numeric(comps_y_min)) stop(
-#         "Parameter y_min must be numeric.")
-#       if(length(comps_y_min) != 1) stop(
-#         "Parameter y_min must have length = 1.")
-#     }
-#     
-#     # Check if comps_plot_type has one of the available options #
-#     checkplot <- purrr::map(comps_plot_type, 
-#                             function(plot) stringr::str_detect(plot, "box|col|point|scatter|bar"))
-#     if (any(!unlist(checkplot))) stop(
-#       "Invalid entry in comps_plot_type. Plot_type strings must contain 
-#     at least one of the following: box, col, point, scatter, bar")
-#     
-#     # --Value-- #
-#     # Check if only one of value_y_max and value_y_min has been selected with value_y_limits or value_y_range #
-#     if(!is.null(value_y_max) & 
-#        !is.null(value_y_min) & 
-#        (!is.null(value_y_range) | !is.null(value_y_limits))) stop(
-#          "Cannot use both value_y_min and value_y_max with value_y_range 
-#        or value_y_limits parameters. Only one of y_min or y_max can be 
-#        used.")
-#     
-#     # Check if value_y_limits is in acceptable strings and length == 1 #
-#     if (!is.null(value_y_limits) ){
-#       if((length(value_y_limits) != 1)) stop(
-#         "Parameter y_limits must have length = 1.")
-#       if(!(value_y_limits %in% c("fixed", "free")) ) stop(
-#         "Parameter y_limits must be input as either 'fixed' or 'free'.")
-#     }
-#     
-#     # Check if value_y_range is positive, numeric and length == 1 #
-#     if (!is.null(value_y_range)){
-#       if(!is.numeric(value_y_range)) stop(
-#         "Parameter y_range must be numeric.")
-#       if(length(value_y_range) != 1) stop(
-#         "Parameter y_range must have length = 1.")
-#       if(!(value_y_range > 0)) stop(
-#         "Parameter y_range must be greater than zero.")
-#     }
-#     
-#     # Check if value_y_max is numeric and length == 1 #
-#     if (!is.null(value_y_max)){
-#       if(!is.numeric(value_y_max)) stop(
-#         "Parameter y_max must be numeric.")
-#       if(length(value_y_max) != 1) stop(
-#         "Parameter y_max must have length = 1.")
-#     }
-#     
-#     # Check if value_y_min is numeric and length == 1 #
-#     if (!is.null(value_y_min)){
-#       if(!is.numeric(value_y_min)) stop(
-#         "Parameter y_min must be numeric.")
-#       if(length(value_y_min) != 1) stop(
-#         "Parameter y_min must have length = 1.")
-#     }
-#     
-#     # Check if value_plot_type has one of the available options #
-#     checkplot <- purrr::map(value_plot_type, 
-#                             function(plot) stringr::str_detect(plot, "box|col|point|scatter|bar"))
-#     if (any(!unlist(checkplot))) stop(
-#       "Invalid entry in value_plot_type. Plot_type strings must contain 
-#     at least one of the following: box, col, point, scatter, bar")
-#     
-#   } else {
-#     
-#     ##### Post-Moniker and null assignment check ####
-#     # --Value-- #
-#     if (!is.null(trellData$data_values) && !is.null(value_panel_x_axis)) {
-#       
-#       # print(value_panel_x_axis)
-#       # print(value_panel_y_axis)
-#       # print(panel_variable)
-#       # print(value_color_variable)
-#       
-#       # Ensure panel, color/x/y parameters are not matching #
-#       if (!((value_panel_x_axis != panel_variable) && 
-#             (value_panel_y_axis != panel_variable) && 
-#             (panel_variable != value_color_variable))){
-#         stop("Parameters for value panel_y_axis, panel_x_axis, and color_variable 
-#            cannot match panel_variable. Refer to ?plot_comps for default settings 
-#            or try setting all of these parameters individually.")
-#       }
-#       if(value_panel_x_axis == value_panel_y_axis) warning(
-#         "Parameter for value panel_y_axis and panel_x_axis are identical. 
-#             Refer to ?plot_comps for default settings or try setting 
-#             parameters individually for different axis labels.")
-#       
-#       # Variable for variable-in checks #
-#       allcol <- colnames(trellData$data_values)
-#       allcolstr <- toString(allcol)
-#       
-#       # Ensure panel, color, x, and y parameters are in data_values #
-#       if (!(value_panel_x_axis %in% allcol)) stop(
-#         paste("Parameter value_panel_x_axis  must be in:", allcolstr))
-#       if (!(value_panel_y_axis %in% allcol)) stop(
-#         paste("Parameter value_panel_y_axis must  must be in:", allcolstr))
-#       if (!(panel_variable %in% allcol)) stop(
-#         paste("Parameter panel_variable must be in:", allcolstr))
-#       if (!(value_color_variable %in% allcol)) stop(
-#         paste("Parameter value_color_variable must be in:", allcolstr))
-#       
-#     }
-#     
-#     # --Comps-- #
-#     
-#     # Ensure summary_stats and comp_stats are both present #
-#     if(((is.null(trellData$summary_stats)) & 
-#         (!is.null(trellData$comp_stats))) | 
-#        ((!is.null(trellData$summary_stats)) &
-#         (is.null(trellData$comp_stats))) ) {
-#       stop("Both summary_stats and comp_stats must be present 
-#          if one or the other is in trellData.")
-#     }
-#     
-#     if ((!is.null(trellData$summary_stats)) && 
-#         (!is.null(trellData$comp_stats)) &&
-#         (!is.null(comps_panel_x_axis)) ) {
-#       
-#       # Check if stats statistical test attribute is valid #
-#       if(!(
-#         attributes(trellData)$statistical_test %in% 
-#         c("combined", "gtest", "anova"))) stop(
-#         paste("Non-applicable statistical_test attribute in trellData object."))
-#       
-#       # Ensure panel, color/x/y parameters are not matching #
-#       if(comps_panel_x_axis == comps_panel_y_axis) warning(
-#         "Parameter for comps panel_y_axis and panel_x_axis are identical.
-#     Refer to ?plot_comps for default settings or try setting parameters
-#     individually for different axis labels.")
-#       
-#       if (!((comps_panel_x_axis != panel_variable) && 
-#             (comps_panel_y_axis != panel_variable) && 
-#             (panel_variable != comps_color_variable))) stop(
-#               "Parameters for comps panel_y_axis, panel_x_axis, 
-#             and color_variable cannot match panel_variable. Refer to ?plot_comps 
-#             for default settings or try setting all of these parameters 
-#             individually.")
-#       
-#       # Variable for variable-in checks #
-#       allcol <- c(colnames(trellData$comp_stats), 
-#                   colnames(trellData$summary_stats))
-#       allcolstr <- toString(unique(allcol))
-#       
-#       # Ensure panel, color, x, and y parameters are in comp_stats or summary stats #
-#       if (!(comps_panel_x_axis %in% allcol)) stop(
-#         paste("Parameter comps_panel_x_axis  must be in:", allcolstr))
-#       if (!(comps_panel_y_axis %in% allcol)) stop(
-#         paste("Parameter comps_panel_y_axis must  must be in:", allcolstr))
-#       if (!(panel_variable %in% allcol)) stop(
-#         paste("Parameter panel_variable must be in:", allcolstr))
-#       if (!(comps_color_variable %in% allcol)) stop(
-#         paste("Parameter comps_color_variable must be in:", allcolstr))
-#       
-#     }
-#   }
-# }
-#   
-
-#' @name generate_plot_message
-#' @rdname generate_plot_message
-#' @title Generates a message stating the specified plotting y-limits
-#' 
-#' @description Generates a message stating the specified plotting y-limits
-#'
-#' @param trellData An object of class "trellData" generated from \code{\link{as.trellData}}.
-#' @param comps_y_limits For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param comps_y_range For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param comps_y_max For comparisons: Sets the maximum y-value for the y-axis.
-#' @param comps_y_min For comparisons: Sets the minimum y-value for the y-axis.
-#' @param value_y_limits For values: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.
-#' @param value_y_range For values: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
-#' @param value_y_max For values: Sets the maximum y-value for the y-axis.
-#' @param value_y_min For values: Sets the minimum y-value for the y-axis.
+#' @param interactive Should the plots be rendered as plotly objects?
+#' @param plot_type types of plots 
+#' @param y_limits y-limits
+#' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
 #'
 #' @author Rachel Richardson
-#'
 
-generate_plot_message <- function(...){
-  .generate_plot_message(...)
+
+validate_format_plot_input <- function(...){
+  .validate_format_plot_input(...)
 }
 
-.generate_plot_message <- function(trellData, 
-                                   comps_y_limits = NULL, comps_y_range = NULL,
-                                   comps_y_max = NULL, comps_y_min = NULL, 
-                                   value_y_limits = NULL, value_y_range = NULL, 
-                                   value_y_max = NULL, value_y_min = NULL){
+.validate_format_plot_input <- function(
+  trellData,
+  plot_type,
+  p_val,
+  panel_variable,
+  plot_text,
+  custom_plot,
+  interactive){
+
+  ##### Initial checks #####
+
+  # Check if class is correct #
+  if(!inherits(trellData, "trellData")) stop(
+    "trellData must be of the class 'trellData'")
+
+  # Check if data is in trellData #
+  if((is.null(trellData$comp_stats) || is.na(trellData$comp_stats)) &&
+     (is.null(trellData$data_values) || is.na(trellData$data_values))) stop(
+    "No data values or comparison statistics in trellData to plot")
+
+  # # Check if data is in trellData (as above) #
+  # if(is.na(trellData$comp_stats) && is.na(trellData$data_values)) stop(
+  #   "No data values or comparison statistics in trellData to plot")
+
+  # Check if p_val is numeric of length 1 #
+  if(!is.numeric(p_val) || length(p_val) != 1) stop(
+    "p_val must be a numeric of length 1")
+
+  # Check if plotly is logical of length 1 #
+  if(!is.logical(interactive) || (length(interactive) != 1)) stop(
+    "interactive must be a logical (TRUE or FALSE) of length 1")
+
+  # Check if plot_text is logical of length 1 #
+  if(!is.logical(plot_text) || (length(plot_text) != 1)) stop(
+    "plot_text must be a logical (TRUE or FALSE) of length 1")
+
+  # Check if custom_plot is a string of length 1 #
+  if(!is.null(custom_plot) && (!is.character(custom_plot) || (length(custom_plot) != 1))) stop(
+    "custom_plot must be a character string (TRUE or FALSE) of length 1. Example: custom_plot = 'custom_fn' ")
   
-  ## Input comps y limits messages, tells user the plot limit parameters ##
-  #--Comps--#
-  if(!is.null(trellData$summary_stats) & !is.null(trellData$comp_stats)){
-    ## Input comps y limits messages, tells user the plot limit parameters ##
-    if (is.null(comps_y_limits) & is.null(comps_y_range) & is.null(comps_y_max) & is.null(comps_y_min)){
-      message("No specified comparison y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
-      comps_y_limits <- "free"
-    } else if (!is.null(comps_y_limits)){
-      if ((comps_y_limits == "fixed") & is.null(comps_y_max) & is.null(comps_y_min)){
-        message("Specified comparison y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
-      } else if ((comps_y_limits == "fixed") & !is.null(comps_y_max)){
-        message(paste("Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max: ", comps_y_max, sep = ""))
-      } else if ((comps_y_limits == "fixed") & !is.null(comps_y_min)){
-        message(paste("Specified comparison y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min: ", comps_y_min, sep = ""))
-      } else if (comps_y_limits == "free" & is.null(comps_y_max) & is.null(comps_y_min)){
-        message("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot.")
-      } else if ((comps_y_limits == "free") & !is.null(comps_y_max)){
-        message(paste("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot with a maximum of y_max. Specified y_max: ", comps_y_max, sep = ""))
-      } else if ((comps_y_limits == "free") & !is.null(comps_y_min)){
-        message(paste("Specified comparison y-limit: 'free'. Axis y-limits will be scaled per plot with a minimum of y_min. Specified y_min: ", comps_y_min, sep = ""))
-      } 
-    } else if (!is.null(comps_y_range) & is.null(comps_y_max) & is.null(comps_y_min)){
-      message(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
-                    comps_y_range," units, split over the median.", 
-                    sep = ""))
-    } else if (!is.null(comps_y_range) & !is.null(comps_y_min)) {
-      message(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
-                    comps_y_range," units from the y_min. Specified y_min: ", comps_y_min, sep = ""))
-    } else if (!is.null(comps_y_range) & !is.null(comps_y_max)) {
-      message(paste("Specified comparison y-range: ", comps_y_range, ". Axis y-limits will range ",
-                    comps_y_range," units from the y_max. Specified y_max: ", comps_y_max, sep = ""))
-    } else if (is.null(comps_y_min) && is.null(comps_y_range) && 
-               is.null(comps_y_limits) && !is.null(comps_y_max)){
-      message(paste("Specified comparison y-max: ", 
-                    comps_y_max,
-                    ". No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max."))
-      comps_y_limits <- "free"
-    } else if (!is.null(comps_y_min) && is.null(comps_y_range) && 
-               is.null(comps_y_limits) && is.null(comps_y_max)){
-      message(paste("Specified comparison y-min: ", 
-                    comps_y_max,
-                    ". No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min."))
-      comps_y_limits <- "free"
-    }
-  }
+  # Check if custom_plot function exists #
+  if(!is.null(custom_plot) && !exists(custom_plot)) stop(
+    paste("custom_plot function not found! Input custom_plot function name:", custom_plot))
   
-  #--Values--#
-  if(!is.null(trellData$data_values)){
-    ## Input values y limits messages, tells user the plot limit parameters ##
-    if (is.null(value_y_limits) & is.null(value_y_range) & is.null(value_y_max) & is.null(value_y_min)){
-      message("No specified value y-axis parameters. Axis y-limits will be scaled per plot, as per y_limits = 'free'.")
-      value_y_limits <- "free"
-    } else if (!is.null(value_y_limits)){
-      if ((value_y_limits == "fixed") & is.null(value_y_max) & is.null(value_y_min)){
-        message("Specified value y-limit: 'fixed'. Axis y-limits will fixed for all plots based on maximum and minimum y-values.")
-      } else if ((value_y_limits == "fixed") & !is.null(value_y_max)){
-        message(paste("Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a maximum of y_max. Specified y_max: ", value_y_max, sep = ""))
-      } else if ((value_y_limits == "fixed") & !is.null(value_y_min)){
-        message(paste("Specified value y-limit: 'fixed'. Axis y-limits will be fixed for all plots with a minimum of y_min. Specified y_min: ", value_y_min, sep = ""))
-      } else if (value_y_limits == "free" & is.null(value_y_max) & is.null(value_y_min)){
-        message("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot.")
-      } else if ((value_y_limits == "free") & !is.null(value_y_max)){
-        message(paste("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot with a maximum of y_max. Specified y_max: ", value_y_max, sep = ""))
-      } else if ((value_y_limits == "free") & !is.null(value_y_min)){
-        message(paste("Specified value y-limit: 'free'. Axis y-limits will be scaled per plot with a minimum of y_min. Specified y_min: ", value_y_min, sep = ""))
-      } 
-    } else if (!is.null(value_y_range) & is.null(value_y_max) & is.null(value_y_min)){
-      message(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
-                    value_y_range," units, split over the median.", 
-                    sep = ""))
-    } else if (!is.null(value_y_range) & !is.null(value_y_min)) {
-      message(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
-                    value_y_range," units from the y_min. Specified y_min: ", value_y_min, sep = ""))
-    } else if (!is.null(value_y_range) & !is.null(value_y_max)) {
-      message(paste("Specified value y-range: ", value_y_range, ". Axis y-limits will range ",
-                    value_y_range," units from the y_max. Specified y_max: ", value_y_max, sep = ""))
-    } else if (is.null(value_y_min) && is.null(value_y_range) && 
-               is.null(value_y_limits) && !is.null(value_y_max)){
-      message(paste("Specified comparison y-max: ", 
-                    value_y_max,
-                    ". No range or limits specified; Axis y-limits will be scaled per plot with a maximum of y_max."))
-      value_y_limits <- "free"
-    } else if (!is.null(value_y_min) && is.null(value_y_range) && 
-               is.null(value_y_limits) && is.null(value_y_max)){
-      message(paste("Specified comparison y-min: ", 
-                    value_y_max,
-                    ". No range or limits specified; Axis y-limits will be scaled per plot with a minimum of y_min."))
-      value_y_limits <- "free"
-    }
-  }
+  # Check plot_type input
+  if(!is.null(plot_type) && !all(plot_type %in% c(
+    "abundance_global", 
+    "foldchange_global", 
+    "missing_bar",
+    "abundance_heatmap",
+    "foldchange_heatmap",
+    "presence_heatmap",
+    "foldchange_bar",
+    "abundance_boxplot"
+  ))
+  ) stop(
+    "plot_type specified is not supported. Must be a character string in the following: abundance_boxplot, foldchange_bar, abundance_global, foldchange_global, missing_bar, abundance_heatmap, foldchange_heatmap, presence_heatmap, foldchange_bar, abundance_boxplot"
+  )
   
-  return(list(comps_y_limits , value_y_limits))
+  if(!is.null(plot_type) && (length(plot_type) != 1 )) stop(
+    "Invalid plot_type input. Refer to examples in ?pmartR:::format_plot."
+  )
+  
+  if(is.null(plot_type) && is.null(custom_plot)) stop(
+    "No plotting information found in plot_type or custom_plot."
+  )
+  
+  if (panel_variable == pmartR::get_edata_cname(trellData) && stringr::str_detect(plot_type, "heatmap")) {
+    stop(
+      paste("Heatmaps require a panel_variable that is not the same as edata cname (Default panel_variable is set to edata cname). Current edata cname:", pmartR::get_edata_cname(trellData))
+    )
+  } 
+  
+  temp <- Reduce("|", list(unlist(lapply(trellData, is.data.frame)), 
+                       unlist(lapply(trellData, is.null))))
+  
+  if(!all(temp)) stop(
+    "All trellData fields must be NULL or data.frames."
+  )
+  if((!is.null(trellData$comp_stats) && is.null(trellData$summary_stats) ) || 
+     (is.null(trellData$comp_stats)  && !is.null(trellData$summary_stats))) stop(
+    "Where comp_stats is generated, summary_stats are required and vice versa."
+  )
+  if(!is.null(trellData$comp_stats) && 
+     (is.null(attr(trellData, "statistical_test")) || 
+      !(attr(trellData, "statistical_test") %in% c("combined", "anova", "gtest")))) stop(
+    "Statistical_test attribute must be set to combined, anova, or gtest."
+  )
+  
+  
+  # Check plot_type input
+  if(is.null(trellData$comp_stats) && plot_type %in% c(
+    "foldchange_global", 
+    "foldchange_heatmap",
+    "foldchange_bar"
+  )) stop(
+    "Statistical comparisons (omicsStats) are required for plot_type specified (foldchange_global, foldchange_heatmap, or foldchange_bar). Refer to pmatR::imd_anova() for computing statistics."  )
+  
+  # Check plot_type input
+  if(is.null(trellData$data_values) && plot_type %in% c(
+    "abundance_global", 
+    "abundance_heatmap",
+    "presence_heatmap",
+    "abundance_boxplot"
+  )) stop(
+    "Data values (omicsData) are required for plot_type specified (abundance_global, abundance_heatmap, presence_heatmap, abundance_boxplot).")
   
 }
-
 
 #' @name add_plot_features
 #' @rdname add_plot_features
@@ -2284,6 +1990,20 @@ list_y_limits <- function(plot_type, y_limits){
 }
 
 .list_y_limits <- function(plot_type, y_limits){
+  
+  if(!(plot_type %in% c(
+    "abundance_global", 
+    "foldchange_global", 
+    "missing_bar",
+    "abundance_heatmap",
+    "foldchange_heatmap",
+    "presence_heatmap",
+    "foldchange_bar",
+    "abundance_boxplot"
+  ))
+  ) stop(
+    "plot_type specified is not supported. Must be a character string in the following: abundance_boxplot, foldchange_bar, abundance_global, foldchange_global, missing_bar, abundance_heatmap, foldchange_heatmap, presence_heatmap, foldchange_bar, abundance_boxplot"
+  )
     
     limlist <- list()
     plotlims <- list()
@@ -2313,17 +2033,18 @@ list_y_limits <- function(plot_type, y_limits){
         "List names for y_limits are restricted to 'min', 'max', 'range', and 'scale'"
       )
       
-      plotlims[1:length(plot_type)] <- list(y_limits)
-    }
-    
-    ###### Checks for singular input
-    if (length(y_limits) == 1 && (y_limits == "fixed" || y_limits == "free")){
+      plotlims <- list(y_limits)
+      names(plotlims) <- plot_type
+      
+      ### Singular inputs
+    } else if (y_limits == "fixed" || y_limits == "free"){
       limlist[["scale"]] <- y_limits
       plotlims[1:length(plot_type)] <- list(limlist)
       
     } else if (is.numeric(y_limits) && length(y_limits) == 2){
       limlist[["min"]] <- min(y_limits)
       limlist[["max"]] <- max(y_limits)
+      
       plotlims[1:length(plot_type)] <- list(limlist)
       
       #### Handles lists of y_limit input
@@ -2335,16 +2056,13 @@ list_y_limits <- function(plot_type, y_limits){
       }))) stop(
         "List of lists of lists are not supported in y_limits.")
       
-      if (length(y_limits) != length(plot_type)) stop(
-        "Lists in y_limits must be the same length as plot_type. Refer to examples in ?trelliVis().")
-      
       if (any(duplicated(names(y_limits)))) stop(
         paste("List inputs may not have duplicate names. Use a list of lists to specify different plot y_limits. Duplicate names:",
               names(y_limits)[duplicated(names(y_limits))])
       )  
       
-      if (any(!(names(y_limits) %in% plot_type))) stop(
-        paste("Names in y_limits should match plot_type. plot_type:",
+      if (any(!(plot_type %in% names(y_limits)))) stop(
+        paste("List of list inputs must be named. Names in y_limits should match plot_type. plot_type:",
               paste(plot_type, collapse = ", "))
       )
       
@@ -2353,9 +2071,6 @@ list_y_limits <- function(plot_type, y_limits){
       
       if(!is.null(plotlims) && length(plotlims) > 1){
         purrr::map(plotlims, function(listitem){
-          if (length(listitem) > 1 && is.null(names(listitem))) stop(
-            "Invalid format. List inputs must be named. Refer to ?trelliVis for examples."
-          )
           if (any(duplicated(names(listitem)))) stop(
             paste("List inputs may not have duplicate names. Use a list of lists to specify different plot y_limits. Duplicate names:",
                   names(listitem)[duplicated(names(listitem))])
@@ -2407,6 +2122,53 @@ list_y_limits <- function(plot_type, y_limits){
     nms <- c(plot_type[unlist(lists)], plot_type[!unlist(lists)])
     nms <- nms[!is.na(nms)]
     names(output) <- nms
+    
+    check <- output[[plot_type]]
+    
+    if("min" %in% names(check) && 
+       (length(check[["min"]]) != 1 ||
+       !is.numeric(check[["min"]]))) stop(
+      "Min must be a numeric of length 1."
+    )
+    if("max" %in% names(check) && 
+       (length(check[["max"]]) != 1 ||
+        !is.numeric(check[["max"]]))) stop(
+          "Max must be a numeric of length 1."
+        )
+    
+    if("range" %in% names(check) && 
+       (length(check[["range"]]) != 1 ||
+        !is.numeric(check[["range"]]) ||
+        !(check[["range"]] > 0))) stop(
+          "Range must be a numeric of length 1 that is greater than 0."
+        )
+    if("scale" %in% names(check) && 
+       (length(check[["scale"]]) != 1 ||
+        !is.character(check[["scale"]]) ||
+        !(check[["scale"]] %in% c("free", "fixed")))) stop(
+          "Scale must be a character of length 1 in 'free' or 'fixed'."
+        )
+    
+    if("min" %in% names(check) && 
+       "max" %in% names(check) && 
+       check[["min"]] > check[["max"]]) stop(
+         "Set min must be less than set max."
+       )
+    if("range" %in% names(check) && 
+       "scale" %in% names(check) &&
+       ("max" %in% names(check) || "min" %in% names(check))) stop(
+         "Range y-limits are not supported with scale y-limits and set min/max."
+       )
+    if("min" %in% names(check) && 
+       "max" %in% names(check) && 
+       "range" %in% names(check)) stop(
+         "Range y-limits are not supported with set min and max y-limits."
+       )
+    if("min" %in% names(check) && 
+       "max" %in% names(check) && 
+       "scale" %in% names(check)) stop(
+         "Scale y-limits are not supported with set min and max y-limits."
+       )
     
     return(output)
   }
@@ -2721,7 +2483,7 @@ data_cogs <- function(...) {
                 function(peptide) peptide %in% degen))
           }
           
-          if(!is.null(try_URL) && 
+          if(try_URL && 
              !is.null(pmartR::get_emeta_cname(trellData))){
             cogs <- dplyr::mutate(
               cogs,
@@ -2742,7 +2504,7 @@ data_cogs <- function(...) {
                 }))
           }
         } else if ("proData" %in% parent_dat){
-          if(!is.null(try_URL)){
+          if(try_URL){
             cogs <- dplyr::mutate(
               cogs,
               Protein_URL = purrr::map_chr(
@@ -2762,7 +2524,7 @@ data_cogs <- function(...) {
                 }))
           }
         } else if ("metabData" %in% parent_dat){
-          if(!is.null(try_URL)){
+          if(try_URL){
             cogs <- dplyr::mutate(
               cogs,
               Metabolite_URL = purrr::map_chr(
@@ -2778,7 +2540,7 @@ data_cogs <- function(...) {
           
         } else if ("lipidData" %in% parent_dat){
           
-          if(!is.null(try_URL)){
+          if(try_URL){
             cogs <- dplyr::mutate(
               cogs,
               Lipid_Maps_Hits = purrr::map_chr(
@@ -2847,34 +2609,28 @@ data_cogs <- function(...) {
               } else {
                 return(trelliscopejs::cog_href(
                   toString(unique(cogs[[column]])),
-                  desc = "Link to protein UniProt page"))
+                  desc = "Link to protein UniProt page",
+                  default_label = TRUE))
               }
               
             } else if (column == "Metabolite_URL") {
               return(trelliscopejs::cog_href(
                 toString(unique(cogs[[column]])),
-                desc = "Link to metabolite PubChem page."))
+                desc = "Link to metabolite PubChem page.",
+                default_label = TRUE))
               
             } else if (column == "Lipid_Maps_Hits") {
               return(trelliscopejs::cog_href(
                 toString(unique(cogs[[column]])),
-                desc = "Link to Lipid Maps search of lipid species."))
+                desc = "Link to Lipid Maps search of lipid species.", 
+                default_label = TRUE))
             } else if (column == "peps_per_pro"){
-              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-                return(trelliscopejs::cog(
-                  0,
-                  desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
-              }
               return(trelliscopejs::cog(
                 suppressWarnings(as.numeric(mean(cogs[[column]]))),
-                desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
+                desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "),
+                default_label = TRUE)
               
             } else if (column == "n_peps_used"){
-              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-                return(trelliscopejs::cog(
-                  0,
-                  desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
-              }
               return(trelliscopejs::cog(
                 mean(suppressWarnings(as.numeric(cogs[[column]]))),
                 desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
@@ -2882,14 +2638,9 @@ data_cogs <- function(...) {
             } else if (column == "Mean"){
               return(trelliscopejs::cog(
                 toString(unique(cogs[[column]])),
-                desc = "Mean of abundances/intensities for experimental groups."))
+                desc = "Mean of abundances/intensities for experimental groups where statistical tests could be performed."))
               
             } else if (column == "Fold_change"){
-              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-                return(trelliscopejs::cog(
-                  0,
-                  desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
-              }
               return(trelliscopejs::cog(
                 mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
                 desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
@@ -2900,21 +2651,11 @@ data_cogs <- function(...) {
                 desc = "Significant ANOVA results based on input p-value threshold (default == 0.05)."))
               
             } else if (column == "P_value_G") {
-              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-                return(trelliscopejs::cog(
-                  1,
-                  desc = "Mean G-test p-values (per panel). (Value of 1 == NA) "))
-              }
               return(trelliscopejs::cog(
                 mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
                 desc = "Mean G-test p-values (per panel)."))
               
             } else if (column == "P_value_T") {
-              if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-                return(trelliscopejs::cog(
-                  1,
-                  desc = "Mean ANOVA p-values (per panel).  (Value of 1 == NA) "))
-              }
               return(trelliscopejs::cog(
                 mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
                 desc = "Mean ANOVA p-values (per panel)."))
@@ -2934,11 +2675,6 @@ data_cogs <- function(...) {
             }
             
           } else if (is.numeric(cogs[[column]])){
-            if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-              return(trelliscopejs::cog(
-                0,
-                desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
-            }
             return(trelliscopejs::cog(
               mean(cogs[[column]], na.rm = TRUE), 
               desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
@@ -2950,11 +2686,11 @@ data_cogs <- function(...) {
             
           } else if (is.character(cogs[[column]]) && 
                      !any(is.na(suppressWarnings(as.numeric(cogs[[column]]))))){
-            if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-              return(trelliscopejs::cog(
-                0,
-                desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
-            }
+            # if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
+            #   return(trelliscopejs::cog(
+            #     0,
+            #     desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
+            # }
             return(trelliscopejs::cog(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 
                                       desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
             
@@ -3018,6 +2754,8 @@ data_cogs <- function(...) {
 #' @param plot_type plots for plotting
 #' @param self_contained Should display be generated in document? Defaults to FALSE
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
+#' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
+#'
 #'
 #' @author Rachel Richardson
 #' @export
@@ -3033,7 +2771,8 @@ trelliVis <- function(...) {
                        plot_text = FALSE, interactive = FALSE,
                        y_limits = NULL, plot_type = NULL,
                        self_contained = FALSE,
-                       custom_cog = NULL) {
+                       custom_cog = NULL,
+                       custom_plot = NULL) {
   
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
@@ -3154,7 +2893,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
     
     # Fill plot type
-    if (is.null(plot_type)){
+    if (is.null(plot_type) && is.null(custom_plot)){
       if(is.null(trellData[[1]]$comp_stats)){
         plot_type <- "abundance_boxplot"
       } else if (is.null(trellData[[1]]$data_values)){
@@ -3179,35 +2918,84 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
     ## Check trelli_name ##
     # Default trelliscope names correspond to data types entered #
-    if(is.null(trelli_name)){
-      trelli_name <- vector("list", 2)
-      trelli_name[[1]] <- paste(attr(trellData, "data_types")[1], plot_type, sep = "_")
-      trelli_name[[2]] <- paste(attr(trellData, "data_types")[2], plot_type, sep = "_")
-      names(trelli_name) <- attr(trellData, "data_types")
+    if(!is.null(plot_type)){
       
-
-      # if trelli_name is not of length list, add identifiers #
-    } else if (length(trelli_name) == 1){
-      label <- trelli_name
-      trelli_name <- vector("list", 2)
-      trelli_name[[1]] <- paste(paste(label, attr(trellData, "data_types")[1], sep = "_"), plot_type, sep = "_")
-      trelli_name[[2]] <- paste(paste(label, attr(trellData, "data_types")[2], sep = "_"), plot_type, sep = "_")
-      names(trelli_name) <- attr(trellData, "data_types")
+      if(is.null(trelli_name)){
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- paste(attr(trellData, "data_types")[1], plot_type, sep = "_")
+        trelli_name[[2]] <- paste(attr(trellData, "data_types")[2], plot_type, sep = "_")
+        if(!is.null(custom_plot)){
+          trelli_name[[1]] <- c(trelli_name[[1]], paste("Custom", attr(trellData, "data_types")[1], sep = "_"))
+          trelli_name[[2]] <- c(trelli_name[[2]], paste("Custom", attr(trellData, "data_types")[2], sep = "_"))
+        }
+        names(trelli_name) <- attr(trellData, "data_types")
+        
+        
+        # if trelli_name is not of length list, add identifiers #
+      } else if (length(trelli_name) == 1){
+        label <- trelli_name
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- paste(paste(label, attr(trellData, "data_types")[1], sep = "_"), plot_type, sep = "_")
+        trelli_name[[2]] <- paste(paste(label, attr(trellData, "data_types")[2], sep = "_"), plot_type, sep = "_")
+        if(!is.null(custom_plot)){
+          trelli_name[[1]] <- c(trelli_name[[1]], paste("Custom", attr(trellData, "data_types")[1], sep = "_"))
+          trelli_name[[2]] <- c(trelli_name[[2]], paste("Custom", attr(trellData, "data_types")[2], sep = "_"))
+        }
+        names(trelli_name) <- attr(trellData, "data_types")
+        
+        # if trelli_name too long, cut to length(trellData)  #
+      } else if (((length(trelli_name) != length(plot_types)*2 + 2) && !is.null(custom_plot)) || 
+                 (length(trelli_name) != length(plot_types)*2  && is.null(custom_plot)) ) {
+        message("Length of trelli_name is not equal to the number of displays generated. Only the first name will be used.")
+        label <- trelli_name[1]
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- paste(label, attr(trellData, "data_types")[1], plot_type, sep = "_")
+        trelli_name[[2]] <- paste(label, attr(trellData, "data_types")[2], plot_type, sep = "_")
+        if(!is.null(custom_plot)){
+          trelli_name[[1]] <- c(trelli_name[[1]], paste("Custom", attr(trellData, "data_types")[1], sep = "_"))
+          trelli_name[[2]] <- c(trelli_name[[2]], paste("Custom", attr(trellData, "data_types")[2], sep = "_"))
+        }
+        names(trelli_name) <- attr(trellData, "data_types")
+      } else {
+        label <- trelli_name
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- trelli_name[1:length(plot_types)]
+        trelli_name[[2]] <- trelli_name[(length(plot_types)+1):(length(plot_types)*2)]
+        names(trelli_name) <- attr(trellData, "data_types")
+      }
       
-      # if trelli_name too long, cut to length(trellData)  #
-    } else if (length(trelli_name) != length(plot_types)*2) {
-      message("Length of trelli_name is not equal to the number of displays generated. Only the first name will be used.")
-      label <- trelli_name[1]
-      trelli_name <- vector("list", 2)
-      trelli_name[[1]] <- paste(label, attr(trellData, "data_types")[1], plot_type, sep = "_")
-      trelli_name[[2]] <- paste(label, attr(trellData, "data_types")[2], plot_type, sep = "_")
-      names(trelli_name) <- attr(trellData, "data_types")
     } else {
-      label <- trelli_name
-      trelli_name <- vector("list", 2)
-      trelli_name[[1]] <- trelli_name[1:length(plot_types)]
-      trelli_name[[2]] <- trelli_name[(length(plot_types)+1):(length(plot_types)*2)]
-      names(trelli_name) <- attr(trellData, "data_types")
+      
+      if(is.null(trelli_name)){
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- paste("Custom", attr(trellData, "data_types")[1], sep = "_")
+        trelli_name[[2]] <- paste("Custom", attr(trellData, "data_types")[2], sep = "_")
+        names(trelli_name) <- attr(trellData, "data_types")
+        
+        # if trelli_name is not of length list, add identifiers #
+      } else if (length(trelli_name) == 1){
+        label <- trelli_name
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- c(trelli_name[[1]], paste(label, attr(trellData, "data_types")[1], sep = "_"))
+        trelli_name[[2]] <- c(trelli_name[[2]], paste(label, attr(trellData, "data_types")[2], sep = "_"))
+        names(trelli_name) <- attr(trellData, "data_types")
+        
+        # if trelli_name too long, cut to length(trellData)  #
+      } else if (length(trelli_name) != 2) {
+        message("Length of trelli_name is not equal to the number of displays generated. Only the first name will be used.")
+        label <- trelli_name[1]
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- c(trelli_name[[1]], paste(label, attr(trellData, "data_types")[1], sep = "_"))
+        trelli_name[[2]] <- c(trelli_name[[2]], paste(label, attr(trellData, "data_types")[2], sep = "_"))
+        names(trelli_name) <- attr(trellData, "data_types")
+      } else {
+        label <- trelli_name
+        trelli_name <- vector("list", 2)
+        trelli_name[[1]] <- trelli_name[1]
+        trelli_name[[2]] <- trelli_name[2]
+        names(trelli_name) <- attr(trellData, "data_types")
+      }
+      
     }
     
     # Ensure NULLs ar the correct length #
@@ -3238,20 +3026,57 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
     group <- purrr::map(trellData, pmartR:::get_data_class)
     
-    nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
-      
-      
-      nest_out <- purrr::map(plot_type, function(types){
-        format_plot(trellData = pairedplotter, 
-                    p_val = p_val,
-                    panel_variable = pan, 
-                    plot_type = types,
-                    plot_text = plot_text,
-                    y_limits = y_limits,
-                    interactive = interactive)
-        })
-      return(nest_out)
+      nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
+        
+        if(!is.null(plot_type)){
+          nest_out <- purrr::map(plot_type, function(types){
+            format_plot(trellData = pairedplotter, 
+                        p_val = p_val,
+                        panel_variable = pan, 
+                        plot_type = types,
+                        plot_text = plot_text,
+                        y_limits = y_limits,
+                        interactive = interactive)
+          })
+        
+          if(!is.null(custom_plot)){
+            nest_out[[length(nest_out) + 1]] <- format_plot(trellData = pairedplotter, 
+                                                            p_val = p_val,
+                                                            panel_variable = pan, 
+                                                            custom_plot = custom_plot,
+                                                            plot_text = plot_text,
+                                                            y_limits = y_limits,
+                                                            interactive = interactive)
+          }
+        } else {
+          nest_out <- list()
+          nest_out[[1]] <- format_plot(trellData = pairedplotter,
+                                       p_val = p_val,
+                                       panel_variable = pan,
+                                       custom_plot = custom_plot,
+                                       plot_text = plot_text,
+                                       y_limits = y_limits,
+                                       interactive = interactive)
+        }
+        return(nest_out)
       })
+    
+      
+    # nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
+    #   
+    #   
+    #   nest_out <- purrr::map(plot_type, function(types){
+    #     format_plot(trellData = pairedplotter, 
+    #                 p_val = p_val,
+    #                 panel_variable = pan, 
+    #                 plot_type = types,
+    #                 plot_text = plot_text,
+    #                 y_limits = y_limits,
+    #                 interactive = interactive)
+    #     })
+    #   return(nest_out)
+    #   })
+
     
     tictoc::toc()
     
@@ -3309,12 +3134,34 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     out <- purrr::pmap(list(nest_plot_cog_list, 
                 trelli_name, group), function(display1, name1, grp){
                   purrr::map2(display1, name1, function(display, name){
-                    trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                                               path = as.character(trelli_path_out), 
-                                               group = grp,
-                                               thumb = TRUE, state = list(
-                                                 sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                                                 labels = list(names(display[1]))))
+                    
+                    
+                    if(self_contained){
+                      
+                      trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
+                                                 self_contained = TRUE, 
+                                                 group = grp,
+                                                 thumb = TRUE, state = list(
+                                                   sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
+                                                   labels = list(names(display[1]))))
+                      
+                    } else {
+                      
+                      trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
+                                                 path = as.character(trelli_path_out), 
+                                                 group = grp,
+                                                 thumb = TRUE, state = list(
+                                                   sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
+                                                   labels = list(names(display[1]))))
+                      
+                    }
+                    
+                    # trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
+                    #                            path = as.character(trelli_path_out), 
+                    #                            group = grp,
+                    #                            thumb = TRUE, state = list(
+                    #                              sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
+                    #                              labels = list(names(display[1]))))
                   })
       })
     
@@ -3328,14 +3175,14 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     group <- pmartR:::get_data_class(trellData)
     
     #Check panel variable
-    if(!(panel_variable %in% c(colnames(trellData$summary_stats),
+    if(!is.null(panel_variable) && !(panel_variable %in% c(colnames(trellData$summary_stats),
                                colnames(trellData$comp_stats),
                                colnames(trellData$data_values)))) stop(
                                  "Panel_variable in not present in input data columns."
                                )
     
     # Fill plot type
-    if (is.null(plot_type)){
+    if (is.null(plot_type) && is.null(custom_plot)){
       if(is.null(trellData$comp_stats)){
         plot_type <- "abundance_boxplot"
       } else if (is.null(trellData$data_values)){
@@ -3352,23 +3199,157 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
          )
     
     # Default: Name the display after parent classes (omicsData and omicStats clases) #
-    if(is.null(trelli_name)){
-      trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), plot_type, sep = "_")
-      # Make sure trelliname is length 1 #
-    } else if (length(trelli_name) != (length(plot_type))) {
-      warning("trelli_name length is not equal to the number of displays generated from plot_type; using the first entry in trelli_name.")
-      trelli_name <- paste(trelli_name[[1]], plot_type, sep = "_")
+    
+    if(!is.null(plot_type)){
+      if(is.null(trelli_name)){
+        trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), plot_type, sep = "_")
+        # Make sure trelliname is length 1 #
+      } else if (length(trelli_name) == 1){
+        label <- trelli_name
+        trelli_name <- paste(label, plot_type, sep = "_")
+        if(!is.null(custom_plot)){
+          trelli_name <- c(trelli_name, paste(label, "Custom", sep = "_"))
+        }
+      } else if (((length(trelli_name) != (length(plot_type))) && is.null(custom_plot)) || 
+                 (!is.null(custom_plot) && length(trelli_name) != (length(plot_type)) + 1)) {
+        warning("trelli_name length is not equal to the number of displays generated from plot_type; using the first entry in trelli_name.")
+        label <- trelli_name[[1]]
+        trelli_name <- paste(label, plot_type, sep = "_")
+        if(!is.null(custom_plot)){
+          trelli_name <- c(trelli_name, paste(label, "Custom", sep = "_"))
+        }
+      }
+    } else {
+      if(is.null(trelli_name)){
+        trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), "Custom", sep = "_")
+        # Make sure trelliname is length 1 #
+      } else if (length(trelli_name) != 1) {
+        warning("trelli_name length is not equal to the number of displays generated from plot_type; using the first entry in trelli_name.")
+        trelli_name <- paste(trelli_name[[1]], "Custom", sep = "_")
+      }
     }
+    # if(is.null(trelli_name)){
+    #   trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), plot_type, sep = "_")
+    #   # Make sure trelliname is length 1 #
+    # } else if (length(trelli_name) != (length(plot_type))) {
+    #   warning("trelli_name length is not equal to the number of displays generated from plot_type; using the first entry in trelli_name.")
+    #   trelli_name <- paste(trelli_name[[1]], plot_type, sep = "_")
+    # }
     
     # Nest data and generate trelliscope plots #
     
-    displays <- purrr::map2(plot_type, trelli_name, function(types, names){
+    if(!is.null(plot_type)){
       
+      displays <- purrr::map2(plot_type, trelli_name, function(types, names){
+        
+        tictoc::tic("Generate plots")
+        
+        nested_plot <- format_plot(trellData = trellData, 
+                                   p_val = p_val,
+                                   plot_type = types,
+                                   plot_text = plot_text,
+                                   y_limits = y_limits,
+                                   panel_variable = panel_variable,
+                                   interactive = interactive)
+        tictoc::toc()
+        
+        tictoc::tic("Generate auto cogs")
+        
+        # Generate default cognostics #
+        nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
+                                                    trellData = trellData,
+                                                    p_val = p_val, 
+                                                    try_URL = try_URL,
+                                                    custom_cog = custom_cog))
+        tictoc::toc()
+        
+        tictoc::tic("Pipe into trelliscope")
+        
+        # Generate trelliscope display #
+        if(self_contained){
+          out <- nest_plot_cog %>%
+            trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
+                                       self_contained = TRUE, 
+                                       thumb = TRUE,
+                                       state = list(
+                                         sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                         labels = list(names(nest_plot_cog[1])))
+            )
+        } else {
+          
+          out <- nest_plot_cog %>%
+            trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
+                                       path = as.character(trelli_path_out), 
+                                       thumb = TRUE,
+                                       group = group,
+                                       state = list(
+                                         sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                         labels = list(names(nest_plot_cog[1])))
+            )
+        }
+        tictoc::toc()
+        return(out)
+      })
+      
+      if(!is.null(custom_plot)){
+        
+          tictoc::tic("Generate plots")
+          
+          nested_plot <- format_plot(trellData = trellData, 
+                                     p_val = p_val,
+                                     custom_plot = custom_plot,
+                                     plot_text = plot_text,
+                                     y_limits = y_limits,
+                                     panel_variable = panel_variable,
+                                     interactive = interactive)
+          tictoc::toc()
+          
+          tictoc::tic("Generate auto cogs")
+          
+          # Generate default cognostics #
+          nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
+                                                      trellData = trellData,
+                                                      p_val = p_val, 
+                                                      try_URL = try_URL,
+                                                      custom_cog = custom_cog))
+          tictoc::toc()
+          
+          tictoc::tic("Pipe into trelliscope")
+          
+          # Generate trelliscope display #
+          if(self_contained){
+            out <- nest_plot_cog %>%
+              trelliscopejs::trelliscope(name = as.character(trelli_name[length(trelli_name)]), nrow = 1, ncol = 2,
+                                         self_contained = TRUE, 
+                                         thumb = TRUE,
+                                         state = list(
+                                           sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                           labels = list(names(nest_plot_cog[1])))
+              )
+          } else {
+            
+            out <- nest_plot_cog %>%
+              trelliscopejs::trelliscope(name = as.character(trelli_name[length(trelli_name)]), nrow = 1, ncol = 2,
+                                         path = as.character(trelli_path_out), 
+                                         thumb = TRUE,
+                                         group = group,
+                                         state = list(
+                                           sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                           labels = list(names(nest_plot_cog[1])))
+              )
+          }
+          
+          displays[[length(displays) + 1]] <- out
+          
+          tictoc::toc()
+        }
+        
+    } else {
       tictoc::tic("Generate plots")
       
       nested_plot <- format_plot(trellData = trellData, 
                                  p_val = p_val,
-                                 plot_type = types,
+                                 custom_plot = custom_plot,
                                  plot_text = plot_text,
                                  y_limits = y_limits,
                                  panel_variable = panel_variable,
@@ -3390,7 +3371,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       # Generate trelliscope display #
       if(self_contained){
         out <- nest_plot_cog %>%
-          trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
+          trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
                                      self_contained = TRUE, 
                                      thumb = TRUE,
                                      state = list(
@@ -3400,7 +3381,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       } else {
         
         out <- nest_plot_cog %>%
-          trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
+          trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
                                      path = as.character(trelli_path_out), 
                                      thumb = TRUE,
                                      group = group,
@@ -3409,9 +3390,63 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                        labels = list(names(nest_plot_cog[1])))
           )
       }
+      
+      displays <- out
       tictoc::toc()
-      return(out)
-      })
+      
+      }
+      
+    
+    # displays <- purrr::map2(plot_type, trelli_name, function(types, names){
+    #   
+    #   tictoc::tic("Generate plots")
+    #   
+    #   nested_plot <- format_plot(trellData = trellData, 
+    #                              p_val = p_val,
+    #                              plot_type = types,
+    #                              plot_text = plot_text,
+    #                              y_limits = y_limits,
+    #                              panel_variable = panel_variable,
+    #                              interactive = interactive)
+    #   tictoc::toc()
+    #   
+    #   tictoc::tic("Generate auto cogs")
+    #   
+    #   # Generate default cognostics #
+    #   nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
+    #                                               trellData = trellData,
+    #                                               p_val = p_val, 
+    #                                               try_URL = try_URL,
+    #                                               custom_cog = custom_cog))
+    #   tictoc::toc()
+    #   
+    #   tictoc::tic("Pipe into trelliscope")
+    #   
+    #   # Generate trelliscope display #
+    #   if(self_contained){
+    #     out <- nest_plot_cog %>%
+    #       trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
+    #                                  self_contained = TRUE, 
+    #                                  thumb = TRUE,
+    #                                  state = list(
+    #                                    sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+    #                                    labels = list(names(nest_plot_cog[1])))
+    #       )
+    #   } else {
+    #     
+    #     out <- nest_plot_cog %>%
+    #       trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
+    #                                  path = as.character(trelli_path_out), 
+    #                                  thumb = TRUE,
+    #                                  group = group,
+    #                                  state = list(
+    #                                    sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+    #                                    labels = list(names(nest_plot_cog[1])))
+    #       )
+    #   }
+    #   tictoc::toc()
+    #   return(out)
+    #   })
     return(displays)
   }
 }

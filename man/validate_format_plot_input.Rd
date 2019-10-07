@@ -2,14 +2,11 @@
 % Please edit documentation in R/trelliVis.R
 \name{validate_format_plot_input}
 \alias{validate_format_plot_input}
-\alias{generate_plot_message}
 \title{Validate inputs for omicsData and omicsStats in trelliVis processing}
 \usage{
-generate_plot_message(...)
+validate_format_plot_input(...)
 }
 \arguments{
-\item{...}{further arguments}
-
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
 
 \item{p_val}{Specifies p-value for setting graph border colors}
@@ -18,33 +15,17 @@ generate_plot_message(...)
 
 \item{plot_text}{For comparisons only: TRUE/FALSE for p-value text above data}
 
-\item{plotly}{Should the plots be rendered as plotly objects?}
+\item{interactive}{Should the plots be rendered as plotly objects?}
 
-\item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
+\item{plot_type}{types of plots}
 
-\item{comps_y_limits}{For comparisons: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
+\item{y_limits}{y-limits}
 
-\item{comps_y_range}{For comparisons: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
-
-\item{comps_y_max}{For comparisons: Sets the maximum y-value for the y-axis.}
-
-\item{comps_y_min}{For comparisons: Sets the minimum y-value for the y-axis.}
-
-\item{value_y_limits}{For values: Set to "fixed" or "free" for automated y-axis calculating. "fixed" - axis generated based on the maximum/minimum across all plots. "free" - axis axis generated based on the maximum/minimum of individual plot.}
-
-\item{value_y_range}{For values: Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.}
-
-\item{value_y_max}{For values: Sets the maximum y-value for the y-axis.}
-
-\item{value_y_min}{For values: Sets the minimum y-value for the y-axis.}
+\item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
 }
 \description{
 Checks for validity of trellData input and assigns variables where needed
-
-Generates a message stating the specified plotting y-limits
 }
 \author{
-Rachel Richardson
-
 Rachel Richardson
 }
