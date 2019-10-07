@@ -1,4 +1,4 @@
-testthat::context("Test as.trellData output (approx. 40 seconds)")
+testthat::context("Test as.trellData output (approx. 1 minute)")
 
 ################################################################################
 ## Generate testing data ##
@@ -643,7 +643,7 @@ testthat::test_that("Format list slices are equal to non-lists", {
 ################################################################################
 ################################################################################
 
-testthat::context("Test format_plot output") ## takes some time for pep/pro data (large), not used
+testthat::context("Test format_plot output, (approx. 2 minute)") ## takes some time for pep/pro data (large), not used
 
 ## Generate nested plot structures ##
 plot_isoobject <- pmartR::format_plot(format_isoobject, plot_type = "abundance_boxplot")
@@ -729,7 +729,7 @@ testthat::test_that("Correct error/warning throwing", {
   testthat::expect_error(pmartR::format_plot(badform8, plot_type = "abundance_boxplot"),
                          "Where comp_stats is generated, summary_stats are required and vice versa.")
   
-  rm(badform, badform2, badform3, badform4, badform5, badform6, badform7, badform8)
+  # rm(badform, badform2, badform3, badform4, badform5, badform6, badform7, badform8)
   
   # p val error #
   testthat::expect_error(pmartR::format_plot(format_pepobject, p_val = NA, plot_type = "abundance_boxplot"),
@@ -894,7 +894,7 @@ testthat::test_that("Correct error/warning throwing", {
 
 testthat::context("Test list_y_limits output and error throwing")
 
-testthat::test_that("Correct error/warning throwing", {
+testthat::test_that("Correct list_y_limits error/warning throwing", {
 # list_y_limits errors #
   testthat::expect_error( 
     pmartR:::list_y_limits(plot_type = "abundance_boxplot",
@@ -986,130 +986,131 @@ testthat::test_that("Correct error/warning throwing", {
 # ################################################################################
 # ################################################################################
 # 
-# testthat::context("Test set_increment and set_ylimits output")
-# 
-# #### Testing data: y-values #### 
-# ylist1 <- data.frame(NA, "NA", 8, c(3,2), NA, NA)
-# ylist2 <- c(NA, "r"," r", "r", NA, NA)
-# ylist3 <- c(NA, "NA"," NA", "NA", NA, NA)
-# ylist4 <- c(0)
-# ylist5 <- data.frame(NA, NA, NA, NA, NA, NA)
-# ylist6 <- c(NULL)
-# ylist7 <- c(NA, NA, NA, NA, NA, NA)
-# ylist8 <- c(4)
-# ylist9 <- c(-4, -4, NA, NA, NA, NA)
-# ylist10 <- c(-4, -5, NA, NA, NA, NA)
-# ylist11 <- c(4, NA, NA, 6, NA, 5)
-# ylist12 <- data.frame(NA, NA, NA, 3, NA, NA)
-# ylist13 <- data.frame(NA, NA, NA, c(3,2), NA, NA)
-# ylist14 <- data.frame(NA, NA, -8, c(-9,-10), NA, NA)
-# 
+testthat::context("Test set_increment and set_ylimits output")
+
+#### Testing data: y-values ####
+ylist1 <- data.frame(NA, "NA", 8, c(3,2), NA, NA)
+ylist2 <- c(NA, "r"," r", "r", NA, NA)
+ylist3 <- c(NA, "NA"," NA", "NA", NA, NA)
+ylist4 <- c(0)
+ylist5 <- data.frame(NA, NA, NA, NA, NA, NA)
+ylist6 <- c(NULL)
+ylist7 <- c(NA, NA, NA, NA, NA, NA)
+ylist8 <- c(4)
+ylist9 <- c(-4, -4, NA, NA, NA, NA)
+ylist10 <- c(-4, -5, NA, NA, NA, NA)
+ylist11 <- c(4, NA, NA, 6, NA, 5)
+ylist12 <- data.frame(NA, NA, NA, 3, NA, NA)
+ylist13 <- data.frame(NA, NA, NA, c(3,2), NA, NA)
+ylist14 <- data.frame(NA, NA, -8, c(-9,-10), NA, NA)
+
 # #### Test set_increment #### 
-# testthat::test_that("Subfunction set_increment correctly processes", {
-#   testthat::expect_error(pmartR::set_increment(ylist1))
-#   testthat::expect_error(pmartR::set_increment(ylist2))
-#   testthat::expect_error(pmartR::set_increment(ylist3))
-#   testthat::expect_error(pmartR::set_increment(ylist4, include_zero = "z"))
-#   testthat::expect_error(pmartR::set_increment(ylist4, include_zero = 1))
-#   testthat::expect_identical(pmartR::set_increment(ylist4), 0)
-#   testthat::expect_identical(pmartR::set_increment(ylist5), 0)
-#   testthat::expect_identical(pmartR::set_increment(ylist6), 0)
-#   testthat::expect_identical(pmartR::set_increment(ylist7), 0)
-#   testthat::expect_identical(pmartR::set_increment(ylist8), 4/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist8, include_zero = FALSE), 4/20)
-#   testthat::expect_identical(pmartR::set_increment(ylist9), 4/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist9, include_zero = FALSE), 4/20)
-#   testthat::expect_identical(pmartR::set_increment(ylist10), 5/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist10, include_zero = FALSE), 1/20)
-#   testthat::expect_identical(pmartR::set_increment(ylist11), 6/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist11, include_zero = FALSE), 2/20)
-#   testthat::expect_identical(pmartR::set_increment(ylist12), 3/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist12, include_zero = FALSE), 3/20)
-#   testthat::expect_identical(pmartR::set_increment(ylist13), 3/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist13, include_zero = FALSE), 1/20)
-#   testthat::expect_identical(pmartR::set_increment(ylist14), 10/20)
-#   testthat::expect_identical(pmartR::set_increment(
-#     ylist14, include_zero = FALSE), 2/20)
-# })
-# 
-# #### Test set_ylimits #### 
-# testthat::test_that("Subfunction set_ylimits correctly processes", {
-#   
-#   temp_inc <- 1    # Testing increment value
-#   temp_ymax <- 20  # Testing y_max
-#   temp_ymin <- -16 # Testing y_min
-#   temp_yrange <- 6 # Testing y_range
-#   
-#   #### Errors ####
-#   testthat::expect_error(pmartR::set_ylimits(ylist1, temp_inc))
-#   testthat::expect_error(pmartR::set_ylimits(ylist2, temp_inc))
-#   testthat::expect_error(pmartR::set_ylimits(ylist3, temp_inc))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, "z"))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, NA))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, c(1,2)))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, include_zero = "z"))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, include_zero = 1))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_max = "z"))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_min = "z"))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_range = "z"))
-#   testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, 
-#                                              y_range = temp_yrange,
-#                                              y_max = temp_ymax,
-#                                              y_min = temp_ymin))
-#   
-#   #### Value match w/o limits ####
-#   testthat::expect_identical(pmartR::set_ylimits(ylist4, temp_inc), c(-5, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist5, temp_inc), c(-5, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist6, temp_inc), c(-5, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist7, temp_inc), c(-5, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist8, temp_inc), c(-1, 9))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist8, temp_inc, include_zero = FALSE), c(-1, 9))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist9, temp_inc), c(-9, 1))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist9, temp_inc, include_zero = FALSE), c(-9, 1))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist10, temp_inc), c(-10, 1))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist10, temp_inc, include_zero = FALSE), c(-10, 1))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist11, temp_inc), c(-1, 11))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist11, temp_inc, include_zero = FALSE), c(-1, 11))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist12, temp_inc), c(-2, 8))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist12, temp_inc, include_zero = FALSE), c(-2, 8))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist13, temp_inc), c(-3, 8))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist13, temp_inc, include_zero = FALSE), c(-3, 8))
-#   testthat::expect_identical(pmartR::set_ylimits(ylist14, temp_inc), c(-15, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist14, temp_inc, include_zero = FALSE), c(-15, -3))
-#   
-#   
-#   #### Value match w/ limits ####
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist4, temp_inc, y_max = temp_ymax), c(-5, 20))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist4, temp_inc, y_min = temp_ymin), c(-16, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist4, temp_inc, y_min = temp_ymin), c(-16, 5))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist4, temp_inc, y_min = temp_ymin, y_max = temp_ymax), c(-16, 20))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist4, temp_inc, y_range = temp_yrange, y_max = temp_ymax), c(14, 20))
-#   testthat::expect_identical(pmartR::set_ylimits(
-#     ylist4, temp_inc, y_min = temp_ymin, y_range = temp_yrange), c(-16, -10))
-#   
-# })
+testthat::test_that("Subfunction set_increment correctly processes", {
+  testthat::expect_error(pmartR::set_increment(ylist1))
+  testthat::expect_error(pmartR::set_increment(ylist2))
+  testthat::expect_error(pmartR::set_increment(ylist3))
+  testthat::expect_error(pmartR::set_increment(ylist4, include_zero = "z"))
+  testthat::expect_error(pmartR::set_increment(ylist4, include_zero = 1))
+  testthat::expect_identical(pmartR::set_increment(ylist4), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist5), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist6), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist7), 0)
+  testthat::expect_identical(pmartR::set_increment(ylist8), 4/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist8, include_zero = FALSE), 4/20)
+  testthat::expect_identical(pmartR::set_increment(ylist9), 4/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist9, include_zero = FALSE), 4/20)
+  testthat::expect_identical(pmartR::set_increment(ylist10), 5/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist10, include_zero = FALSE), 1/20)
+  testthat::expect_identical(pmartR::set_increment(ylist11), 6/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist11, include_zero = FALSE), 2/20)
+  testthat::expect_identical(pmartR::set_increment(ylist12), 3/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist12, include_zero = FALSE), 3/20)
+  testthat::expect_identical(pmartR::set_increment(ylist13), 3/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist13, include_zero = FALSE), 1/20)
+  testthat::expect_identical(pmartR::set_increment(ylist14), 10/20)
+  testthat::expect_identical(pmartR::set_increment(
+    ylist14, include_zero = FALSE), 2/20)
+})
+
+#### Test set_ylimits ####
+testthat::test_that("Subfunction set_ylimits correctly processes", {
+
+  temp_inc <- 1    # Testing increment value
+  temp_ymax <- 20  # Testing y_max
+  temp_ymin <- -16 # Testing y_min
+  temp_yrange <- 6 # Testing y_range
+
+  #### Errors ####
+  testthat::expect_error(pmartR::set_ylimits(ylist1, temp_inc))
+  testthat::expect_error(pmartR::set_ylimits(ylist2, temp_inc))
+  testthat::expect_error(pmartR::set_ylimits(ylist3, temp_inc))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, NA))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, c(1,2)))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, include_zero = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, include_zero = 1))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_max = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_min = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc, y_range = "z"))
+  testthat::expect_error(pmartR::set_ylimits(ylist4, temp_inc,
+                                             y_range = temp_yrange,
+                                             y_max = temp_ymax,
+                                             y_min = temp_ymin))
+
+  #### Value match w/o limits ####
+  testthat::expect_identical(pmartR::set_ylimits(ylist4, temp_inc), c(-3, 3))
+  testthat::expect_identical(pmartR::set_ylimits(ylist5, temp_inc), c(-3, 3))
+  testthat::expect_identical(pmartR::set_ylimits(ylist6, temp_inc), c(-3, 3))
+  testthat::expect_identical(pmartR::set_ylimits(ylist7, temp_inc), c(-3, 3))
+  testthat::expect_identical(pmartR::set_ylimits(ylist8, temp_inc), c(-3, 7))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist8, temp_inc, include_zero = FALSE), c(1, 7))
+  testthat::expect_identical(pmartR::set_ylimits(ylist9, temp_inc), c(-7, 3))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist9, temp_inc, include_zero = FALSE), c(-7, -1))
+  testthat::expect_identical(pmartR::set_ylimits(ylist10, temp_inc), c(-8, 3))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist10, temp_inc, include_zero = FALSE), c(-8, -1))
+  testthat::expect_identical(pmartR::set_ylimits(ylist11, temp_inc), c(-3, 9))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist11, temp_inc, include_zero = FALSE), c(1, 9))
+  testthat::expect_identical(pmartR::set_ylimits(ylist12, temp_inc), c(-3, 6))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist12, temp_inc, include_zero = FALSE), c(0, 6))
+  testthat::expect_identical(pmartR::set_ylimits(ylist13, temp_inc), c(-1, 6))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist13, temp_inc, include_zero = FALSE), c(-1, 6))
+  testthat::expect_identical(pmartR::set_ylimits(ylist14, temp_inc), c(-13, 3))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist14, temp_inc, include_zero = FALSE), c(-13, -5))
+
+
+  #### Value match w/ limits ####
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_max = temp_ymax), c(-3, 20))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin), c(-16, 3))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin, y_max = temp_ymax), c(-16, 20))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_range = temp_yrange, y_max = temp_ymax), c(14, 20))
+  testthat::expect_identical(pmartR::set_ylimits(
+    ylist4, temp_inc, y_min = temp_ymin, y_range = temp_yrange), c(-16, -10))
+
+})
 
 ################################################################################
 ################################################################################
 
 # testthat::context("Test main TrelliVis function output")
 
-##  covr::file_coverage("./R/trelliVis.R", "./tests/testthat/test_trelliVis.R")
+# trelliVis.R
+
+# covr::file_coverage("./R/trelliVis.R", "./tests/testthat/test_trelliVis.R")
+# covr::file_coverage("./R/edata_transform.R", "./tests/testthat/test_edata_transform.R")

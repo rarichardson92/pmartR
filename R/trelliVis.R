@@ -2182,7 +2182,7 @@ list_y_limits <- function(plot_type, y_limits){
 #' @description Sets y-axis increment for trellData plotting. Used by plot_comp.
 #'
 #' @param yvalues y-values for plotting
-#' @param testtype consideration for different statistical tests
+#' @param include_zero Should zero be included in plot scaling?
 #'
 #' @author Rachel Richardson
 #'
@@ -2233,6 +2233,7 @@ set_increment <- function(yvalues, ...){
 #' @param y_range Specify a range for the plot y-axis. Will calculate the range based on one of y_max or y_min parameters or from the median of y-values where y_max and y_min are not defined.
 #' @param y_max Sets the maximum y-value for the y-axis.
 #' @param y_min Sets the minimum y-value for the y-axis.
+#' @param include_zero Should zero be included regardless of scaling?
 #'
 #' @author Rachel Richardson
 #'
@@ -2243,7 +2244,8 @@ set_ylimits <- function(yvalues, increment, ...){
 }
 
 .set_ylimits <- function(yvalues, increment, y_range = NULL, 
-                         y_max = NULL, y_min = NULL, include_zero = TRUE){
+                         y_max = NULL, y_min = NULL, include_zero = TRUE
+                         ){
   
   # Catch NAs #
   yvalues <- yvalues[!is.na(yvalues)]
