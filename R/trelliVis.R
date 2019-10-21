@@ -2904,6 +2904,25 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
     "At least one of omicsData, omicsStats, or omicsFormat must be populated."
   )
   
+  # Check user inputs for bad paths
+  
+  if(!is.null(trelli_name)){
+    if(any(stringr::str_detect(trelli_name, "[^A-z0-9_\\/\\.\\\\]+"))) warning(
+      "Caution: Non-word characters (outside of periods and slashes) detected in trelliname that may cause errors in file creation. Ensure that trelliname is a permissable file name for your system."
+    )
+  }
+
+  if(any(stringr::str_detect(trelli_path_out, "[^A-z0-9_\\/\\.\\\\]+"))) warning(
+    "Caution: Non-word characters (outside of periods and slashes) detected in trelli_path_out that may cause errors in file creation. Ensure that trelli_path_out is a permissable folder name for your system."
+    )
+  
+  
+  if (any(c("state", "self_contained", "path", "name", "panel_col", "group") %in% names(list(...)))) stop(
+    paste("The following trelliscopejs arguments are currently not supported for user input: ", toString(c("state", "self_contained", "path", "name", "panel_col", "group")))
+  )
+  
+  
+  
   #####
   ## Switch Stats and Omics data as appropriate ##
   #####
@@ -2933,12 +2952,12 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   #####
   
   # If lists of omicsData or trellData are used, make sure panel variables are specified for both #
-  if ((class(omicsData) == "list" | 
+  if ((class(omicsData) == "list" || 
        class(omicsStats) == "list") && 
       !is.null(panel_variable) && 
       length(panel_variable) != max(length(omicsStats), 
                                     length(omicsData))) stop(
-                                      "Panel variable must be specified for each index in omicsStats/omicsData"
+                                      "Panel variable must be specified for each index in omicsStats/omicsData (e.g. c('Peptide', 'Protein'))"
                                     )
   
   #####
@@ -2971,9 +2990,28 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   # If a pep/pro pair is listed, act on each item #
   if(class(trellData) == "list"){
     
+    if(is.null(trelliscopejs::cog_disp_filter)) stop(
+      "Function trelliscopejs::cog_disp_filter() not found! This function is required for linked displays. Consider updating your trelliscopejs package or installing from the dev branch using devtools::install_github('hafen/trelliscopejs@dev'). (The list input of omicsData and/or omicsStats can be processed as unlinked displays in trelliVis for circumstances where updates are not available)"
+    )
+    
     if(!is.null(custom_cog)){
-      
-      purr
+      purrr::map(trellData, function(trell){
+        
+        if(is.null(panel_variable)){
+          tester <- pmartR::get_edata_cname(trell)
+        } else {
+          tester <- panel_variable
+        }
+        
+        trell <- trell[[1]]
+        
+        name <- as.character(trell[floor(runif(1, 1, nrow(trell))), tester])
+        subset <- trell[as.character(trell[[tester]]) == name,]
+        
+        x <- eval(parse(text = paste0(custom_cog, "(subset)")))
+          if(!is.data.frame(x) || nrow(x) != 1) stop(
+            paste("Validation failed. Custom cog function on data subset is required to yield a data.frame with nrow == 1. Subset tested on:", tester, "==", name))
+      })
       
     }
     
@@ -3095,7 +3133,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       
     }
     
-    # Ensure NULLs ar the correct length #
+    # Ensure NULLs or the correct length #
     if (is.null(omicsData)){
       omicsData <- rep(list(NULL), length(trellData))
     }
@@ -3105,15 +3143,15 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     if (is.null(panel_variable)){
       panel_variable <- rep(list(NULL), length(trellData))
     } else {
-      if(!(panel_variable %in% c(colnames(trellData[[1]]$summary_stats),
+      if(!(all(panel_variable %in% c(colnames(trellData[[1]]$summary_stats),
                                colnames(trellData[[1]]$comp_stats),
-                               colnames(trellData[[1]]$data_values)))) stop(
-                                 "Panel_variable in not present in input data columns."
+                               colnames(trellData[[1]]$data_values))))) stop(
+                                 paste("Panel_variable input is not present in input data columns. Panel_variable =", toString(panel_variable))
                                )
-      if(!(panel_variable %in% c(colnames(trellData[[2]]$summary_stats),
+      if(!(all(panel_variable %in% c(colnames(trellData[[2]]$summary_stats),
                                  colnames(trellData[[2]]$comp_stats),
-                                 colnames(trellData[[2]]$data_values)))) stop(
-                                   "Panel_variable in not present in input data columns."
+                                 colnames(trellData[[2]]$data_values))))) stop(
+                                   paste("Panel_variable input is not present in input data columns. Panel_variable =", toString(panel_variable))
                                  )
     }
     
@@ -3251,8 +3289,26 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     if(!is.null(panel_variable) && !(panel_variable %in% c(colnames(trellData$summary_stats),
                                colnames(trellData$comp_stats),
                                colnames(trellData$data_values)))) stop(
-                                 "Panel_variable in not present in input data columns."
+                                 paste("Panel_variable input is not present in input data columns.  Panel_variable =", toString(panel_variable))
                                )
+
+    # Check custom cog
+    if(!is.null(custom_cog)){
+        
+      if(is.null(panel_variable)){
+        tester <- pmartR::get_edata_cname(trellData)
+      } else {
+        tester <- panel_variable
+      }
+      
+      name <- as.character(trellData[[1]][floor(runif(1, 1, nrow(trellData[[1]]))), tester])
+      subset <- trellData[[1]][as.character(trellData[[1]][[tester]]) == name,]
+      
+      x <- eval(parse(text = paste0(custom_cog, "(subset)")))
+      if(!is.data.frame(x) || nrow(x) != 1) stop(
+        paste("Validation failed. Custom cog function on data subset is required to yield a data.frame with nrow == 1. Subset tested on:", tester, "==", name))
+    
+    }
     
     # Fill plot type
     if (is.null(plot_type) && is.null(custom_plot)){

@@ -338,7 +338,6 @@ format_qpro1stats  <- pmartR::as.trellData(qpro1_stats)
 format_qpro2stats  <- pmartR::as.trellData(qpro2_stats)
 
 # Both data and stats #
-## Only log transformed data? ##  ADDD for matching log transforms
 
 format_isoboth    <- pmartR::as.trellData(isobaric_object, isobaric_stats)
 format_lipboth    <- pmartR::as.trellData(list(lipid_object), list(lipid_stats))
@@ -1428,17 +1427,96 @@ testthat::context("Test main TrelliVis function output")
 
 ## Generate function outputs from test data ##
 
-#### Linking with cog_disp_filter will break function with associated displays
-## ensure name, path, (not currently user implemented group) has no characters that would mess up a path
-## Test custom cog function validity upfront
+# trelliVis(metab_object, metab_stats)
+iso_display    <- trelliVis(isobaric_object, isobaric_stats, plot_type = "custom_fn")
+metab_display  <- trelliVis(metab_object, metab_stats, self_contained = TRUE)
+lipid_display  <- trelliVis(list(lipid_object), list(lipid_stats))
+pro_display    <- trelliVis(qpro1_stats, qpro1)
+linked_display <- trelliVis(list(isobaric_object, qpro1), 
+                            list(isobaric_stats, qpro1_stats), 
+                            custom_plot = "custom_fn")
+linked_display2 <- trelliVis(list(isobaric_object, qpro1), trelli_name = c("this", "that", "the other"))
+linked_display3 <- trelliVis(list(isobaric_object, qpro1), 
+                             custom_plot = "custom_fn", 
+                             self_contained = TRUE)
+linked_display3 <- trelliVis(list(isobaric_object, qpro1), 
+                             plot_type = "abundance_boxplot", 
+                             custom_plot = "custom_fn")
 
-x <- trelliVis(isobaric_object, isobaric_stats)
-x <- trelliVis(metab_object, metab_stats)
-x <- trelliVis(list(lipid_object), list(lipid_stats))
-x <- trelliVis(qpro1, qpro1_stats)
+## 
 
-x <- trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats))
+testthat::test_that("Subfunction set_ylimits correctly processes", {
+  testthat::expect_warning(testthat::expect_error(
+    trelliVis(metab_object, metab_stats, custom_cog = "mean"), 
+    "Validation failed"), "argument is not numeric or logical")
+  testthat::expect_warning(testthat::expect_error(
+    trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), custom_cog = "mean"), 
+    "Validation failed"), "argument is not numeric or logical")
+  testthat::expect_error(
+    trelliVis(metab_object, metab_stats, panel_variable = "mean"), 
+    "not present in input data")
+  testthat::expect_error(
+    trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), panel_variable = c("mean", "mean")), 
+    "not present in input data")
+  testthat::expect_error(
+    trelliVis(metab_object, metab_stats, state = "mean"), 
+    "currently not supported")
+  testthat::expect_error(
+    trelliVis(omicsStats = NULL, omicsData = NULL, omicsFormat = NULL), 
+    "least one of omicsData")
+  testthat::expect_error(
+    trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), panel_variable = "Peptide"), 
+    "specified for each index")
+  testthat::expect_error(
+    trelliVis(metab_object, metab_stats, try_URL = "blh"), 
+    "try_URL must be a")
 
+  x <- as.trellData(isobaric_object, isobaric_stats)
+  attributes(x)$isobaric_info$norm_info$is_normalized <- FALSE
+  attributes(x)$data_info$norm_info$is_normalized <- FALSE
+  testthat::expect_error(
+    trelliVis(omicsFormat = x), 
+    "normalize_isobaric")
+  x <- as.trellData(metab_object, metab_stats)
+  attributes(x)$isobaric_info$norm_info$is_normalized <- FALSE
+  attributes(x)$data_info$norm_info$is_normalized <- FALSE
+  testthat::expect_error(
+    trelliVis(omicsFormat = x), 
+    "normalize_global")
+  
+  x <- as.trellData(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats))
+  attributes(x[[1]])$isobaric_info$norm_info$is_normalized <- FALSE
+  attributes(x[[1]])$data_info$norm_info$is_normalized <- FALSE
+  testthat::expect_error(
+    trelliVis(omicsFormat = x), 
+    "normalize_isobaric")
+  x <- as.trellData(list(pep_object, qpro2), list(pep_stats, qpro2_stats))
+  attributes(x[[2]])$isobaric_info$norm_info$is_normalized <- FALSE
+  attributes(x[[2]])$data_info$norm_info$is_normalized <- FALSE
+  testthat::expect_error(
+    trelliVis(omicsFormat = x), 
+    "normalize_global")
+  
+  x <- as.trellData(list(pep_object, qpro2), list(pep_stats, qpro2_stats))
+  attributes(x[[1]])$isobaric_info$norm_info$is_normalized <- FALSE
+  attributes(x[[1]])$data_info$norm_info$is_normalized <- FALSE
+  testthat::expect_error(
+    trelliVis(omicsFormat = x), 
+    "normalize_global")
+  x <- as.trellData(list(pep_object, qpro2), list(pep_stats, qpro2_stats))
+  attributes(x[[2]])$isobaric_info$norm_info$is_normalized <- FALSE
+  attributes(x[[2]])$data_info$norm_info$is_normalized <- FALSE
+  testthat::expect_error(
+    trelliVis(omicsFormat = x), 
+    "normalize_global")
+  
+  testthat::expect_warning(testthat::expect_warning(
+    x <- trelliVis(omicsData = metab_object, trelli_name = "la la"), 
+    "Non-word characters"))
+  testthat::expect_warning(
+    x <- trelliVis(omicsData = metab_object, trelli_path_out = "la la"), 
+    "Non-word characters")
+})
 
 # trelliVis.R
 
