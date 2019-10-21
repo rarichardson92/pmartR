@@ -4,12 +4,12 @@
 \alias{set_increment}
 \title{Sets y-axis increment for trellData labels plotting}
 \usage{
-set_increment(yvalues, ...)
+set_increment(yvalues, include_zero = TRUE)
 }
 \arguments{
 \item{yvalues}{y-values for plotting}
 
-\item{testtype}{consideration for different statistical tests}
+\item{include_zero}{Should zero be included in plot scaling?}
 }
 \description{
 Sets y-axis increment for trellData plotting. Used by plot_comp.

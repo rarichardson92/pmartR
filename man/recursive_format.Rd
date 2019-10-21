@@ -4,7 +4,7 @@
 \alias{recursive_format}
 \title{Recursive call of as.trellData and associated checks for list inputs}
 \usage{
-recursive_format(...)
+recursive_format(omicsData = NULL, omicsStats = NULL)
 }
 \arguments{
 \item{yvalues}{y-values for plotting}

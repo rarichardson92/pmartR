@@ -4,7 +4,8 @@
 \alias{set_ylimits}
 \title{Sets y-axis limits for trellData plotting}
 \usage{
-set_ylimits(yvalues, increment, ...)
+set_ylimits(yvalues, increment, y_range = NULL, y_max = NULL,
+  y_min = NULL, include_zero = TRUE)
 }
 \arguments{
 \item{yvalues}{y-values for plotting}
@@ -16,6 +17,8 @@ set_ylimits(yvalues, increment, ...)
 \item{y_max}{Sets the maximum y-value for the y-axis.}
 
 \item{y_min}{Sets the minimum y-value for the y-axis.}
+
+\item{include_zero}{Should zero be included regardless of scaling?}
 }
 \description{
 Sets y-axis limits for trellData plotting. Used by plot_comp.

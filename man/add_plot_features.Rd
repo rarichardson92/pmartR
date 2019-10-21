@@ -4,7 +4,8 @@
 \alias{add_plot_features}
 \title{Adds features to dataframe for plotting}
 \usage{
-add_plot_features(...)
+add_plot_features(trellData, nestedData, p_val = NULL,
+  panel_variable = NULL, y_axis)
 }
 \arguments{
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
@@ -15,9 +16,7 @@ add_plot_features(...)
 
 \item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData.}
 
-\item{comps_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
-
-\item{value_panel_y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
+\item{y_axis}{Specifies what column should be on the y-axis, must be a column in trellData and numeric.}
 }
 \description{
 Adds border color, hover, and label text as applicable to nested trellData dataframe for plotting

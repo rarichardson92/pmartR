@@ -4,7 +4,7 @@
 \alias{validate_omics_input}
 \title{Validate inputs for omicsData and omicsStats in trelliVis processing}
 \usage{
-validate_omics_input(...)
+validate_omics_input(omicsData = NULL, omicsStats = NULL)
 }
 \arguments{
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}

@@ -4,10 +4,13 @@
 \alias{validate_format_plot_input}
 \title{Validate inputs for omicsData and omicsStats in trelliVis processing}
 \usage{
-validate_format_plot_input(...)
+validate_format_plot_input(trellData, plot_type, p_val, panel_variable,
+  plot_text, custom_plot, interactive)
 }
 \arguments{
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
+
+\item{plot_type}{types of plots}
 
 \item{p_val}{Specifies p-value for setting graph border colors}
 
@@ -15,13 +18,11 @@ validate_format_plot_input(...)
 
 \item{plot_text}{For comparisons only: TRUE/FALSE for p-value text above data}
 
+\item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
+
 \item{interactive}{Should the plots be rendered as plotly objects?}
 
-\item{plot_type}{types of plots}
-
 \item{y_limits}{y-limits}
-
-\item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
 }
 \description{
 Checks for validity of trellData input and assigns variables where needed

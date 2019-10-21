@@ -4,14 +4,14 @@
 \alias{as.trellData}
 \title{Convert Omics data and pairwise statistics to a plotting object}
 \usage{
-as.trellData(...)
+as.trellData(omicsData = NULL, omicsStats = NULL)
 }
 \arguments{
-\item{...}{further arguments}
-
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
 
 \item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData.}
+
+\item{...}{further arguments}
 }
 \description{
 Converts a ResObject and its respective OmicsData into an easily plottable object.

@@ -4,22 +4,24 @@
 \alias{format_plot}
 \title{Plot pairwise comparisons and data values in trellData object}
 \usage{
-format_plot(trellData, ...)
+format_plot(trellData, panel_variable = NULL, plot_type = NULL,
+  p_val = 0.05, plot_text = FALSE, y_limits = NULL,
+  interactive = FALSE, custom_plot = NULL)
 }
 \arguments{
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
 
-\item{p_val}{Specifies p-value for setting graph border colors}
-
 \item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
-
-\item{plot_text}{For comparisons only: TRUE/FALSE for p-value text above data}
-
-\item{interactive}{Should the plots be rendered as plotly objects?}
 
 \item{plot_type}{types of plots}
 
+\item{p_val}{Specifies p-value for setting graph border colors}
+
+\item{plot_text}{For comparisons only: TRUE/FALSE for p-value text above data}
+
 \item{y_limits}{y-limits}
+
+\item{interactive}{Should the plots be rendered as plotly objects?}
 
 \item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
 }

@@ -48,8 +48,8 @@
 #'
 #' @export
 #' 
-as.trellData <- function(...){
-  .as.trellData(...)
+as.trellData <- function(omicsData = NULL, omicsStats = NULL){
+  .as.trellData(omicsData, omicsStats)
 }
 
 .as.trellData <- suppressWarnings(function(omicsData = NULL, omicsStats = NULL){
@@ -336,8 +336,8 @@ print.trellData<- function(trellData){
 #' @author Rachel Richardson
 #'
 
-recursive_format <- function(...){
-  .recursive_format(...)
+recursive_format <- function(omicsData = NULL, omicsStats = NULL){
+  .recursive_format(omicsData, omicsStats)
 }
 
 .recursive_format <- function(omicsData = NULL, omicsStats = NULL){
@@ -395,8 +395,8 @@ recursive_format <- function(...){
 #' @author Rachel Richardson
 #'
 
-validate_omics_input <- function(...){
-  .validate_omics_input(...)
+validate_omics_input <- function(omicsData = NULL, omicsStats = NULL){
+  .validate_omics_input(omicsData, omicsStats)
 }
 
 .validate_omics_input <- function(omicsData = NULL, omicsStats = NULL){
@@ -430,13 +430,6 @@ validate_omics_input <- function(...){
           1) use list() instead of c() to preverse integrity of omicsData 
           and omicsStats lists, 2) If using both omicsData and omicsStats, 
           both inputs must be lists.")
-        
-        # Check that omicsStats input is a list() not a c() #
-        if (any(unlist(purrr::map(c(omicsStats), is.data.frame)))) stop(
-          "List/vector entry error, dataframes in input list. Possible solutions: 
-            1) use list() instead of c() to preverse integrity of omicsData 
-            and omicsStats lists, 2) If using both omicsData and omicsStats, 
-            both inputs must be lists.")
         
         #Generate cname lists #
         listData <- omicsData %>% purrr::map(function(omics) attr(omics, which = "cname"))
@@ -523,10 +516,10 @@ validate_omics_input <- function(...){
     }
   } else {
     
-    if((class(omicsData) == "list" && class(omicsStats) != "NULL") || 
-       (class(omicsData) != "NULL" && class(omicsStats) == "list")) stop(
-         "Dual input using lists in omicsData and omicsStats must be lists of equal length."
-       )
+    # if((class(omicsData) == "list" && class(omicsStats) != "NULL") || 
+    #    (class(omicsData) != "NULL" && class(omicsStats) == "list")) stop(
+    #      "Dual input using lists in omicsData and omicsStats must be lists of equal length."
+    #    )
 
     ## Initial Checks  for non-lists ##
     # Make sure at least one of omicsData or omicsStats is present #
@@ -602,10 +595,11 @@ validate_omics_input <- function(...){
          nrow(omicsStats$Flags) != nrow(omicsStats$P_value)) stop(
            "Mismatched rows between omicsStats dataframes Full_results, P_value, and Flags. Check integrity of omicsStats object."
          )
-      
+            
       # Check attribute statistical test is populated #
-      if(!(attr(omicsStats, "statistical_test") %in% c("combined", "anova", "gtest"))) stop(
-        "OmicsStats statistical_test attribute incorrect; must be combined, anova, or gtest."
+      if(is.null(attr(omicsStats, "statistical_test")) || 
+         !(attr(omicsStats, "statistical_test") %in% c("combined", "anova", "gtest"))) stop(
+        "OmicsStats statistical_test attribute incorrect or NULL; must be combined, anova, or gtest."
       )
       
       # Check cname e_data is in all columns #
@@ -633,19 +627,19 @@ validate_omics_input <- function(...){
               "Number of columns in omicsStats dataframes is different than expected based on group_DF and comparisons attributes. Some grouping and comparison statistics might be missing from input."
             )
       
-      # Check required data #
-      if(is.null(omicsData$e_data) || is.null(omicsData$f_data)) stop(
-        "Omicsdata requires both e_data and f_data."
-      )
+      # # Check required data # ##### redundant with Biomolecules in omicsStats do not match biomolecules in omicsData, column does not match between omicsData and omicsStats errors
+      # if(is.null(omicsData$e_data) || is.null(omicsData$f_data)) stop( 
+      #   "Omicsdata requires both e_data and f_data."
+      # )
       
-      # Check cname e_data is in e_data, cname f_data is in f_data #
-      if(!(uniqedatId %in% colnames(omicsData$e_data) &&
-           sampID %in% colnames(omicsData$f_data))) stop(
-             paste(
-               paste(uniqedatId, "column must be present in omicsData e_data."),
-               paste(sampID, "column must be present in omicsData f_data.")
-             )
-           )
+      # # Check cname e_data is in e_data, cname f_data is in f_data #    ##### redundant with Biomolecules in omicsStats do not match biomolecules in omicsData, column does not match between omicsData and omicsStats errors
+      # if(!(uniqedatId %in% colnames(omicsData$e_data) && 
+      #      sampID %in% colnames(omicsData$f_data))) stop(
+      #        paste(
+      #          paste(uniqedatId, "column must be present in omicsData e_data."),
+      #          paste(sampID, "column must be present in omicsData f_data.")
+      #        )
+      #      )
       
       # Check cname f_data is in columns of e_data #
       if(!all(unlist(omicsData$f_data[sampID]) %in% colnames(omicsData$e_data))) stop(
@@ -674,8 +668,9 @@ validate_omics_input <- function(...){
          )
       
       # Check attribute statistical test is populated #
-      if(!(attr(omicsStats, "statistical_test") %in% c("combined", "anova", "gtest"))) stop(
-        "OmicsStats statistical_test attribute incorrect; must be combined, anova, or gtest."
+      if(is.null(attr(omicsStats, "statistical_test"))|| 
+         !(attr(omicsStats, "statistical_test") %in% c("combined", "anova", "gtest"))) stop(
+        "OmicsStats statistical_test attribute incorrect or NULL; must be combined, anova, or gtest."
       )
       
       # Check cname e_data is in all columns #
@@ -733,6 +728,29 @@ validate_omics_input <- function(...){
 }
 
 
+#' @name custom_fn
+#' @rdname custom_fn
+#' @title Test function for format_plot(), custom_plot argument
+#'
+#' @description Test function for format_plot(), custom_plot argument. Plots a ggplot where x = 1:10, y = 1:10.
+#'
+#' @param data data subset from a trellData object.
+#' @author Rachel Richardson
+custom_fn <- function(data){
+  ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+}
+
+#' @name custom_fn_cog
+#' @rdname custom_fn_cog
+#' @title Test function for data_cog(), custom_cog argument
+#'
+#' @description Test function for data_cog(), custom_cog argument. Returns a tibble with one row and 3 columns.
+#'
+#' @param data data subset from a trellData object.
+#' @author Rachel Richardson
+custom_fn_cog <- function(data){
+  tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
+}
 
 #' @name format_plot
 #' @rdname format_plot
@@ -750,9 +768,23 @@ validate_omics_input <- function(...){
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
 #'
 #' @author Rachel Richardson
-#' @export
-format_plot <- function(trellData, ...) {
-  .format_plot(trellData,  ...)
+#'
+format_plot <- function(trellData, 
+                        panel_variable = NULL, 
+                        plot_type = NULL, 
+                        p_val = 0.05, 
+                        plot_text = FALSE, 
+                        y_limits = NULL,
+                        interactive = FALSE,
+                        custom_plot = NULL) {
+  .format_plot(trellData, 
+               panel_variable, 
+               plot_type, 
+               p_val, 
+               plot_text, 
+               y_limits,
+               interactive,
+               custom_plot)
 }
 
 .format_plot <- function(trellData, 
@@ -800,11 +832,11 @@ format_plot <- function(trellData, ...) {
     if(!is.null(custom_plot)){
       trellData2 <- trellData
       if(!is.null(trellData2$data_value)){
-        trellData2$data_value <- trellData2$data_value[trellData2$data_value[[panel_variable]] == panel,]
+        trellData2$data_value <- trellData2$data_value[as.character(trellData2$data_value[[panel_variable]]) == panel,]
       }
       if(!is.null(trellData2$comp_stats)){
-        trellData2$comp_stats <- trellData2$comp_stats[trellData2$comp_stats[[panel_variable]] == panel,]
-        trellData2$summary_stats <- trellData2$summary_stats[trellData2$summary_stats[[panel_variable]] == panel,]
+        trellData2$comp_stats <- trellData2$comp_stats[as.character(trellData2$comp_stats[[panel_variable]]) == panel,]
+        trellData2$summary_stats <- trellData2$summary_stats[as.character(trellData2$summary_stats[[panel_variable]]) == panel,]
       }
       plot_out <- eval(parse(text = paste0(custom_plot, "(trellData2)")))
       }
@@ -812,11 +844,6 @@ format_plot <- function(trellData, ...) {
     if("abundance_global" %in% plot_type){
       
       lims <- graphlims[["abundance_global"]]
-      
-      if (!is.null(lims$scale) && lims$scale == "free") {
-        warning( 
-          "Scale option 'free' is not valid with abundance_global plots. Fixed plots will be generated based on global values.")
-      }
       
       sampID <- pmartR:::get_fdata_cname(trellData)
       
@@ -903,12 +930,6 @@ format_plot <- function(trellData, ...) {
     if("foldchange_global" %in% plot_type){
       
       lims <- graphlims[["foldchange_global"]]
-  
-      if (!is.null(lims$scale) && lims$scale == "free") {
-        warning( 
-          "Scale option 'free' is not valid with foldchange_global plots. Fixed plots will be generated based on global values.")
-        lims$scale <- "fixed"
-      }
       
       sampID <- pmartR:::get_fdata_cname(trellData)
       comps <- "Comparison"
@@ -929,10 +950,10 @@ format_plot <- function(trellData, ...) {
       
       data <- trellData$comp_stats
       
-      if(!(panel_variable %in% colnames(trellData$comp_stats))) stop(
-        paste(
-          "Panel variable for foldchange_global must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)
-      ))
+      # if(!(panel_variable %in% colnames(trellData$comp_stats))) stop(
+      #   paste(
+      #     "Panel variable for foldchange_global must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)
+      # ))
       
         rows <- as.character(data[[panel_variable]]) == panel
         df2 <- data[rows,]
@@ -985,20 +1006,20 @@ format_plot <- function(trellData, ...) {
       
       lims <- graphlims[["missing_bar"]]
       
-      if (!is.null(lims$scale) || !is.null(lims$range)) {
-        warning( 
-          "Scale options and range are not valid with missing_bar plots, scale will not be applied. Please use max and min or list(NULL) for missing_bar y_limits.  Refer to examples in ?trelliVis().")
-      }
-      
-      if (!is.null(lims$min) && (lims$min < 0 || lims$min > 1)) {
-        stop( 
-          "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
-      }
-      
-      if (!is.null(lims$max) && (lims$max < 0 || lims$max > 1)) {
-        stop( 
-          "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
-      }
+      # if (!is.null(lims$scale) || !is.null(lims$range)) {
+      #   warning( 
+      #     "Scale options and range are not valid with missing_bar plots, scale will not be applied. Please use max and min or list(NULL) for missing_bar y_limits.  Refer to examples in ?trelliVis().")
+      # }
+      # 
+      # if (!is.null(lims$min) && (lims$min < 0 || lims$min > 1)) {
+      #   stop( 
+      #     "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
+      # }
+      # 
+      # if (!is.null(lims$max) && (lims$max < 0 || lims$max > 1)) {
+      #   stop( 
+      #     "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
+      # }
       
       
       if(!is.null(trellData$summary_stats)){
@@ -1222,17 +1243,6 @@ format_plot <- function(trellData, ...) {
     if("abundance_heatmap" %in% plot_type){
       
       lims <- graphlims[["abundance_heatmap"]]
-      
-      ## Move outside function
-      
-      # if (!is.null(lims[[1]])) {
-      #   warning( 
-      #     "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
-      # }
-      
-      
-      if(attr(trellData, "meta_info") && 
-         panel_variable != pmartR::get_edata_cname(trellData)){
         
         if ("Group_DF" %in% colnames(trellData$data_values)){
           group <- "Group_DF"
@@ -1295,7 +1305,7 @@ format_plot <- function(trellData, ...) {
               plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
                 ggplot2::xlab("")
             }
-      }
+      # }
     }
     
     #### Foldchange Heatmap ####
@@ -1304,12 +1314,10 @@ format_plot <- function(trellData, ...) {
       
       lims <- graphlims[["foldchange_heatmap"]]
       
-      if (!is.null(lims[[1]])) {
-        warning( 
-          "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
-      }
-      
-      if(attr(trellData, "meta_info") && panel_variable != pmartR::get_edata_cname(trellData)){
+      # if (!is.null(lims[[1]])) {
+      #   warning( 
+      #     "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
+      # }
         
         foldchange <- grep("change", colnames(trellData$comp_stats), value = T)
         
@@ -1360,7 +1368,6 @@ format_plot <- function(trellData, ...) {
               plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
                 ggplot2::xlab("")
             }
-      }
     }
     
     #### Presence Heatmap ####
@@ -1368,14 +1375,10 @@ format_plot <- function(trellData, ...) {
       
       lims <- graphlims[["presence_heatmap"]]
       
-      if (!is.null(lims[[1]])) {
-        warning( 
-          "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
-      }
-      
-      
-      if(attr(trellData, "meta_info") && panel_variable != pmartR::get_edata_cname(trellData)){
-        # if(!is.null(trellData$data_values)){
+      # if (!is.null(lims[[1]])) {
+      #   warning( 
+      #     "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
+      # }
           
           abundance <- grep("abundance", colnames(trellData$data_values), value = T)
           pal <- grDevices::colorRampPalette(c("red", "yellow"))
@@ -1438,8 +1441,6 @@ format_plot <- function(trellData, ...) {
                 plot_out <- plot_out + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 6)) +
                   ggplot2::xlab("")
               }
-              
-      }
     }
     
     #### Abundance Boxplot ####
@@ -1477,7 +1478,7 @@ format_plot <- function(trellData, ...) {
                                             nestedData,
                                             p_val = p_val,
                                             panel_variable = panel_variable,
-                                            value_panel_y_axis = abundance)  ### Take out of function later 
+                                            y_axis = abundance)
       
       nestedData_value <- unique.data.frame(nestedData_value[c(
         group_df_name,
@@ -1543,11 +1544,11 @@ format_plot <- function(trellData, ...) {
       
       plotter <- trellData$comp_stats
       
-      if(!is.null(panel_variable) && !(panel_variable %in% colnames(trellData$comp_stats))) stop(
-        paste(
-          c("Panel variable for foldchange_bar must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)), 
-          collapse = " "
-        ))
+      # if(!is.null(panel_variable) && !(panel_variable %in% colnames(trellData$comp_stats))) stop(
+      #   paste(
+      #     c("Panel variable for foldchange_bar must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)), 
+      #     collapse = " "
+      #   ))
       
       if(!is.null(lims$scale) && lims$scale == "fixed"){
         
@@ -1570,16 +1571,18 @@ format_plot <- function(trellData, ...) {
                                               nestedData,
                                               p_val = p_val,
                                               panel_variable = panel_variable,
-                                              comps_panel_y_axis = "Fold_change"   ### Remove from function later
+                                              y_axis = "Fold_change"
                                               )
         
-        nestedData_comps <- unique.data.frame(nestedData_comps[c(
+        keep <- colnames(nestedData_comps) %in% c(
           pmartR::get_edata_cname(trellData),
           "Fold_change",
           "text",
           "Comparison",
           "bord",
-          "labels")])
+          "labels")
+        
+        nestedData_comps <- unique.data.frame(nestedData_comps[keep])
         
         # Make ggplots #
         
@@ -1655,25 +1658,25 @@ format_plot <- function(trellData, ...) {
     #######
     #######
     
-    if(interactive){
+    if(interactive && !is.null(plot_type)){
       
       if(any(stringr::str_detect(plot_type, "heatmap"))) {
         
-        plotnames <- c("abundance_boxplot", 
-                        "foldchange_bar", 
-                        "abundance_global", 
-                        "foldchange_global", 
-                        "missing_bar",
-                        "abundance_heatmap",
-                        "foldchange_heatmap",
-                        "presence_heatmap",
-                        "foldchange_bar",
-                        "abundance_boxplot")
-        typenames <- plotnames[plotnames %in% plot_type]
-        #Accounts for out of order input
-        
-        if(stringr::str_detect(typenames[1], "heatmap")){
-          
+        # plotnames <- c("abundance_boxplot", 
+        #                 "foldchange_bar", 
+        #                 "abundance_global", 
+        #                 "foldchange_global", 
+        #                 "missing_bar",
+        #                 "abundance_heatmap",
+        #                 "foldchange_heatmap",
+        #                 "presence_heatmap",
+        #                 "foldchange_bar",
+        #                 "abundance_boxplot")
+        # typenames <- plotnames[plotnames %in% plot_type]
+        # #Accounts for out of order input
+        # 
+        # if(stringr::str_detect(typenames[1], "heatmap")){
+
           # plot_out <- plot_out + ggplot2::theme(legend.position = "none")
           plot_out <- plotly::ggplotly(plot_out, tooltip = c("text"))
           plot_out <- plot_out %>% plotly::layout(plot_bgcolor='grey',
@@ -1681,13 +1684,16 @@ format_plot <- function(trellData, ...) {
                                                   yaxis = list(showgrid = F)
                                                   )
           
-        }
+        # }
 
       }
       
         return(plotly::ggplotly(plot_out, tooltip = "text"))
       
     } else {
+      if(!inherits(plot_out, c("ggplot", "plotly", "rbokeh")))  stop(
+        "Generated custom plot is not supported. Please use ggplot, plotly, or rbokeh to generate a single plot in the custom function."
+      )
         return(plot_out)
     }
   }
@@ -1731,8 +1737,20 @@ format_plot <- function(trellData, ...) {
 #' @author Rachel Richardson
 
 
-validate_format_plot_input <- function(...){
-  .validate_format_plot_input(...)
+validate_format_plot_input <- function(trellData,
+                                       plot_type,
+                                       p_val,
+                                       panel_variable,
+                                       plot_text,
+                                       custom_plot,
+                                       interactive){
+  .validate_format_plot_input(trellData,
+                              plot_type,
+                              p_val,
+                              panel_variable,
+                              plot_text,
+                              custom_plot,
+                              interactive)
 }
 
 .validate_format_plot_input <- function(
@@ -1758,7 +1776,7 @@ validate_format_plot_input <- function(...){
   # # Check if data is in trellData (as above) #
   # if(is.na(trellData$comp_stats) && is.na(trellData$data_values)) stop(
   #   "No data values or comparison statistics in trellData to plot")
-
+  
   # Check if p_val is numeric of length 1 #
   if(!is.numeric(p_val) || length(p_val) != 1) stop(
     "p_val must be a numeric of length 1")
@@ -1794,15 +1812,20 @@ validate_format_plot_input <- function(...){
     "plot_type specified is not supported. Must be a character string in the following: abundance_boxplot, foldchange_bar, abundance_global, foldchange_global, missing_bar, abundance_heatmap, foldchange_heatmap, presence_heatmap, foldchange_bar, abundance_boxplot"
   )
   
+  # Check plot_type length #
   if(!is.null(plot_type) && (length(plot_type) != 1 )) stop(
     "Invalid plot_type input. Refer to examples in ?pmartR:::format_plot."
   )
   
+  # Check if plotting info is available #
   if(is.null(plot_type) && is.null(custom_plot)) stop(
     "No plotting information found in plot_type or custom_plot."
   )
   
-  if (panel_variable == pmartR::get_edata_cname(trellData) && stringr::str_detect(plot_type, "heatmap")) {
+  # Check heatmap requirements #
+  if (!is.null(plot_type) && 
+      panel_variable == pmartR::get_edata_cname(trellData) && 
+      stringr::str_detect(plot_type, "heatmap")) {
     stop(
       paste("Heatmaps require a panel_variable that is not the same as edata cname (Default panel_variable is set to edata cname). Current edata cname:", pmartR::get_edata_cname(trellData))
     )
@@ -1811,6 +1834,7 @@ validate_format_plot_input <- function(...){
   temp <- Reduce("|", list(unlist(lapply(trellData, is.data.frame)), 
                        unlist(lapply(trellData, is.null))))
   
+  # Check structure of trellData
   if(!all(temp)) stop(
     "All trellData fields must be NULL or data.frames."
   )
@@ -1824,9 +1848,16 @@ validate_format_plot_input <- function(...){
     "Statistical_test attribute must be set to combined, anova, or gtest."
   )
   
+  # Check if panel variable is correct #
+  allcol <- lapply(trellData, colnames)
+  if (!all(panel_variable %in% unlist(allcol))) stop(
+    paste("Panel_variable is not valid. String must be in the following: ", toString(unique(unlist(allcol))))
+  )
   
   # Check plot_type input
-  if(is.null(trellData$comp_stats) && plot_type %in% c(
+  if(is.null(trellData$comp_stats) && 
+     !is.null(plot_type) &&
+     plot_type %in% c(
     "foldchange_global", 
     "foldchange_heatmap",
     "foldchange_bar"
@@ -1834,7 +1865,9 @@ validate_format_plot_input <- function(...){
     "Statistical comparisons (omicsStats) are required for plot_type specified (foldchange_global, foldchange_heatmap, or foldchange_bar). Refer to pmatR::imd_anova() for computing statistics."  )
   
   # Check plot_type input
-  if(is.null(trellData$data_values) && plot_type %in% c(
+  if(is.null(trellData$data_values) && 
+     !is.null(plot_type) &&
+     plot_type %in% c(
     "abundance_global", 
     "abundance_heatmap",
     "presence_heatmap",
@@ -1854,28 +1887,34 @@ validate_format_plot_input <- function(...){
 #' @param nestedData Nested trellData dataframe
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. 
-#' @param comps_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. 
-#' @param value_panel_y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. 
+#' @param y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. 
 #'
 #' @author Rachel Richardson
 #'
-#' @export
+#'
 #'
 
-add_plot_features <- function(...){
-  .add_plot_features(...)
+add_plot_features <- function(trellData,
+                              nestedData,
+                              p_val = NULL, 
+                              panel_variable = NULL,
+                              y_axis){
+  .add_plot_features(trellData,
+                     nestedData,
+                     p_val, 
+                     panel_variable,
+                     y_axis)
 }
 
 .add_plot_features <- function(trellData,
                                nestedData,
                                p_val = NULL, 
                                panel_variable = NULL,
-                               comps_panel_y_axis = NULL,
-                               value_panel_y_axis = NULL){
+                               y_axis){
   
   colors <- c(NA, "grey40", "black")
   
-  if(is.null(value_panel_y_axis)){
+  if(y_axis == "Fold_change"){
     
     # Set border colors based on significance #
     bord <- rep(colors[1], nrow(nestedData))
@@ -1890,8 +1929,8 @@ add_plot_features <- function(...){
     hover_want_comps <- c(attributes(trellData)$cnames$edata_cname,
                           "Group", "Count", "Comparison",
                           "P_value_G", "P_value_T", "Fold_change") 
-    if (!(comps_panel_y_axis %in% hover_want_comps)){
-      hover_want_comps <- c(hover_want_comps, comps_panel_y_axis)
+    if (!(y_axis %in% hover_want_comps)){
+      hover_want_comps <- c(hover_want_comps, y_axis)
     }
     if (panel_variable %in% hover_want_comps){
       hover_want_comps <- hover_want_comps[!(hover_want_comps %in% panel_variable)]
@@ -1903,7 +1942,7 @@ add_plot_features <- function(...){
         if (label %in% c("P_value_G", "P_value_T")) {
           return(paste(paste(label, ":", sep = ""), 
                        signif(nestedData[row,][[label]])))
-        } else if (label %in% c("Fold_change", comps_panel_y_axis)){
+        } else if (label %in% c("Fold_change", y_axis)){
           return(paste(paste(label, ":", sep = ""), 
                        signif(nestedData[row,][[label]])))
         } else {
@@ -1942,8 +1981,8 @@ add_plot_features <- function(...){
                     "Group", grep("abundance",
                                   colnames(trellData$data_values),
                                   value = TRUE)) 
-    if (!(value_panel_y_axis %in% hover_want)){
-      hover_want <- c(hover_want, value_panel_y_axis)
+    if (!(y_axis %in% hover_want)){
+      hover_want <- c(hover_want, y_axis)
     }
     if (panel_variable %in% hover_want){
       hover_want <- hover_want[!(hover_want %in% panel_variable)]
@@ -1954,7 +1993,7 @@ add_plot_features <- function(...){
       row_text <- purrr::map(hover_labs, function(label){
         if (label %in% c(grep("abundance", 
                               colnames(trellData$data_values), 
-                              value = TRUE), value_panel_y_axis)) {
+                              value = TRUE), y_axis)) {
           return(paste(paste(label, ":", sep = ""),
                 signif(nestedData[row,][[label]])))
         } else {
@@ -1964,6 +2003,7 @@ add_plot_features <- function(...){
       
       return(toString(row_text, sep = ", "))
     })
+    
     nestedData_value <- data.frame(nestedData, text = unlist(text_labs))
     
     return(nestedData_value)
@@ -1983,7 +2023,7 @@ add_plot_features <- function(...){
 #'
 #' @author Rachel Richardson
 #'
-#' @export
+#'
 
 list_y_limits <- function(plot_type, y_limits){
   .list_y_limits(plot_type, y_limits)
@@ -2012,6 +2052,9 @@ list_y_limits <- function(plot_type, y_limits){
     ## Set if null
     if(is.null(y_limits)){
       y_limits <- "fixed"
+      nullflag <- TRUE
+    } else {
+      nullflag <- FALSE
     }
     
     ## Find and assign any list elements
@@ -2066,8 +2109,8 @@ list_y_limits <- function(plot_type, y_limits){
               paste(plot_type, collapse = ", "))
       )
       
-      y_limits <- y_limits[plot_type]
-      plotlims <- y_limits[unlist(lists)]
+      y_limits2 <- y_limits[plot_type]
+      plotlims <- y_limits2[unlist(lists)]
       
       if(!is.null(plotlims) && length(plotlims) > 1){
         purrr::map(plotlims, function(listitem){
@@ -2098,18 +2141,19 @@ list_y_limits <- function(plot_type, y_limits){
         
       }
       
-      
-      
       ## Find and assign non-list elements
-      plotlims2 <- purrr::map(y_limits[!unlist(lists)], function(limit){
-        
+      nonlist <- names(unlist(lists))[!as.logical(unlist(lists))]
+      plotlims2 <- purrr::map(nonlist, function(nonlistname){
+        limit <- y_limits[[nonlistname]]
         listlims2 <- list()
         if (limit == "fixed" || limit == "free"){
           listlims2$scale <- limit
         } else if (is.numeric(limit) && length(limit) == 2){
-          listlims2$min <- limit[1]
-          listlims2$max <- limit[2]
-        }
+          listlims2$min <- min(limit)
+          listlims2$max <- max(limit)
+        } else stop(
+          "For mixed input of lists and non-lists, non-list input is restricted to c(min, max), 'free', or 'fixed'"
+        )
         return(listlims2)
       })
     }
@@ -2118,12 +2162,18 @@ list_y_limits <- function(plot_type, y_limits){
       "Invalid input. y_limits input is restricted to named lists for each plot type, strings 'fixed' or 'free', or a numeric vector of length 2 specifying maximum and minimum y_values. Refer to ?trelliVis for examples."
     )
     
+    if(!exists("nonlist")){
+      nonlist <- plot_type[!unlist(lists)]
+    }
+    
     output <- c(plotlims, plotlims2)
-    nms <- c(plot_type[unlist(lists)], plot_type[!unlist(lists)])
+    nms <- c(plot_type[unlist(lists)], nonlist)
     nms <- nms[!is.na(nms)]
     names(output) <- nms
     
     check <- output[[plot_type]]
+    
+    
     
     if("min" %in% names(check) && 
        (length(check[["min"]]) != 1 ||
@@ -2151,7 +2201,7 @@ list_y_limits <- function(plot_type, y_limits){
     
     if("min" %in% names(check) && 
        "max" %in% names(check) && 
-       check[["min"]] > check[["max"]]) stop(
+       !(check[["min"]] < check[["max"]])) stop(
          "Set min must be less than set max."
        )
     if("range" %in% names(check) && 
@@ -2170,10 +2220,34 @@ list_y_limits <- function(plot_type, y_limits){
          "Scale y-limits are not supported with set min and max y-limits."
        )
     
+    if (plot_type %in% c("abundance_heatmap", "foldchange_heatmap", "presence_heatmap") && !nullflag) {
+      warning( 
+        "y_limits are not supported with heatmaps and will not be used.  Refer to examples in ?trelliVis().")
+    }
+    
+    if (plot_type %in% c("abundance_global", "foldchange_global") && !is.null(check$scale) && check$scale == "free") {
+      warning( 
+        "Scale option 'free' is not valid with global plots. Fixed plots will be generated based on global values.")
+      output[[plot_type]]$scale <- "fixed"
+    }
+    
+    if (plot_type == "missing_bar" && (!is.null(check$scale) || !is.null(check$range))) {
+      warning( 
+        "Scale options and range are not valid with missing_bar plots, scale will not be applied. Please use max and min or list(NULL) for missing_bar y_limits.  Refer to examples in ?trelliVis().")
+    }
+    
+    if (plot_type == "missing_bar" && (!is.null(check$min) && (check$min < 0 || check$min > 1))) {
+      stop( 
+        "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
+    }
+    
+    if (plot_type == "missing_bar" && (!is.null(check$max) && (check$max < 0 || check$max > 1))) {
+      stop( 
+        "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
+    }
+    
     return(output)
   }
-
-
 
 #' @name set_increment
 #' @rdname set_increment
@@ -2186,9 +2260,9 @@ list_y_limits <- function(plot_type, y_limits){
 #'
 #' @author Rachel Richardson
 #'
-#' @export
-set_increment <- function(yvalues, ...){
-  .set_increment(yvalues,  ...)
+#'
+set_increment <- function(yvalues, include_zero = TRUE){
+  .set_increment(yvalues, include_zero)
 }
 
 .set_increment <- function(yvalues, include_zero = TRUE){
@@ -2237,14 +2311,28 @@ set_increment <- function(yvalues, ...){
 #'
 #' @author Rachel Richardson
 #'
-#' @export
+#'
 #' 
-set_ylimits <- function(yvalues, increment, ...){
-  .set_ylimits(yvalues, increment, ...)
+set_ylimits <- function(yvalues, 
+                        increment, 
+                        y_range = NULL, 
+                        y_max = NULL, 
+                        y_min = NULL, 
+                        include_zero = TRUE){
+  .set_ylimits(yvalues, 
+               increment, 
+               y_range, 
+               y_max, 
+               y_min, 
+               include_zero)
 }
 
-.set_ylimits <- function(yvalues, increment, y_range = NULL, 
-                         y_max = NULL, y_min = NULL, include_zero = TRUE
+.set_ylimits <- function(yvalues, 
+                         increment, 
+                         y_range = NULL, 
+                         y_max = NULL, 
+                         y_min = NULL, 
+                         include_zero = TRUE
                          ){
   
   # Catch NAs #
@@ -2290,8 +2378,8 @@ set_ylimits <- function(yvalues, increment, ...){
     maxi <- y_max
     mini <- y_min
     
-    if(maxi < mini) stop ("Invalid max and min. Max < Min")
-    
+    # if(maxi < mini) stop ("Invalid max and min. Max < Min")
+    # 
     return(c(mini, maxi))
   } else if( !is.null(y_range) && !is.null(y_min)){
     mini <- y_min
@@ -2351,11 +2439,19 @@ set_ylimits <- function(yvalues, increment, ...){
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #'
 #' @author Rachel Richardson
-#' @export
+#'
 
 
-data_cogs <- function(...) {
-  .data_cogs( ...)
+data_cogs <- function(nested_plot,
+                      trellData,
+                      p_val = 0.05,
+                      try_URL = FALSE,
+                      custom_cog = NULL) {
+  .data_cogs(nested_plot,
+             trellData,
+             p_val,
+             try_URL,
+             custom_cog)
 }
 
 .data_cogs <- function(nested_plot,
@@ -2364,15 +2460,31 @@ data_cogs <- function(...) {
                        try_URL = FALSE,
                        custom_cog = NULL){
   
-  ## Variable checks ##
+  ## Variable checks, also checked at start of trelliVis
+  ## Extensive testing for trellData executed in format plot validation function
+  ## nested_plot should be piped from format_plot directly with trellData and nested_plot
+  ## custom cog tested breifly at the beginning of trelliVis
   
   # Check check if p_val is numeric of length 1 #
-  if(!is.numeric(p_val) | (length(p_val) != 1)) stop(
+  if(!is.numeric(p_val) || length(p_val) != 1) stop(
     "p_val must be a numeric of length 1")  
   
   # Check check if try_URL is boolean of length 1 #
-  if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
-    "try_URL must be a TRUE/FALSE of length 1")  
+  if(!is.logical(try_URL) || length(try_URL) != 1) stop(
+    "try_URL must be a logical (TRUE/FALSE) of length 1")  
+  
+  # Check check if nested_plot is dataframe from format_plot  #
+  if(!is.data.frame(nested_plot) || ncol(nested_plot) != 2 || colnames(nested_plot)[2] != "panel") stop(
+    "nested_plot must be a data.frame passed from format_plot; requires ncol == 2, and colnames(nested_plot)[2] == 'panel'")  
+  
+  # Check check if trellData correct class #
+  if(!inherits(trellData, "trellData")) stop(
+    "trellData must be class trellData.")
+  
+  # Check check if custom cog is a string of length 1 #
+  if(!is.null(custom_cog) && (!is.character(custom_cog) || length(custom_cog) != 1)) stop(
+    "custom_cog argument must be a string of length 1, defining the name of the custom function.")  
+  
   
   ## Assign unique ID, then panel variable ##
   uniqueID <- pmartR::get_edata_cname(trellData)
@@ -2425,15 +2537,17 @@ data_cogs <- function(...) {
           panel_comp <- trell_comp[as.character(trell_comp[[panel_variable]]) == panel,]
           panel_summ <- trell_summ[as.character(trell_summ[[panel_variable]]) == panel,]
           
-          byvc  <- colnames(panel_values)[colnames(panel_values) %in% colnames(panel_comp)]
-          bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
-          
+          # byvc  <- colnames(panel_values)[colnames(panel_values) %in% colnames(panel_comp)]
+          # bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
+          # 
           addOrigCogs <- dplyr::left_join(panel_values, 
                                           panel_comp, 
-                                          by = byvc)
+                                          by = intersect(colnames(panel_values),
+                                                         colnames(panel_comp)))
           addOrigCogs <- dplyr::left_join(addOrigCogs,
                                           panel_summ,
-                                          by = unique(c(byvc, bycs, "Group")))
+                                          by = intersect(colnames(addOrigCogs),
+                                                         colnames(panel_summ)))
           
         } else if (!is.null(trellData$data_values)){
           panel_values <- trell_values[trell_values[[panel_variable]] == panel,]
@@ -2442,11 +2556,12 @@ data_cogs <- function(...) {
         } else {
           panel_comp <- trell_comp[trell_comp[[panel_variable]] == panel,]
           panel_summ <- trell_summ[trell_summ[[panel_variable]] == panel,]
-          bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
+          # bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
           
           addOrigCogs <- dplyr::left_join(panel_comp,
                                           panel_summ,
-                                          by = unique(c(bycs, "Group")))
+                                          by = intersect(colnames(panel_summ),
+                                                         colnames(panel_comp)))
         }
         cogs <- addOrigCogs
         
@@ -2628,13 +2743,13 @@ data_cogs <- function(...) {
                 default_label = TRUE))
             } else if (column == "peps_per_pro"){
               return(trelliscopejs::cog(
-                suppressWarnings(as.numeric(mean(cogs[[column]]))),
-                desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "),
-                default_label = TRUE)
+                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) ",
+                default_label = TRUE))
               
             } else if (column == "n_peps_used"){
               return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]]))),
+                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
                 desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
               
             } else if (column == "Mean"){
@@ -2667,7 +2782,7 @@ data_cogs <- function(...) {
                 toString(any(suppressWarnings(as.logical(cogs[[column]])))),
                 desc = "Significant G-test results based on input p-value threshold (default == 0.05)."))
               
-            } else if (column == abundance) {
+            } else if (length(abundance) > 0 && column == abundance) {
               return(trelliscopejs::cog(
                 mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
                 desc = "Average abundance/intensity of values."))
@@ -2688,14 +2803,9 @@ data_cogs <- function(...) {
             
           } else if (is.character(cogs[[column]]) && 
                      !any(is.na(suppressWarnings(as.numeric(cogs[[column]]))))){
-            # if(is.na(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE))){
-            #   return(trelliscopejs::cog(
-            #     0,
-            #     desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
-            # }
-            return(trelliscopejs::cog(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 
+            return(trelliscopejs::cog(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
                                       desc = "User defined variable. (Numeric mean, Value of 0 == NA) "))
-            
+
           } else {
             return(trelliscopejs::cog(toString(unique(cogs[[column]])), 
                                       desc = "User defined variable. (Categorical)"))
@@ -2709,23 +2819,13 @@ data_cogs <- function(...) {
          
         cog_out[[panel_variable]] <- NULL
         
-        
-        # testcustom <- function(datasubset){
-        #   dplyr::tibble(
-        #     custom1 = trelliscopejs::cog(sign(mean(as.numeric(cogs[[abundance]]), na.rm = TRUE)), 
-        #                        desc = "Test custom cognostic 1"),
-        #     custom2 = trelliscopejs::cog(mean(as.numeric(cogs[[abundance]]), na.rm = TRUE), 
-        #                                  desc = "Test custom cognostic 2")
-        #   )
-        # }
-        # custom_cog <- "testcustom"
-        
         if(!is.null(custom_cog)){ ## Run custom function on cogs using function name
          x <- eval(parse(text = paste0(custom_cog, "(cogs)")))
          if(is.data.frame(x) && nrow(x) == 1){
            cog_out <- cbind(cog_out,x)
          } else {
-           warning("Invalid result. Custom function on data subset is required to yeild a data.frame with nrow == 1. Custom function will not be used.")
+           warning("Invalid result. Custom function on data subset is required to yield a data.frame with nrow == 1. Custom function will not be used.")
+           return(NA)
          }
         }
         
@@ -2757,12 +2857,33 @@ data_cogs <- function(...) {
 #' @param self_contained Should display be generated in document? Defaults to FALSE
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
-#'
+#' @param ... Additional arguments for trelliscope() function; trelliVis supports arguments ncol, nrow, jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, and thumb are preset based on panel variable, data type, and TRUE respectively. Refer to ?trelliscopejs::trelliscope()
 #'
 #' @author Rachel Richardson
 #' @export
-trelliVis <- function(...) {
-  .trelliVis(...)
+trelliVis <- function(omicsData = NULL, omicsStats = NULL,
+                      omicsFormat = NULL, p_val = 0.05,
+                      panel_variable = NULL, 
+                      try_URL = FALSE, trelli_name = NULL,
+                      trelli_path_out = "TrelliDisplay", 
+                      plot_text = FALSE, interactive = FALSE,
+                      y_limits = NULL, plot_type = NULL,
+                      self_contained = FALSE,
+                      custom_cog = NULL,
+                      custom_plot = NULL,
+                      ...) {
+  
+  .trelliVis(omicsData, omicsStats,
+             omicsFormat, p_val,
+             panel_variable, 
+             try_URL, trelli_name,
+             trelli_path_out, 
+             plot_text, interactive,
+             y_limits, plot_type,
+             self_contained,
+             custom_cog,
+             custom_plot,
+             ...)
 }
 
 .trelliVis <- function(omicsData = NULL, omicsStats = NULL,
@@ -2774,7 +2895,7 @@ trelliVis <- function(...) {
                        y_limits = NULL, plot_type = NULL,
                        self_contained = FALSE,
                        custom_cog = NULL,
-                       custom_plot = NULL) {
+                       custom_plot = NULL, ...) {
   
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
@@ -2835,53 +2956,10 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   
   
 }
-  # if (is.null(omicsStats) & inherits(omicsData, 'statRes')){
-  #   omicsStats <- omicsData
-  #   omicsData <- NULL
-  # }
-  # 
-  # if (!is.null(omicsStats) && 
-  #     !is.null(omicsData) && 
-  #     inherits(omicsStats, c("proData", "pepData", 
-  #                            "metabData", "lipidData")) &&
-  #     inherits(omicsData, 'statRes')){
-  #   temp <- omicsStats
-  #   omicsStats <- omicsData
-  #   omicsData <- temp
-  #   rm(temp)
-  # }
-  
-  
-  
-  # #####
-  # ## Check variable type/lenghts
-  # #####
-  # 
-  # # If lists of omicsData or trellData are used, make sure panel variables are specified for both #
-  # if ((class(omicsData) == "list" | 
-  #     class(omicsStats) == "list") && 
-  #     !is.null(panel_variable) && 
-  #     length(panel_variable) != max(length(omicsStats), 
-  #                                   length(omicsData))) stop(
-  #                                     "Panel variable must be specified for each index in omicsStats/omicsData"
-  #                                   )
   
   # Check check if try_URL is boolean of length 1 #
   if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
     "try_URL must be a TRUE/FALSE of length 1")  
-  
-  #####
-  ## Modification for rollups that don't inherit pep info in emeta
-  #####
-  # 
-  # #Adds e_meta of associated peptide data to associated protein data
-  # if(class(omicsData) == "list" &&
-  #    length(omicsData) != 1){
-  #   vectorpro <- c(inherits(omicsData[1][[1]], "proData"), 
-  #                  inherits(omicsData[2][[1]], "proData"))
-  #   omicsData[vectorpro][[1]]$e_meta <- suppressWarnings(dplyr::left_join(omicsData[vectorpro][[1]]$e_meta,
-  #                                                                         omicsData[!vectorpro][[1]]$e_meta))
-  # }
   
   if (is.null(omicsFormat)){
     # Re-format objects for plotting #
@@ -2893,6 +2971,11 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   # If a pep/pro pair is listed, act on each item #
   if(class(trellData) == "list"){
     
+    if(!is.null(custom_cog)){
+      
+      purr
+      
+    }
     
     # Fill plot type
     if (is.null(plot_type) && is.null(custom_plot)){
@@ -2905,18 +2988,29 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       }
     }
     
+    if (is.null(pmartR::get_data_norm(trellData[[1]])) || !pmartR::get_data_norm(trellData[[1]])){
+      
+      if("isobaricpepData" %in% get_data_class(trellData[[1]]) &&
+         (is.null(attributes(trellData[[1]])$isobaric_info$norm_info$is_normalized) ||
+          attributes(trellData[[1]])$isobaric_info$norm_info$is_normalized != TRUE)) stop(
+            "Input must be normalized prior to plotting. Options include normalize_isobaric as appropriate for isobaricpepData, and normalize_global for any data type. (List input 1)")
+      
+      if(!("isobaricpepData" %in% get_data_class(trellData[[1]]))) stop(
+        "Input must be normalized prior to plotting; please run normalize_global. (List input 1)")
+      
+    }
     
-    if (!pmartR::get_data_norm(trellData[[1]]) &&
-        (is.null(attributes(trellData[[1]])$isobaric_info$norm_info$is_normalized) || #### update helper function
-         attributes(trellData[[1]])$isobaric_info$norm_info$is_normalized != TRUE)) stop(
-           "Input must be normalized prior to plotting; use normalize_global or normalize_isobaric as appropriate."
-         )
-    
-    if (!pmartR::get_data_norm(trellData[[2]]) &&
-        (is.null(attributes(trellData[[2]])$isobaric_info$norm_info$is_normalized) || #### update helper function
-         attributes(trellData[[2]])$isobaric_info$norm_info$is_normalized != TRUE)) stop(
-           "Input must be normalized prior to plotting; use normalize_global or normalize_isobaric as appropriate."
-         )
+    if (is.null(pmartR::get_data_norm(trellData[[2]])) || !pmartR::get_data_norm(trellData[[2]])){
+      
+      if("isobaricpepData" %in% get_data_class(trellData[[2]]) &&
+         (is.null(attributes(trellData[[2]])$isobaric_info$norm_info$is_normalized) ||
+          attributes(trellData[[2]])$isobaric_info$norm_info$is_normalized != TRUE)) stop(
+            "Input must be normalized prior to plotting. Options include normalize_isobaric as appropriate for isobaricpepData, and normalize_global for any data type. (List input 2)")
+      
+      if(!("isobaricpepData" %in% get_data_class(trellData[[2]]))) stop(
+        "Input must be normalized prior to plotting; please run normalize_global. (List input 2)")
+      
+    }
     
     ## Check trelli_name ##
     # Default trelliscope names correspond to data types entered #
@@ -2970,9 +3064,10 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       
       if(is.null(trelli_name)){
         trelli_name <- vector("list", 2)
-        trelli_name[[1]] <- paste("Custom", attr(trellData, "data_types")[1], sep = "_")
-        trelli_name[[2]] <- paste("Custom", attr(trellData, "data_types")[2], sep = "_")
-        names(trelli_name) <- attr(trellData, "data_types")
+        trelli_name[[1]] <- paste("Custom", paste(attr(trellData, "data_types")[1], collapse = "_"), sep = "_")
+        trelli_name[[2]] <- paste("Custom", paste(attr(trellData, "data_types")[2], collapse = "_"), sep = "_")
+        names(trelli_name) <- c(paste(attr(trellData, "data_types")[1], collapse = "_"), 
+                                paste(attr(trellData, "data_types")[2], collapse = "_"))
         
         # if trelli_name is not of length list, add identifiers #
       } else if (length(trelli_name) == 1){
@@ -3026,7 +3121,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
     tictoc::tic("Generate plots")
     
-    group <- purrr::map(trellData, pmartR:::get_data_class)
+    group <- purrr::map(trellData, function(item) paste(pmartR:::get_data_class(item), collapse = "_"))
     
       nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
         
@@ -3063,23 +3158,6 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
         return(nest_out)
       })
     
-      
-    # nested_plot <- purrr::map2(trellData, panel_variable, function(pairedplotter, pan){
-    #   
-    #   
-    #   nest_out <- purrr::map(plot_type, function(types){
-    #     format_plot(trellData = pairedplotter, 
-    #                 p_val = p_val,
-    #                 panel_variable = pan, 
-    #                 plot_type = types,
-    #                 plot_text = plot_text,
-    #                 y_limits = y_limits,
-    #                 interactive = interactive)
-    #     })
-    #   return(nest_out)
-    #   })
-
-    
     tictoc::toc()
     
     tictoc::tic("Generate auto cogs") 
@@ -3103,7 +3181,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
         cog_out <- purrr::map2(nests, links, function(nest, link){
           cogs2 <- dplyr::mutate(nest, cogs = cogs$cogs)
           
-          if (pmartR:::get_data_class(trell) == "pepData"){
+          if ("pepData" %in% pmartR:::get_data_class(trell)){
             
             x <- trelliscopejs::cog_disp_filter(
               link,
@@ -3145,7 +3223,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                                  group = grp,
                                                  thumb = TRUE, state = list(
                                                    sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                                                   labels = list(names(display[1]))))
+                                                   labels = list(names(display[1]))), ...)
                       
                     } else {
                       
@@ -3154,16 +3232,9 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                                  group = grp,
                                                  thumb = TRUE, state = list(
                                                    sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                                                   labels = list(names(display[1]))))
+                                                   labels = list(names(display[1]))), ...)
                       
                     }
-                    
-                    # trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                    #                            path = as.character(trelli_path_out), 
-                    #                            group = grp,
-                    #                            thumb = TRUE, state = list(
-                    #                              sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                    #                              labels = list(names(display[1]))))
                   })
       })
     
@@ -3174,7 +3245,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   # Where not a pep/pro pair: #
   } else {
     
-    group <- pmartR:::get_data_class(trellData)
+    group <- paste(pmartR:::get_data_class(trellData), collapse = "_")
     
     #Check panel variable
     if(!is.null(panel_variable) && !(panel_variable %in% c(colnames(trellData$summary_stats),
@@ -3194,17 +3265,23 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       }
     }
     
-    if (!pmartR::get_data_norm(trellData) &&
-        (is.null(attributes(trellData)$isobaric_info$norm_info$is_normalized) || #### update helper function
+    if (is.null(pmartR::get_data_norm(trellData)) || !pmartR::get_data_norm(trellData)){
+      
+      if("isobaricpepData" %in% get_data_class(trellData) &&
+         (is.null(attributes(trellData)$isobaric_info$norm_info$is_normalized) ||
          attributes(trellData)$isobaric_info$norm_info$is_normalized != TRUE)) stop(
-           "Input must be normalized prior to plotting; use normalize_global or normalize_isobaric as appropriate."
-         )
+           "Input must be normalized prior to plotting. Options include normalize_isobaric as appropriate for isobaricpepData, and normalize_global for any data type.")
+      
+      if(!("isobaricpepData" %in% get_data_class(trellData))) stop(
+        "Input must be normalized prior to plotting; please run normalize_global.")
+      
+    }
     
     # Default: Name the display after parent classes (omicsData and omicStats clases) #
     
     if(!is.null(plot_type)){
       if(is.null(trelli_name)){
-        trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), plot_type, sep = "_")
+        trelli_name <- paste(paste(attr(trellData, "parent_class"), collapse = "_"), plot_type, sep = "_")
         # Make sure trelliname is length 1 #
       } else if (length(trelli_name) == 1){
         label <- trelli_name
@@ -3223,20 +3300,13 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       }
     } else {
       if(is.null(trelli_name)){
-        trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), "Custom", sep = "_")
+        trelli_name <- paste(paste(attr(trellData, "parent_class"), collapse = "_"), "Custom", sep = "_")
         # Make sure trelliname is length 1 #
       } else if (length(trelli_name) != 1) {
         warning("trelli_name length is not equal to the number of displays generated from plot_type; using the first entry in trelli_name.")
         trelli_name <- paste(trelli_name[[1]], "Custom", sep = "_")
       }
     }
-    # if(is.null(trelli_name)){
-    #   trelli_name <- paste(paste(attr(trellData, "parent_class"), sep = "_"), plot_type, sep = "_")
-    #   # Make sure trelliname is length 1 #
-    # } else if (length(trelli_name) != (length(plot_type))) {
-    #   warning("trelli_name length is not equal to the number of displays generated from plot_type; using the first entry in trelli_name.")
-    #   trelli_name <- paste(trelli_name[[1]], plot_type, sep = "_")
-    # }
     
     # Nest data and generate trelliscope plots #
     
@@ -3275,7 +3345,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                        thumb = TRUE,
                                        state = list(
                                          sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                         labels = list(names(nest_plot_cog[1])))
+                                         labels = list(names(nest_plot_cog[1]))),
+                                       ...
             )
         } else {
           
@@ -3285,8 +3356,10 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                        thumb = TRUE,
                                        group = group,
                                        state = list(
-                                         sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                         labels = list(names(nest_plot_cog[1])))
+                                         sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")),
+                                         labels = list(names(nest_plot_cog[1]))
+                                         ),
+                                       ...
             )
         }
         tictoc::toc()
@@ -3326,7 +3399,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                          thumb = TRUE,
                                          state = list(
                                            sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                           labels = list(names(nest_plot_cog[1])))
+                                           labels = list(names(nest_plot_cog[1]))),
+                                         ...
               )
           } else {
             
@@ -3337,7 +3411,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                          group = group,
                                          state = list(
                                            sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                           labels = list(names(nest_plot_cog[1])))
+                                           labels = list(names(nest_plot_cog[1]))),
+                                         ...
               )
           }
           
@@ -3348,7 +3423,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
         
     } else {
       tictoc::tic("Generate plots")
-      
+
       nested_plot <- format_plot(trellData = trellData, 
                                  p_val = p_val,
                                  custom_plot = custom_plot,
@@ -3378,7 +3453,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                      thumb = TRUE,
                                      state = list(
                                        sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                       labels = list(names(nest_plot_cog[1])))
+                                       labels = list(names(nest_plot_cog[1]))),
+                                     ...
           )
       } else {
         
@@ -3389,66 +3465,16 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                      group = group,
                                      state = list(
                                        sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                       labels = list(names(nest_plot_cog[1])))
+                                       labels = list(names(nest_plot_cog[1]))),
+                                     ...
           )
       }
       
       displays <- out
       tictoc::toc()
       
-      }
-      
+    }
     
-    # displays <- purrr::map2(plot_type, trelli_name, function(types, names){
-    #   
-    #   tictoc::tic("Generate plots")
-    #   
-    #   nested_plot <- format_plot(trellData = trellData, 
-    #                              p_val = p_val,
-    #                              plot_type = types,
-    #                              plot_text = plot_text,
-    #                              y_limits = y_limits,
-    #                              panel_variable = panel_variable,
-    #                              interactive = interactive)
-    #   tictoc::toc()
-    #   
-    #   tictoc::tic("Generate auto cogs")
-    #   
-    #   # Generate default cognostics #
-    #   nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
-    #                                               trellData = trellData,
-    #                                               p_val = p_val, 
-    #                                               try_URL = try_URL,
-    #                                               custom_cog = custom_cog))
-    #   tictoc::toc()
-    #   
-    #   tictoc::tic("Pipe into trelliscope")
-    #   
-    #   # Generate trelliscope display #
-    #   if(self_contained){
-    #     out <- nest_plot_cog %>%
-    #       trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
-    #                                  self_contained = TRUE, 
-    #                                  thumb = TRUE,
-    #                                  state = list(
-    #                                    sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-    #                                    labels = list(names(nest_plot_cog[1])))
-    #       )
-    #   } else {
-    #     
-    #     out <- nest_plot_cog %>%
-    #       trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
-    #                                  path = as.character(trelli_path_out), 
-    #                                  thumb = TRUE,
-    #                                  group = group,
-    #                                  state = list(
-    #                                    sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-    #                                    labels = list(names(nest_plot_cog[1])))
-    #       )
-    #   }
-    #   tictoc::toc()
-    #   return(out)
-    #   })
     return(displays)
   }
 }

@@ -4,7 +4,12 @@
 \alias{trelliVis}
 \title{Plot pairwise comparisons and data values in trellData object}
 \usage{
-trelliVis(...)
+trelliVis(omicsData = NULL, omicsStats = NULL, omicsFormat = NULL,
+  p_val = 0.05, panel_variable = NULL, try_URL = FALSE,
+  trelli_name = NULL, trelli_path_out = "TrelliDisplay",
+  plot_text = FALSE, interactive = FALSE, y_limits = NULL,
+  plot_type = NULL, self_contained = FALSE, custom_cog = NULL,
+  custom_plot = NULL, ...)
 }
 \arguments{
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.}
@@ -23,9 +28,9 @@ trelliVis(...)
 
 \item{trelli_path_out}{String: path to where trelliscope is stored. Default is "./TrelliDisplay"}
 
-\item{interactive}{Should the plots be rendered as plotly objects?}
-
 \item{plot_text}{Disable plot text}
+
+\item{interactive}{Should the plots be rendered as plotly objects?}
 
 \item{y_limits}{Y limits}
 
@@ -36,6 +41,8 @@ trelliVis(...)
 \item{custom_cog}{The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).}
 
 \item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
+
+\item{...}{Additional arguments for trelliscope() function; trelliVis supports arguments ncol, nrow, jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, and thumb are preset based on panel variable, data type, and TRUE respectively. Refer to ?trelliscopejs::trelliscope()}
 }
 \description{
 Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

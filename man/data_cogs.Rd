@@ -4,7 +4,8 @@
 \alias{data_cogs}
 \title{Plot pairwise comparisons and data values in trellData object}
 \usage{
-data_cogs(...)
+data_cogs(nested_plot, trellData, p_val = 0.05, try_URL = FALSE,
+  custom_cog = NULL)
 }
 \arguments{
 \item{nested_plot}{A nested table generated from trellData using formatplot()}
