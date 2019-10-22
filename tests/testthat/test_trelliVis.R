@@ -1,5 +1,6 @@
 testthat::context("Test as.trellData output (approx. 1 minute)")
 library(pmartR)
+library(pmartRdata)
 ################################################################################
 ## Generate testing data ##
 
@@ -1423,35 +1424,39 @@ testthat::test_that("Subfunction set_ylimits correctly processes", {
 ################################################################################
 ################################################################################
 
-testthat::context("Test main TrelliVis function output")
+testthat::context("Test main TrelliVis function output (Takes a substantial amount of time (1 hr +); works through several (11) trelliscope displays)")
 
 ## Generate function outputs from test data ##
 
 # trelliVis(metab_object, metab_stats)
-iso_display    <- trelliVis(isobaric_object, isobaric_stats, plot_type = "custom_fn")
+iso_display    <- trelliVis(isobaric_object, isobaric_stats, custom_plot = "custom_fn")
 metab_display  <- trelliVis(metab_object, metab_stats, self_contained = TRUE)
 lipid_display  <- trelliVis(list(lipid_object), list(lipid_stats))
 pro_display    <- trelliVis(qpro1_stats, qpro1)
 linked_display <- trelliVis(list(isobaric_object, qpro1), 
                             list(isobaric_stats, qpro1_stats), 
                             custom_plot = "custom_fn")
-linked_display2 <- trelliVis(list(isobaric_object, qpro1), trelli_name = c("this", "that", "the other"))
+# linked_display2 <- trelliVis(list(isobaric_object, qpro1), trelli_name = c("this", "that", "the other"))
 linked_display3 <- trelliVis(list(isobaric_object, qpro1), 
                              custom_plot = "custom_fn", 
                              self_contained = TRUE)
-linked_display3 <- trelliVis(list(isobaric_object, qpro1), 
+linked_display4 <- trelliVis(list(isobaric_object, qpro1), 
                              plot_type = "abundance_boxplot", 
                              custom_plot = "custom_fn")
 
 ## 
 
-testthat::test_that("Subfunction set_ylimits correctly processes", {
-  testthat::expect_warning(testthat::expect_error(
+testthat::test_that("Validate error throwing", {
+  #testthat::expect_warning(
+    testthat::expect_error(
     trelliVis(metab_object, metab_stats, custom_cog = "mean"), 
-    "Validation failed"), "argument is not numeric or logical")
-  testthat::expect_warning(testthat::expect_error(
+    "Validation failed")#, 
+    #"argument is not numeric or logical")
+  # testthat::expect_warning(
+    testthat::expect_error(
     trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), custom_cog = "mean"), 
-    "Validation failed"), "argument is not numeric or logical")
+    "Validation failed")#, 
+    #"argument is not numeric or logical")
   testthat::expect_error(
     trelliVis(metab_object, metab_stats, panel_variable = "mean"), 
     "not present in input data")
@@ -1516,9 +1521,10 @@ testthat::test_that("Subfunction set_ylimits correctly processes", {
   testthat::expect_warning(
     x <- trelliVis(omicsData = metab_object, trelli_path_out = "la la"), 
     "Non-word characters")
+  
+  testthat::expect_message(
+    trelliVis(list(isobaric_object, qpro1), trelli_name = c("this", "that", "theother")), 
+    "Length of trelli_name")
 })
 
-# trelliVis.R
-
-# covr::file_coverage("./R/trelliVis.R", "./tests/testthat/test_trelliVis.R")
-# covr::file_coverage("./R/edata_transform.R", "./tests/testthat/test_edata_transform.R")
+# devtools::test_coverage_file() => 

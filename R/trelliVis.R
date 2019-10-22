@@ -2,11 +2,10 @@
 #' @rdname as.trellData
 #' @title Convert Omics data and pairwise statistics to a plotting object
 #'
-#' @description Converts a ResObject and its respective OmicsData into an easily plottable object.
+#' @description Converts a ResObject and its respective OmicsData into an easily plottable object. Called automatically in trelliVis() function.
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
-#' @param ... further arguments
 #'
 #' @details Objects of class 'trellData' inherit attributes from omicsStats and omicsData. These attributes can be changed from their default value by manual specification. A list of these attributes as well as their default values are as follows:
 #' \tabular{ll}{
@@ -36,12 +35,31 @@
 #' \tab \cr
 #' }
 #'
+#' @seealso \link[pmartR]{trelliVis}
+#'
 #' @examples
 #' dontrun{
 #' library(pmartRdata)
-#' data("pro_edata")
-#' data("pro_fdata")
-#' myproData <- as.proData(e_data = pro_edata, f_data = pro_fdata, edata_cname = "Reference", fdata_cname = "SampleID", is_normalized=TRUE)
+#' library(pmartR)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' as.trellData(omicsData = mymetabData)
+#' 
+#' mymetabStats <- pmartR::imd_anova(mymetabData, test_method = "combined")
+#' as.trellData(omicsData = mymetabData, omicsStats = mymetabStats)
+#' 
+#' data("isobaric_object")
+#' mypepData <- pmartR::edata_transform(isobaric_object, "log10")
+#' mypepData <- pmartR::normalize_isobaric(mypepData, apply_norm = T) # For isobaric normalization
+#' mypepData <- pmartR::group_designation(mypepData, "Group")
+#' mypepData <- pmartR::normalize_global(mypepData, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' myproRoll <- pmartR::protein_quant(mypepData, "rrollup")
+#' mypepStats <- pmartR::imd_anova(mypepData, test_method = "combined")
+#' myproStats <- pmartR::imd_anova(myproRoll, test_method = "combined")
+#' pmartR::as.trellData(omicsData = list(mypepData, myproRoll), omicsStats = list(mypepStats, myproStats))
+#' 
 #'}
 #'
 #' @author Rachel Richardson
@@ -264,9 +282,25 @@ as.trellData <- function(omicsData = NULL, omicsStats = NULL){
 
 #' print.trellData
 #' 
-#' For printing an S3 object of type 'trellData':
+#' For printing an S3 object of type 'trellData'; Displays truncated dataframes for each element in trellData.
 #' 
 #'@rdname print-trellData
+#'@param trellData The trellData object to print.
+#'
+#'@examples
+#'
+#' dontrun{
+#' library(pmartRdata)
+#' library(pmartR)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' print(pmartR::as.trellData(mymetabData))
+#' }
+#' 
+#' @seealso \link[pmartR]{as.trellData}
+#' 
 #'@export
 #'
 print.trellData<- function(trellData){
@@ -330,8 +364,10 @@ print.trellData<- function(trellData){
 #' 
 #' @description Checks for validity of list inputs and handles different list combinations as input.
 #'
-#' @param yvalues y-values for plotting
-#' @param testtype consideration for different statistical tests
+#' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
+#' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
+#'
+#' @seealso \link[pmartR]{as.trellData}
 #'
 #' @author Rachel Richardson
 #'
@@ -385,12 +421,14 @@ recursive_format <- function(omicsData = NULL, omicsStats = NULL){
 
 #' @name validate_omics_input
 #' @rdname validate_omics_input
-#' @title Validate inputs for omicsData and omicsStats in trelliVis processing
+#' @title Validate inputs for omicsData and omicsStats in as.trellData processing.
 #' 
 #' @description Checks for validity of omicsData and omicsStats inputs.
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData.
+#'
+#' @seealso \link[pmartR]{as.trellData}
 #'
 #' @author Rachel Richardson
 #'
@@ -735,7 +773,30 @@ validate_omics_input <- function(omicsData = NULL, omicsStats = NULL){
 #' @description Test function for format_plot(), custom_plot argument. Plots a ggplot where x = 1:10, y = 1:10.
 #'
 #' @param data data subset from a trellData object.
+#' 
+#' @seealso \link[pmartR]{format_plot}
+#' 
+#' @examples
+#'
+#' dontrun{
+#' library(pmartRdata)
+#' library(pmartR)
+#' library(ggplot2)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' 
+#' custom_fn <- function(data){
+#' ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+#' }
+#' 
+#' pmartR:::format_plot(pmartR::as.trellData(mymetabData), custom_plot = "custom_fn")
+#' }
+#' 
 #' @author Rachel Richardson
+#' 
+#' 
 custom_fn <- function(data){
   ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
 }
@@ -747,6 +808,34 @@ custom_fn <- function(data){
 #' @description Test function for data_cog(), custom_cog argument. Returns a tibble with one row and 3 columns.
 #'
 #' @param data data subset from a trellData object.
+#' 
+#' @examples
+#'
+#' dontrun{
+#' library(pmartRdata)
+#' library(pmartR)
+#' library(ggplot2)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' 
+#' custom_fn <- function(data){
+#' ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+#' }
+#' 
+#' custom_fn_cog <- function(data){
+#' tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
+#' }
+#' 
+#' format <- pmartR::as.trellData(mymetabData)
+#' plot <- pmartR:::format_plot(format, custom_plot = "custom_fn")
+#' pmartR:::data_cogs(plot, format, custom_cog = "custom_fn_cog")
+#' 
+#' }
+#' 
+#' @seealso \link[pmartR]{data_cogs}
+#' 
 #' @author Rachel Richardson
 custom_fn_cog <- function(data){
   tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
@@ -756,16 +845,93 @@ custom_fn_cog <- function(data){
 #' @rdname format_plot
 #' @title Plot pairwise comparisons and data values in trellData object
 #'
-#' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+#' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis. Run in main trelliVis function.
 #'
 #' @param trellData An object of class "trellData" generated from \code{\link{as.trellData}}.
 #' @param p_val Specifies p-value for setting graph border colors
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.
-#' @param plot_text For comparisons only: TRUE/FALSE for p-value text above data
+#' @param plot_text For plot_type == foldchange_bar only: TRUE/FALSE for p-value text above data
 #' @param interactive Should the plots be rendered as plotly objects?
-#' @param plot_type types of plots 
-#' @param y_limits y-limits
+#' @param plot_type Types of plots. Restricted to "abundance_boxplot", "abundance_global", "abundance_heatmap", "foldchange_bar", "foldchange_global", "foldchange_heatmap", "missing_bar", "presence_heatmap"
+#' @param y_limits y-limits for plots. Accepts scale, max, min, and range (see details and examples)
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
+#'
+#' @seealso \link[pmartR]{as.trellData}
+#' @seealso \link[pmartR]{trelliVis}
+#'
+#' @details Descriptions of plot_type values and y-limits are as follows:
+#' \tabular{ll}{
+#' abundance_boxplot \tab Boxplots generated from trellData abundance values. Only available if omicsData was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' abundance_global \tab  Biomolecule-specific abundance values compared to global abundances across all biomolecules. Only available if omicsData was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' abundance_heatmap \tab  Heatmap of biomolecule abundances in with a mapping variable (e_meta) across samples. Only available if omicsData with e_meta was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' foldchange_bar \tab Bar graphs generated from trellData foldchange values. Only available if omicsStats was passed in as.trellData to generate trellData object. \cr
+#' \tab\cr
+#' foldchange_global \tab Biomolecule-specific foldchange values compared to global foldchanges across all biomolecules. Only available if omicsStats was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' foldchange_heatmap \tab  Heatmap of biomolecule foldchange values in with a mapping variable (e_meta) across samples. Only available if omicsStats AND omicsData was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' missing_bar \tab Bar graph of the proportion of samples missing/present for each panel_variable. \cr
+#' \tab\cr
+#' presence_heatmap \tab Heatmap of biomolecule presence/absence in with a mapping variable (e_meta) across samples. Only available if omicsData with e_meta was passed in as.trellData to generate trellData object. \cr
+#' }
+#' Valid y_limits entries are as follows:
+#' \tabular{ll}{
+#' scale \tab Options include "free" or "fixed", where "free" allows each panel to auto-scale based on values and "fixed" uses the same scaling across all panels.\cr
+#' \tab \cr
+#' min \tab Minimum value on the y-axis. Where max argument is provided, must be less than max. \cr
+#' \tab \cr
+#' max \tab Maximum value on the y-axis. Where min argument is provided, must be greater than min. \cr
+#' \tab \cr
+#' range \tab A numeric defining the range of y-axis limits, centered on the median of values plotted, OR from a min/max value (if provided). \cr
+#' }
+#'
+#' @examples
+#'
+#' dontrun{
+#' library(pmartRdata)
+#' library(pmartR)
+#' library(ggplot2)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' format      <- pmartR::as.trellData(mymetabData)
+#' 
+#' pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = "free")
+#' 
+#' pmartR:::format_plot(format, plot_type = c("abundance_boxplot", "missing_bar"), y_limits = "fixed")
+#' 
+#' pmartR:::format_plot(format, plot_type = c("abundance_boxplot", "missing_bar"), y_limits = list(abundance_boxplot = list(min = 3, max = 7), missing_bar = list(max = 0.7)))
+#' 
+#' pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = list(abundance_boxplot = list(min = 3, max = 7)))
+#' 
+#' pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = list(abundance_boxplot = list(min = 3, max = 7)))
+#' 
+#' pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = list(abundance_boxplot = list(range = 7)))
+#' 
+#' data("isobaric_object")
+#' mypepData  <- pmartR::edata_transform(isobaric_object, "log10")
+#' mypepData  <- pmartR::normalize_isobaric(mypepData, apply_norm = T) # For isobaric normalization
+#' mypepData  <- pmartR::group_designation(mypepData, "Group")
+#' mypepData  <- pmartR::normalize_global(mypepData, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' myproRoll  <- pmartR::protein_quant(mypepData, "rrollup")
+#' mypepStats <- pmartR::imd_anova(mypepData, test_method = "combined")
+#' myproStats <- pmartR::imd_anova(myproRoll, test_method = "combined")
+#' 
+#' format2    <- pmartR::as.trellData(omicsData = mypepData, omicsStats = mypepStats)
+#' format3    <- pmartR::as.trellData(omicsData = list(mypepData, myproRoll), omicsStats = list(mypepStats, myproStats))
+#' 
+#' custom_fn <- function(data){
+#' ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+#' }
+#' 
+#' pmartR:::format_plot(format2, plot_type = "foldchange_bar", panel_variable = "Protein", plot_text = TRUE, p_val = 0.001, interactive = TRUE)
+#' pmartR:::format_plot(format3, plot_type = "abundance_boxplot", custom_plot = "custom_fn", panel_variable = c("Protein", "Protein"))
+#' 
+#' }
 #'
 #' @author Rachel Richardson
 #'
@@ -1730,9 +1896,11 @@ format_plot <- function(trellData,
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.
 #' @param plot_text For comparisons only: TRUE/FALSE for p-value text above data
 #' @param interactive Should the plots be rendered as plotly objects?
-#' @param plot_type types of plots 
-#' @param y_limits y-limits
+#' @param plot_type types of plots, specified in format_plot
+#' @param y_limits y-limits, specified in format_plot
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
+#'
+#' @seealso \link[pmartR]{format_plot}
 #'
 #' @author Rachel Richardson
 
@@ -1889,6 +2057,8 @@ validate_format_plot_input <- function(trellData,
 #' @param panel_variable Specifies what to divide trelliscope panels by, must be a column in trellData. 
 #' @param y_axis Specifies what column should be on the y-axis, must be a column in trellData and numeric. 
 #'
+#' @seealso \link[pmartR]{format_plot}
+#'
 #' @author Rachel Richardson
 #'
 #'
@@ -2020,6 +2190,8 @@ add_plot_features <- function(trellData,
 #'
 #' @param plot_type plots to graph in trelliVis
 #' @param y_limits User input y-axis limits for plots
+#' 
+#' @seealso \link[pmartR]{format_plot}
 #'
 #' @author Rachel Richardson
 #'
@@ -2258,6 +2430,10 @@ list_y_limits <- function(plot_type, y_limits){
 #' @param yvalues y-values for plotting
 #' @param include_zero Should zero be included in plot scaling?
 #'
+#' @seealso \link[pmartR]{format_plot}
+#' @seealso \link[pmartR]{list_y_limits}
+#' @seealso \link[pmartR]{set_ylimits}
+#'
 #' @author Rachel Richardson
 #'
 #'
@@ -2308,6 +2484,10 @@ set_increment <- function(yvalues, include_zero = TRUE){
 #' @param y_max Sets the maximum y-value for the y-axis.
 #' @param y_min Sets the minimum y-value for the y-axis.
 #' @param include_zero Should zero be included regardless of scaling?
+#'
+#' @seealso \link[pmartR]{format_plot}
+#' @seealso \link[pmartR]{list_y_limits}
+#' @seealso \link[pmartR]{set_increment}
 #'
 #' @author Rachel Richardson
 #'
@@ -2430,13 +2610,37 @@ set_ylimits <- function(yvalues,
 #' @rdname data_cogs
 #' @title Plot pairwise comparisons and data values in trellData object
 #'
-#' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+#' @description Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis. Called in trelliVis function.
 #'
 #' @param nested_plot A nested table generated from trellData using formatplot()
 #' @param trellData A nested table generated from trellData using formatplot()
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
 #' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
+#'
+#' @seealso \link[pmartR]{as.trellData}
+#' @seealso \link[pmartR]{format_plot}
+#' @seealso \link[pmartR]{trelliVis}
+#'
+#' @examples
+#'
+#' dontrun{
+#' library(pmartRdata)
+#' library(pmartR)
+#' library(ggplot2)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' format      <- pmartR::as.trellData(mymetabData)
+#' plot        <- pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = "free")
+#' 
+#' custom_fn_cog <- function(data){
+#' tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
+#' }
+#' 
+#' pmartR::data_cogs(plot, format, try_URL = TRUE, custom_cog = "custom_fn_cog")
+#' }
 #'
 #' @author Rachel Richardson
 #'
@@ -2838,9 +3042,9 @@ data_cogs <- function(nested_plot,
 
 #' @name trelliVis
 #' @rdname trelliVis
-#' @title Plot pairwise comparisons and data values in trellData object
+#' @title Automated trelliscopejs plotting from omicsData
 #'
-#' @description Plot pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+#' @description Generates trelliscopejs displays using pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
 #'
 #' @param omicsData A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.
 #' @param omicsStats A statistical results object produced by running \code{imd_anova} on omicsData. Can use list(pepStats, proStats) for associated data.
@@ -2858,6 +3062,82 @@ data_cogs <- function(nested_plot,
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
 #' @param ... Additional arguments for trelliscope() function; trelliVis supports arguments ncol, nrow, jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, and thumb are preset based on panel variable, data type, and TRUE respectively. Refer to ?trelliscopejs::trelliscope()
+#'
+#' @details Descriptions of plot_type values and y-limits are as follows:
+#' \tabular{ll}{
+#' abundance_boxplot \tab Boxplots generated from trellData abundance values. Only available if omicsData was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' abundance_global \tab  Biomolecule-specific abundance values compared to global abundances across all biomolecules. Only available if omicsData was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' abundance_heatmap \tab  Heatmap of biomolecule abundances in with a mapping variable (e_meta) across samples. Only available if omicsData with e_meta was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' foldchange_bar \tab Bar graphs generated from trellData foldchange values. Only available if omicsStats was passed in as.trellData to generate trellData object. \cr
+#' \tab\cr
+#' foldchange_global \tab Biomolecule-specific foldchange values compared to global foldchanges across all biomolecules. Only available if omicsStats was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' foldchange_heatmap \tab  Heatmap of biomolecule foldchange values in with a mapping variable (e_meta) across samples. Only available if omicsStats AND omicsData was passed in as.trellData to generate trellData object. \cr
+#' \tab \cr
+#' missing_bar \tab Bar graph of the proportion of samples missing/present for each panel_variable. \cr
+#' \tab\cr
+#' presence_heatmap \tab Heatmap of biomolecule presence/absence in with a mapping variable (e_meta) across samples. Only available if omicsData with e_meta was passed in as.trellData to generate trellData object. \cr
+#' }
+#' Valid y_limits entries are as follows:
+#' \tabular{ll}{
+#' scale \tab Options include "free" or "fixed", where "free" allows each panel to auto-scale based on values and "fixed" uses the same scaling across all panels.\cr
+#' \tab \cr
+#' min \tab Minimum value on the y-axis. Where max argument is provided, must be less than max. \cr
+#' \tab \cr
+#' max \tab Maximum value on the y-axis. Where min argument is provided, must be greater than min. \cr
+#' \tab \cr
+#' range \tab A numeric defining the range of y-axis limits, centered on the median of values plotted, OR from a min/max value (if provided). \cr
+#' }
+#'
+#' @seealso \link[pmartR]{as.trellData}
+#' @seealso \link[trelliscopejs]{trelliscope}
+#'
+#'
+#' @examples
+#'
+#' dontrun{
+#' library(pmartRdata)
+#' library(pmartR)
+#' library(ggplot2)
+#' data("metab_object")
+#' mymetabData <- pmartR::edata_transform(metab_object, "log10")
+#' mymetabData <- pmartR::group_designation(metab_object, "Condition")
+#' mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' 
+#' pmartR::trelliVis(omicsData = mymetabData, plot_type = "abundance_boxplot", y_limits = "fixed")
+#' pmartR::trelliVis(omicsFormat = pmartR::as.trellData(mymetabData), plot_type = "abundance_boxplot", y_limits = "fixed")
+#' pmartR::trelliVis(mymetabData, plot_type = c("abundance_boxplot", "missing_bar"), y_limits = list(abundance_boxplot = list(min = 3, max = 7), missing_bar = list(max = 0.7)))
+#' pmartR::trelliVis(mymetabData, y_limits = list(abundance_boxplot = list(min = 3, range = 7))))
+#' pmartR::trelliVis(mymetabData, width = 700, height = 200, ncol = 2)
+#' 
+#' data("isobaric_object")
+#' mypepData  <- pmartR::edata_transform(isobaric_object, "log10")
+#' mypepData  <- pmartR::normalize_isobaric(mypepData, apply_norm = T) # For isobaric normalization
+#' mypepData  <- pmartR::group_designation(mypepData, "Group")
+#' mypepData  <- pmartR::normalize_global(mypepData, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+#' myproRoll  <- pmartR::protein_quant(mypepData, "rrollup")
+#' mypepStats <- pmartR::imd_anova(mypepData, test_method = "combined")
+#' myproStats <- pmartR::imd_anova(myproRoll, test_method = "combined")
+#' 
+#' pmartR::trelliVis(omicsData = mypepData, omicsStats = mypepStats, try_URL = TRUE, self_contained = TRUE)
+#' pmartR::trelliVis(omicsData = list(mypepData, myproRoll), omicsStats = list(mypepStats, myproStats), trelli_name = "test", trelli_path_out = "./Here")
+#' 
+#' custom_fn <- function(data){
+#' ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+#' }
+#' 
+#' custom_fn_cog <- function(data){
+#' tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
+#' }
+#' 
+#' pmartR::trelliVis(omicsData = mypepData, omicsStats = mypepStats, plot_type = "foldchange_bar", panel_variable = "Protein", plot_text = TRUE, p_val = 0.001, interactive = TRUE)
+#' pmartR:::format_plot(omicsData = list(mypepData, myproRoll), omicsStats = list(mypepStats, myproStats), plot_type = "abundance_boxplot", custom_plot = "custom_fn", costom_cog = "custom_fn_cog", panel_variable = c("Protein", "Protein"))
+#' 
+#' }
+#'
 #'
 #' @author Rachel Richardson
 #' @export
@@ -3078,8 +3358,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
         names(trelli_name) <- attr(trellData, "data_types")
         
         # if trelli_name too long, cut to length(trellData)  #
-      } else if (((length(trelli_name) != length(plot_types)*2 + 2) && !is.null(custom_plot)) || 
-                 (length(trelli_name) != length(plot_types)*2  && is.null(custom_plot)) ) {
+      } else if (((length(trelli_name) != length(plot_type)*2 + 2) && !is.null(custom_plot)) || 
+                 (length(trelli_name) != length(plot_type)*2  && is.null(custom_plot)) ) {
         message("Length of trelli_name is not equal to the number of displays generated. Only the first name will be used.")
         label <- trelli_name[1]
         trelli_name <- vector("list", 2)
@@ -3093,8 +3373,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       } else {
         label <- trelli_name
         trelli_name <- vector("list", 2)
-        trelli_name[[1]] <- trelli_name[1:length(plot_types)]
-        trelli_name[[2]] <- trelli_name[(length(plot_types)+1):(length(plot_types)*2)]
+        trelli_name[[1]] <- trelli_name[1:length(plot_type)]
+        trelli_name[[2]] <- trelli_name[(length(plot_type)+1):(length(plot_type)*2)]
         names(trelli_name) <- attr(trellData, "data_types")
       }
       
