@@ -1424,17 +1424,24 @@ testthat::test_that("Subfunction set_ylimits correctly processes", {
 ################################################################################
 ################################################################################
 
-testthat::context("Test main TrelliVis function output (Takes a substantial amount of time (1 hr +); works through several (11) trelliscope displays)")
+testthat::context("Test main TrelliVis function output (Takes )")
 
 ## Generate function outputs from test data ##
 
 testthat::test_that("Validate error throwing", {
-    testthat::expect_error(
-    suppressWarnings(trelliVis(metab_object, metab_stats, custom_cog = "mean")), 
+  testthat::expect_error(
+  suppressWarnings(trelliVis(metab_object, metab_stats, custom_cog = "mean")), 
+  "Validation failed")
+  testthat::expect_error(
+    suppressWarnings(trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), custom_cog = "mean")), 
+  "Validation failed")
+  testthat::expect_error(
+    suppressWarnings(trelliVis(metab_object, metab_stats, custom_plot = "mean")), 
     "Validation failed")
-    testthat::expect_error(
-      suppressWarnings(trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), custom_cog = "mean")), 
+  testthat::expect_error(
+    suppressWarnings(trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), custom_plot = "mean")), 
     "Validation failed")
+    
   testthat::expect_error(
     trelliVis(metab_object, metab_stats, panel_variable = "mean"), 
     "not present in input data")
@@ -1506,8 +1513,11 @@ testthat::test_that("Validate error throwing", {
     "Length of trelli_name")
 })
 
+
+## check all the options for correct output (For full checks, set display = TRUE)
 iso_display    <- trelliVis(isobaric_object, isobaric_stats, custom_plot = "custom_fn", display = FALSE)
 metab_display  <- trelliVis(metab_object, metab_stats, self_contained = TRUE, display = FALSE)
+metab_display2  <- trelliVis(metab_stats, display = FALSE)
 lipid_display  <- trelliVis(list(lipid_object), list(lipid_stats), display = FALSE)
 pro_display    <- trelliVis(qpro1_stats, qpro1, display = FALSE)
 linked_display <- trelliVis(list(isobaric_object, qpro1),
@@ -1516,9 +1526,18 @@ linked_display <- trelliVis(list(isobaric_object, qpro1),
 # linked_display2 <- trelliVis(list(isobaric_object, qpro1), trelli_name = c("this", "that", "the other"))
 linked_display3 <- trelliVis(list(isobaric_object, qpro1),
                              custom_plot = "custom_fn",
+                             trelli_name = c("Truth", "Happiness"),
                              self_contained = TRUE, display = FALSE)
 linked_display4 <- trelliVis(list(isobaric_object, qpro1),
+                             trelli_name = "blah",
                              plot_type = "abundance_boxplot",
-                             custom_plot = "custom_fn", display = FALSE)
+                             custom_plot = "custom_fn", 
+                             display = FALSE, 
+                             panel_variable = c("Protein", "Protein"))
+
+##
+
+metab_display  <- trelliVis(metab_object, trelli_name = "test")
+lipid_display  <- trelliVis(list(lipid_object), list(lipid_stats))
 
 # devtools::test_coverage_file() => 

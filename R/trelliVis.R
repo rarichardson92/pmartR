@@ -997,8 +997,8 @@ format_plot <- function(trellData,
     #### Custom Plot ####
     if(!is.null(custom_plot)){
       trellData2 <- trellData
-      if(!is.null(trellData2$data_value)){
-        trellData2$data_value <- trellData2$data_value[as.character(trellData2$data_value[[panel_variable]]) == panel,]
+      if(!is.null(trellData2$data_values)){
+        trellData2$data_values <- trellData2$data_values[as.character(trellData2$data_values[[panel_variable]]) == panel,]
       }
       if(!is.null(trellData2$comp_stats)){
         trellData2$comp_stats <- trellData2$comp_stats[as.character(trellData2$comp_stats[[panel_variable]]) == panel,]
@@ -1857,9 +1857,6 @@ format_plot <- function(trellData,
         return(plotly::ggplotly(plot_out, tooltip = "text"))
       
     } else {
-      if(!inherits(plot_out, c("ggplot", "plotly", "rbokeh")))  stop(
-        "Generated custom plot is not supported. Please use ggplot, plotly, or rbokeh to generate a single plot in the custom function."
-      )
         return(plot_out)
     }
   }
@@ -3025,12 +3022,7 @@ data_cogs <- function(nested_plot,
         
         if(!is.null(custom_cog)){ ## Run custom function on cogs using function name
          x <- eval(parse(text = paste0(custom_cog, "(cogs)")))
-         if(is.data.frame(x) && nrow(x) == 1){
-           cog_out <- cbind(cog_out,x)
-         } else {
-           warning("Invalid result. Custom function on data subset is required to yield a data.frame with nrow == 1. Custom function will not be used.")
-           return(NA)
-         }
+         cog_out <- cbind(cog_out,x)
         }
         
         return(cog_out)
@@ -3293,14 +3285,58 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
           tester <- panel_variable
         }
         
-        trell <- trell[[1]]
+        name <- as.character(trell[[1]][floor(runif(1, 1, nrow(trell[[1]]))), tester])
+        subset_dv <- trell$data_values[as.character(trell$data_values[[tester]]) == name,]
+        subset_ss <- trell$summary_stats[as.character(trell$summary_stats[[tester]]) == name,]
+        subset_cs <- trell$comp_stats[as.character(trell$comp_stats[[tester]]) == name,]
         
-        name <- as.character(trell[floor(runif(1, 1, nrow(trell))), tester])
-        subset <- trell[as.character(trell[[tester]]) == name,]
+        subsets <- list(subset_dv, subset_ss, subset_cs)
+        subsets <- subsets[as.numeric(which(!unlist(lapply(subsets, is.null))))]
+        if(length(subsets) == 3){
+          subset <- merge(merge(subsets[[1]], subsets[[2]]), subsets[[3]])
+        } else if (length(subsets) == 2){
+          subset <- merge(subsets[[1]], subsets[[2]])
+        } else {
+          subset <- subsets[[1]]
+        }
         
         x <- eval(parse(text = paste0(custom_cog, "(subset)")))
           if(!is.data.frame(x) || nrow(x) != 1) stop(
             paste("Validation failed. Custom cog function on data subset is required to yield a data.frame with nrow == 1. Subset tested on:", tester, "==", name))
+      })
+      
+    }
+    
+    # Validate Custom plot if provided
+    if(!is.null(custom_plot)){
+      purrr::map(trellData, function(trell){
+        
+        if(is.null(panel_variable)){
+          tester <- pmartR::get_edata_cname(trell)
+        } else {
+          tester <- panel_variable
+        }
+        
+        name <- as.character(trell[[1]][floor(runif(1, 1, nrow(trell[[1]]))), tester])
+        subset_dv <- trell$data_values[as.character(trell$data_values[[tester]]) == name,]
+        subset_ss <- trell$summary_stats[as.character(trell$summary_stats[[tester]]) == name,]
+        subset_cs <- trell$comp_stats[as.character(trell$comp_stats[[tester]]) == name,]
+        
+        subsets <- list(subset_dv, subset_ss, subset_cs)
+        subsets <- subsets[as.numeric(which(!unlist(lapply(subsets, is.null))))]
+        if(length(subsets) == 3){
+          subset <- merge(merge(subsets[[1]], subsets[[2]]), subsets[[3]])
+        } else if (length(subsets) == 2){
+          subset <- merge(subsets[[1]], subsets[[2]])
+        } else {
+          subset <- subsets[[1]]
+        }
+        
+        x <- eval(parse(text = paste0(custom_plot, "(subset)")))
+        if(!inherits(x, c("ggplot", "plotly", "rbokeh")) || length(x) != 1)  stop(
+          paste("Validation failed. Custom plot function on data subset is required to yield a single plot with class of ggplot, plotly, or rbokeh. Subset tested on:", tester, "==", name)
+        )
+        
       })
       
     }
@@ -3611,12 +3647,54 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       }
       
       name <- as.character(trellData[[1]][floor(runif(1, 1, nrow(trellData[[1]]))), tester])
-      subset <- trellData[[1]][as.character(trellData[[1]][[tester]]) == name,]
+      subset_dv <- trellData$data_values[as.character(trellData$data_values[[tester]]) == name,]
+      subset_ss <- trellData$summary_stats[as.character(trellData$summary_stats[[tester]]) == name,]
+      subset_cs <- trellData$comp_stats[as.character(trellData$comp_stats[[tester]]) == name,]
+      
+      subsets <- list(subset_dv, subset_ss, subset_cs)
+      subsets <- subsets[as.numeric(which(!unlist(lapply(subsets, is.null))))]
+      if(length(subsets) == 3){
+        subset <- merge(merge(subsets[[1]], subsets[[2]]), subsets[[3]])
+      } else if (length(subsets) == 2){
+        subset <- merge(subsets[[1]], subsets[[2]])
+      } else {
+        subset <- subsets[[1]]
+      }
       
       x <- eval(parse(text = paste0(custom_cog, "(subset)")))
       if(!is.data.frame(x) || nrow(x) != 1) stop(
         paste("Validation failed. Custom cog function on data subset is required to yield a data.frame with nrow == 1. Subset tested on:", tester, "==", name))
     
+    }
+    
+    # Validate Custom plot if provided
+    if(!is.null(custom_plot)){
+        
+      if(is.null(panel_variable)){
+        tester <- pmartR::get_edata_cname(trellData)
+      } else {
+        tester <- panel_variable
+      }
+      
+      name <- as.character(trellData[[1]][floor(runif(1, 1, nrow(trellData[[1]]))), tester])
+      subset_dv <- trellData$data_values[as.character(trellData$data_values[[tester]]) == name,]
+      subset_ss <- trellData$summary_stats[as.character(trellData$summary_stats[[tester]]) == name,]
+      subset_cs <- trellData$comp_stats[as.character(trellData$comp_stats[[tester]]) == name,]
+      
+      subsets <- list(subset_dv, subset_ss, subset_cs)
+      subsets <- subsets[as.numeric(which(!unlist(lapply(subsets, is.null))))]
+      if(length(subsets) == 3){
+        subset <- merge(merge(subsets[[1]], subsets[[2]]), subsets[[3]])
+      } else if (length(subsets) == 2){
+        subset <- merge(subsets[[1]], subsets[[2]])
+      } else {
+        subset <- subsets[[1]]
+      }
+      
+      x <- eval(parse(text = paste0(custom_plot, "(subset)")))
+      if(!inherits(x, c("ggplot", "plotly", "rbokeh")) || length(x) != 1)  stop(
+        paste("Validation failed. Custom plot function on data subset is required to yield a single plot with class of ggplot, plotly, or rbokeh. Subset tested on:", tester, "==", name)
+      )
     }
     
     # Fill plot type
