@@ -3333,7 +3333,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
         }
         
         x <- eval(parse(text = paste0(custom_plot, "(subset)")))
-        if(!inherits(x, c("ggplot", "plotly", "rbokeh")) || length(x) != 1)  stop(
+        print(length(x))
+        if(!inherits(x, c("ggplot", "plotly", "rbokeh")))  stop(
           paste("Validation failed. Custom plot function on data subset is required to yield a single plot with class of ggplot, plotly, or rbokeh. Subset tested on:", tester, "==", name)
         )
         
@@ -3692,7 +3693,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       }
       
       x <- eval(parse(text = paste0(custom_plot, "(subset)")))
-      if(!inherits(x, c("ggplot", "plotly", "rbokeh")) || length(x) != 1)  stop(
+      if(!inherits(x, c("ggplot", "plotly", "rbokeh")))  stop(
         paste("Validation failed. Custom plot function on data subset is required to yield a single plot with class of ggplot, plotly, or rbokeh. Subset tested on:", tester, "==", name)
       )
     }
