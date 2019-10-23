@@ -19,7 +19,35 @@ data_cogs(nested_plot, trellData, p_val = 0.05, try_URL = FALSE,
 \item{custom_cog}{The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).}
 }
 \description{
-Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis. Called in trelliVis function.
+}
+\examples{
+
+dontrun{
+library(pmartRdata)
+library(pmartR)
+library(ggplot2)
+data("metab_object")
+mymetabData <- pmartR::edata_transform(metab_object, "log10")
+mymetabData <- pmartR::group_designation(metab_object, "Condition")
+mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+format      <- pmartR::as.trellData(mymetabData)
+plot        <- pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = "free")
+
+custom_fn_cog <- function(data){
+tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
+}
+
+pmartR::data_cogs(plot, format, try_URL = TRUE, custom_cog = "custom_fn_cog")
+}
+
+}
+\seealso{
+\link[pmartR]{as.trellData}
+
+\link[pmartR]{format_plot}
+
+\link[pmartR]{trelliVis}
 }
 \author{
 Rachel Richardson

@@ -3061,6 +3061,7 @@ data_cogs <- function(nested_plot,
 #' @param self_contained Should display be generated in document? Defaults to FALSE
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
+#' @param display When FALSE, will return arguments to be passed into trelliscopejs::trelliscope() as a list without generating a display.
 #' @param ... Additional arguments for trelliscope() function; trelliVis supports arguments ncol, nrow, jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, and thumb are preset based on panel variable, data type, and TRUE respectively. Refer to ?trelliscopejs::trelliscope()
 #'
 #' @details Descriptions of plot_type values and y-limits are as follows:
@@ -3151,6 +3152,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                       self_contained = FALSE,
                       custom_cog = NULL,
                       custom_plot = NULL,
+                      display = TRUE,
                       ...) {
   
   .trelliVis(omicsData, omicsStats,
@@ -3163,6 +3165,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
              self_contained,
              custom_cog,
              custom_plot,
+             display,
              ...)
 }
 
@@ -3175,8 +3178,14 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                        y_limits = NULL, plot_type = NULL,
                        self_contained = FALSE,
                        custom_cog = NULL,
-                       custom_plot = NULL, ...) {
+                       custom_plot = NULL, 
+                       display = TRUE,
+                       ...) {
   
+  
+  #####
+  ## Initial checks ##
+  #####
   
   #store_object, custom_cog_df, plot package = ggplot, rbokeh, etc, trelliscope additional arguments
   
@@ -3185,7 +3194,6 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
   )
   
   # Check user inputs for bad paths
-  
   if(!is.null(trelli_name)){
     if(any(stringr::str_detect(trelli_name, "[^A-z0-9_\\/\\.\\\\]+"))) warning(
       "Caution: Non-word characters (outside of periods and slashes) detected in trelliname that may cause errors in file creation. Ensure that trelliname is a permissable file name for your system."
@@ -3196,7 +3204,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
     "Caution: Non-word characters (outside of periods and slashes) detected in trelli_path_out that may cause errors in file creation. Ensure that trelli_path_out is a permissable folder name for your system."
     )
   
-  
+  # Check user input for ... entry  
   if (any(c("state", "self_contained", "path", "name", "panel_col", "group") %in% names(list(...)))) stop(
     paste("The following trelliscopejs arguments are currently not supported for user input: ", toString(c("state", "self_contained", "path", "name", "panel_col", "group")))
   )
@@ -3204,7 +3212,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
   
   
   #####
-  ## Switch Stats and Omics data as appropriate ##
+  ## Switch Stats and Omics data as appropriate
   #####
   
 if(!is.null(omicsData) || !is.null(omicsStats)){
@@ -3270,10 +3278,12 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   # If a pep/pro pair is listed, act on each item #
   if(class(trellData) == "list"){
     
+    # Check linking function in trelliscopejs
     if(is.null(trelliscopejs::cog_disp_filter)) stop(
       "Function trelliscopejs::cog_disp_filter() not found! This function is required for linked displays. Consider updating your trelliscopejs package or installing from the dev branch using devtools::install_github('hafen/trelliscopejs@dev'). (The list input of omicsData and/or omicsStats can be processed as unlinked displays in trelliVis for circumstances where updates are not available)"
     )
     
+    # Validate Custom cognostics if provided
     if(!is.null(custom_cog)){
       purrr::map(trellData, function(trell){
         
@@ -3306,6 +3316,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       }
     }
     
+    
+    # Check for normalization of both items in list
     if (is.null(pmartR::get_data_norm(trellData[[1]])) || !pmartR::get_data_norm(trellData[[1]])){
       
       if("isobaricpepData" %in% get_data_class(trellData[[1]]) &&
@@ -3527,38 +3539,55 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     tictoc::toc()
     
     # Generate trelliscope display #
-    tictoc::tic("Pipe into trelliscope")
-    
+    if(display) tictoc::tic("Pipe into trelliscope")
+
     out <- purrr::pmap(list(nest_plot_cog_list, 
                 trelli_name, group), function(display1, name1, grp){
-                  purrr::map2(display1, name1, function(display, name){
+                  purrr::map2(display1, name1, function(display2, name){
                     
+                    
+                    if(!display){
+                      list(display_object = display2, 
+                                  name = as.character(name), 
+                                  self_contained = self_contained, 
+                                  group = grp, 
+                                  thumb = TRUE, 
+                                  state = list(
+                                    sort = list(trelliscopejs::sort_spec(names(display2[1]), dir = "desc")),
+                                    labels = list(names(display2[1]))),
+                                  ...)
+                    } else {
                     
                     if(self_contained){
                       
-                      trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                                                 self_contained = TRUE, 
-                                                 group = grp,
-                                                 thumb = TRUE, state = list(
-                                                   sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                                                   labels = list(names(display[1]))), ...)
-                      
-                    } else {
-                      
-                      trelliscopejs::trelliscope(display, as.character(name), nrow = 1, ncol = 2,
-                                                 path = as.character(trelli_path_out), 
-                                                 group = grp,
-                                                 thumb = TRUE, state = list(
-                                                   sort = list(trelliscopejs::sort_spec(names(display[1]), dir = "desc")), 
-                                                   labels = list(names(display[1]))), ...)
-                      
+                        trelliscopejs::trelliscope(display2, as.character(name), nrow = 1, ncol = 2,
+                                                   self_contained = TRUE, 
+                                                   group = grp,
+                                                   thumb = TRUE, state = list(
+                                                     sort = list(trelliscopejs::sort_spec(names(display2[1]), dir = "desc")), 
+                                                     labels = list(names(display2[1]))), 
+                                                   ...)
+                        
+                      } else {
+                        
+                        trelliscopejs::trelliscope(display2, as.character(name), nrow = 1, ncol = 2,
+                                                   path = as.character(trelli_path_out), 
+                                                   group = grp,
+                                                   thumb = TRUE, state = list(
+                                                     sort = list(trelliscopejs::sort_spec(names(display2[1]), dir = "desc")), 
+                                                     labels = list(names(display2[1]))), ...)
+                        
+                      }
                     }
                   })
       })
     
-    tictoc::toc()
-    
-    return(out[[1]][[1]])
+    if(!display){
+      return(out)
+    } else {
+      tictoc::toc()
+      return(out[[1]][[1]])
+    }
     
   # Where not a pep/pro pair: #
   } else {
@@ -3671,9 +3700,24 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                                     custom_cog = custom_cog))
         tictoc::toc()
         
+        # Generate trelliscope display #
+        
+        if(!display){
+          out <- list(display_object = nest_plot_cog, 
+                      name = as.character(names), 
+                      self_contained = self_contained, 
+                      group = group, 
+                      thumb = TRUE, 
+                      state = list(
+                        sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")),
+                        labels = list(names(nest_plot_cog[1]))
+                      ),
+                      ...)
+          return(out)
+        }
+        
         tictoc::tic("Pipe into trelliscope")
         
-        # Generate trelliscope display #
         if(self_contained){
           out <- nest_plot_cog %>%
             trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
@@ -3685,6 +3729,22 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                        ...
             )
         } else {
+          
+          
+          if(!display){
+            out <- list(display_object = nest_plot_cog, 
+                        name = as.character(names), 
+                        self_contained = self_contained, 
+                        group = group, 
+                        thumb = TRUE, 
+                        state = list(
+                          sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")),
+                          labels = list(names(nest_plot_cog[1]))
+                        ),
+                        ...)
+            return(out)
+          }
+          
           
           out <- nest_plot_cog %>%
             trelliscopejs::trelliscope(name = as.character(names), nrow = 1, ncol = 2,
@@ -3725,36 +3785,50 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                                       custom_cog = custom_cog))
           tictoc::toc()
           
-          tictoc::tic("Pipe into trelliscope")
-          
           # Generate trelliscope display #
-          if(self_contained){
-            out <- nest_plot_cog %>%
-              trelliscopejs::trelliscope(name = as.character(trelli_name[length(trelli_name)]), nrow = 1, ncol = 2,
-                                         self_contained = TRUE, 
-                                         thumb = TRUE,
-                                         state = list(
-                                           sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                           labels = list(names(nest_plot_cog[1]))),
-                                         ...
-              )
+          
+          if(!display){
+            out <- list(display_object = nest_plot_cog, 
+                        name = as.character(trelli_name[length(trelli_name)]), 
+                        self_contained = self_contained, 
+                        group = group, 
+                        thumb = TRUE, 
+                        state = list(
+                          sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                          labels = list(names(nest_plot_cog[1]))),
+                        ...)
           } else {
             
-            out <- nest_plot_cog %>%
-              trelliscopejs::trelliscope(name = as.character(trelli_name[length(trelli_name)]), nrow = 1, ncol = 2,
-                                         path = as.character(trelli_path_out), 
-                                         thumb = TRUE,
-                                         group = group,
-                                         state = list(
-                                           sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                           labels = list(names(nest_plot_cog[1]))),
-                                         ...
-              )
+            tictoc::tic("Pipe into trelliscope")
+          
+            if(self_contained){
+              out <- nest_plot_cog %>%
+                trelliscopejs::trelliscope(name = as.character(trelli_name[length(trelli_name)]), nrow = 1, ncol = 2,
+                                           self_contained = TRUE, 
+                                           thumb = TRUE,
+                                           state = list(
+                                             sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                             labels = list(names(nest_plot_cog[1]))),
+                                           ...
+                )
+            } else {
+              
+              out <- nest_plot_cog %>%
+                trelliscopejs::trelliscope(name = as.character(trelli_name[length(trelli_name)]), nrow = 1, ncol = 2,
+                                           path = as.character(trelli_path_out), 
+                                           thumb = TRUE,
+                                           group = group,
+                                           state = list(
+                                             sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                             labels = list(names(nest_plot_cog[1]))),
+                                           ...
+                )
+            }
           }
           
           displays[[length(displays) + 1]] <- out
           
-          tictoc::toc()
+          if(!display) tictoc::toc()
         }
         
     } else {
@@ -3779,35 +3853,49 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                                   custom_cog = custom_cog))
       tictoc::toc()
       
-      tictoc::tic("Pipe into trelliscope")
-      
       # Generate trelliscope display #
-      if(self_contained){
-        out <- nest_plot_cog %>%
-          trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
-                                     self_contained = TRUE, 
-                                     thumb = TRUE,
-                                     state = list(
-                                       sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                       labels = list(names(nest_plot_cog[1]))),
-                                     ...
-          )
+      
+      if(!display){
+        out <- list(display_object = nest_plot_cog, 
+                    name = as.character(trelli_name[length(trelli_name)]), 
+                    self_contained = self_contained, 
+                    group = group, 
+                    thumb = TRUE, 
+                    state = list(
+                      sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                      labels = list(names(nest_plot_cog[1]))),
+                    ...)
       } else {
+      
+        tictoc::tic("Pipe into trelliscope")
         
-        out <- nest_plot_cog %>%
-          trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
-                                     path = as.character(trelli_path_out), 
-                                     thumb = TRUE,
-                                     group = group,
-                                     state = list(
-                                       sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
-                                       labels = list(names(nest_plot_cog[1]))),
-                                     ...
-          )
+        if(self_contained){
+          out <- nest_plot_cog %>%
+            trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
+                                       self_contained = TRUE, 
+                                       thumb = TRUE,
+                                       state = list(
+                                         sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                         labels = list(names(nest_plot_cog[1]))),
+                                       ...
+            )
+        } else {
+          
+          out <- nest_plot_cog %>%
+            trelliscopejs::trelliscope(name = as.character(trelli_name), nrow = 1, ncol = 2,
+                                       path = as.character(trelli_path_out), 
+                                       thumb = TRUE,
+                                       group = group,
+                                       state = list(
+                                         sort = list(trelliscopejs::sort_spec(names(nest_plot_cog[1]), dir = "desc")), 
+                                         labels = list(names(nest_plot_cog[1]))),
+                                       ...
+            )
+        }
       }
       
       displays <- out
-      tictoc::toc()
+      if(display) tictoc::toc()
       
     }
     

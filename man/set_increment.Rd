@@ -14,6 +14,13 @@ set_increment(yvalues, include_zero = TRUE)
 \description{
 Sets y-axis increment for trellData plotting. Used by plot_comp.
 }
+\seealso{
+\link[pmartR]{format_plot}
+
+\link[pmartR]{list_y_limits}
+
+\link[pmartR]{set_ylimits}
+}
 \author{
 Rachel Richardson
 }

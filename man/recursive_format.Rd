@@ -7,12 +7,15 @@
 recursive_format(omicsData = NULL, omicsStats = NULL)
 }
 \arguments{
-\item{yvalues}{y-values for plotting}
+\item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
 
-\item{testtype}{consideration for different statistical tests}
+\item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData.}
 }
 \description{
 Checks for validity of list inputs and handles different list combinations as input.
+}
+\seealso{
+\link[pmartR]{as.trellData}
 }
 \author{
 Rachel Richardson

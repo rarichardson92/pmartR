@@ -2,7 +2,7 @@
 % Please edit documentation in R/trelliVis.R
 \name{validate_omics_input}
 \alias{validate_omics_input}
-\title{Validate inputs for omicsData and omicsStats in trelliVis processing}
+\title{Validate inputs for omicsData and omicsStats in as.trellData processing.}
 \usage{
 validate_omics_input(omicsData = NULL, omicsStats = NULL)
 }
@@ -13,6 +13,9 @@ validate_omics_input(omicsData = NULL, omicsStats = NULL)
 }
 \description{
 Checks for validity of omicsData and omicsStats inputs.
+}
+\seealso{
+\link[pmartR]{as.trellData}
 }
 \author{
 Rachel Richardson

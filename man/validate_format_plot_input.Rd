@@ -10,7 +10,7 @@ validate_format_plot_input(trellData, plot_type, p_val, panel_variable,
 \arguments{
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
 
-\item{plot_type}{types of plots}
+\item{plot_type}{types of plots, specified in format_plot}
 
 \item{p_val}{Specifies p-value for setting graph border colors}
 
@@ -22,10 +22,13 @@ validate_format_plot_input(trellData, plot_type, p_val, panel_variable,
 
 \item{interactive}{Should the plots be rendered as plotly objects?}
 
-\item{y_limits}{y-limits}
+\item{y_limits}{y-limits, specified in format_plot}
 }
 \description{
 Checks for validity of trellData input and assigns variables where needed
+}
+\seealso{
+\link[pmartR]{format_plot}
 }
 \author{
 Rachel Richardson

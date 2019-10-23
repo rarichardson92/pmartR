@@ -10,11 +10,9 @@ as.trellData(omicsData = NULL, omicsStats = NULL)
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData}
 
 \item{omicsStats}{A statistical results object produced by running \code{imd_anova} on omicsData.}
-
-\item{...}{further arguments}
 }
 \description{
-Converts a ResObject and its respective OmicsData into an easily plottable object.
+Converts a ResObject and its respective OmicsData into an easily plottable object. Called automatically in trelliVis() function.
 }
 \details{
 Objects of class 'trellData' inherit attributes from omicsStats and omicsData. These attributes can be changed from their default value by manual specification. A list of these attributes as well as their default values are as follows:
@@ -48,11 +46,31 @@ meta_info \tab A logical argument, specifying whether \code{e_meta} is provided.
 \examples{
 dontrun{
 library(pmartRdata)
-data("pro_edata")
-data("pro_fdata")
-myproData <- as.proData(e_data = pro_edata, f_data = pro_fdata, edata_cname = "Reference", fdata_cname = "SampleID", is_normalized=TRUE)
+library(pmartR)
+data("metab_object")
+mymetabData <- pmartR::edata_transform(metab_object, "log10")
+mymetabData <- pmartR::group_designation(metab_object, "Condition")
+mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+as.trellData(omicsData = mymetabData)
+
+mymetabStats <- pmartR::imd_anova(mymetabData, test_method = "combined")
+as.trellData(omicsData = mymetabData, omicsStats = mymetabStats)
+
+data("isobaric_object")
+mypepData <- pmartR::edata_transform(isobaric_object, "log10")
+mypepData <- pmartR::normalize_isobaric(mypepData, apply_norm = T) # For isobaric normalization
+mypepData <- pmartR::group_designation(mypepData, "Group")
+mypepData <- pmartR::normalize_global(mypepData, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+myproRoll <- pmartR::protein_quant(mypepData, "rrollup")
+mypepStats <- pmartR::imd_anova(mypepData, test_method = "combined")
+myproStats <- pmartR::imd_anova(myproRoll, test_method = "combined")
+pmartR::as.trellData(omicsData = list(mypepData, myproRoll), omicsStats = list(mypepStats, myproStats))
+
 }
 
+}
+\seealso{
+\link[pmartR]{trelliVis}
 }
 \author{
 Rachel Richardson

@@ -21,6 +21,9 @@ add_plot_features(trellData, nestedData, p_val = NULL,
 \description{
 Adds border color, hover, and label text as applicable to nested trellData dataframe for plotting
 }
+\seealso{
+\link[pmartR]{format_plot}
+}
 \author{
 Rachel Richardson
 }

@@ -13,20 +13,101 @@ format_plot(trellData, panel_variable = NULL, plot_type = NULL,
 
 \item{panel_variable}{Specifies what to divide trelliscope panels by, must be a column in trellData. Defaults to cnames$edata_cname of trellData.}
 
-\item{plot_type}{types of plots}
+\item{plot_type}{Types of plots. Restricted to "abundance_boxplot", "abundance_global", "abundance_heatmap", "foldchange_bar", "foldchange_global", "foldchange_heatmap", "missing_bar", "presence_heatmap"}
 
 \item{p_val}{Specifies p-value for setting graph border colors}
 
-\item{plot_text}{For comparisons only: TRUE/FALSE for p-value text above data}
+\item{plot_text}{For plot_type == foldchange_bar only: TRUE/FALSE for p-value text above data}
 
-\item{y_limits}{y-limits}
+\item{y_limits}{y-limits for plots. Accepts scale, max, min, and range (see details and examples)}
 
 \item{interactive}{Should the plots be rendered as plotly objects?}
 
 \item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
 }
 \description{
-Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.
+Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis. Run in main trelliVis function.
+}
+\details{
+Descriptions of plot_type values and y-limits are as follows:
+\tabular{ll}{
+abundance_boxplot \tab Boxplots generated from trellData abundance values. Only available if omicsData was passed in as.trellData to generate trellData object. \cr
+\tab \cr
+abundance_global \tab  Biomolecule-specific abundance values compared to global abundances across all biomolecules. Only available if omicsData was passed in as.trellData to generate trellData object. \cr
+\tab \cr
+abundance_heatmap \tab  Heatmap of biomolecule abundances in with a mapping variable (e_meta) across samples. Only available if omicsData with e_meta was passed in as.trellData to generate trellData object. \cr
+\tab \cr
+foldchange_bar \tab Bar graphs generated from trellData foldchange values. Only available if omicsStats was passed in as.trellData to generate trellData object. \cr
+\tab\cr
+foldchange_global \tab Biomolecule-specific foldchange values compared to global foldchanges across all biomolecules. Only available if omicsStats was passed in as.trellData to generate trellData object. \cr
+\tab \cr
+foldchange_heatmap \tab  Heatmap of biomolecule foldchange values in with a mapping variable (e_meta) across samples. Only available if omicsStats AND omicsData was passed in as.trellData to generate trellData object. \cr
+\tab \cr
+missing_bar \tab Bar graph of the proportion of samples missing/present for each panel_variable. \cr
+\tab\cr
+presence_heatmap \tab Heatmap of biomolecule presence/absence in with a mapping variable (e_meta) across samples. Only available if omicsData with e_meta was passed in as.trellData to generate trellData object. \cr
+}
+Valid y_limits entries are as follows:
+\tabular{ll}{
+scale \tab Options include "free" or "fixed", where "free" allows each panel to auto-scale based on values and "fixed" uses the same scaling across all panels.\cr
+\tab \cr
+min \tab Minimum value on the y-axis. Where max argument is provided, must be less than max. \cr
+\tab \cr
+max \tab Maximum value on the y-axis. Where min argument is provided, must be greater than min. \cr
+\tab \cr
+range \tab A numeric defining the range of y-axis limits, centered on the median of values plotted, OR from a min/max value (if provided). \cr
+}
+}
+\examples{
+
+dontrun{
+library(pmartRdata)
+library(pmartR)
+library(ggplot2)
+data("metab_object")
+mymetabData <- pmartR::edata_transform(metab_object, "log10")
+mymetabData <- pmartR::group_designation(metab_object, "Condition")
+mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+format      <- pmartR::as.trellData(mymetabData)
+
+pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = "free")
+
+pmartR:::format_plot(format, plot_type = c("abundance_boxplot", "missing_bar"), y_limits = "fixed")
+
+pmartR:::format_plot(format, plot_type = c("abundance_boxplot", "missing_bar"), y_limits = list(abundance_boxplot = list(min = 3, max = 7), missing_bar = list(max = 0.7)))
+
+pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = list(abundance_boxplot = list(min = 3, max = 7)))
+
+pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = list(abundance_boxplot = list(min = 3, max = 7)))
+
+pmartR:::format_plot(format, plot_type = "abundance_boxplot", y_limits = list(abundance_boxplot = list(range = 7)))
+
+data("isobaric_object")
+mypepData  <- pmartR::edata_transform(isobaric_object, "log10")
+mypepData  <- pmartR::normalize_isobaric(mypepData, apply_norm = T) # For isobaric normalization
+mypepData  <- pmartR::group_designation(mypepData, "Group")
+mypepData  <- pmartR::normalize_global(mypepData, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+myproRoll  <- pmartR::protein_quant(mypepData, "rrollup")
+mypepStats <- pmartR::imd_anova(mypepData, test_method = "combined")
+myproStats <- pmartR::imd_anova(myproRoll, test_method = "combined")
+
+format2    <- pmartR::as.trellData(omicsData = mypepData, omicsStats = mypepStats)
+format3    <- pmartR::as.trellData(omicsData = list(mypepData, myproRoll), omicsStats = list(mypepStats, myproStats))
+
+custom_fn <- function(data){
+ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+}
+
+pmartR:::format_plot(format2, plot_type = "foldchange_bar", panel_variable = "Protein", plot_text = TRUE, p_val = 0.001, interactive = TRUE)
+pmartR:::format_plot(format3, plot_type = "abundance_boxplot", custom_plot = "custom_fn", panel_variable = c("Protein", "Protein"))
+
+}
+
+}
+\seealso{
+\link[pmartR]{as.trellData}
+
+\link[pmartR]{trelliVis}
 }
 \author{
 Rachel Richardson

@@ -14,6 +14,9 @@ list_y_limits(plot_type, y_limits)
 \description{
 Takes lists/strings/numeric input and digests as a list of y_limits for each plot type.
 }
+\seealso{
+\link[pmartR]{format_plot}
+}
 \author{
 Rachel Richardson
 }

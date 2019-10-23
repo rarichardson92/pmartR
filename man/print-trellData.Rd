@@ -6,6 +6,25 @@
 \usage{
 \method{print}{trellData}(trellData)
 }
+\arguments{
+\item{trellData}{The trellData object to print.}
+}
 \description{
-For printing an S3 object of type 'trellData':
+For printing an S3 object of type 'trellData'; Displays truncated dataframes for each element in trellData.
+}
+\examples{
+
+dontrun{
+library(pmartRdata)
+library(pmartR)
+data("metab_object")
+mymetabData <- pmartR::edata_transform(metab_object, "log10")
+mymetabData <- pmartR::group_designation(metab_object, "Condition")
+mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+print(pmartR::as.trellData(mymetabData))
+}
+
+}
+\seealso{
+\link[pmartR]{as.trellData}
 }

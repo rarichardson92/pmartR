@@ -23,6 +23,13 @@ set_ylimits(yvalues, increment, y_range = NULL, y_max = NULL,
 \description{
 Sets y-axis limits for trellData plotting. Used by plot_comp.
 }
+\seealso{
+\link[pmartR]{format_plot}
+
+\link[pmartR]{list_y_limits}
+
+\link[pmartR]{set_increment}
+}
 \author{
 Rachel Richardson
 }

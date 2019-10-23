@@ -12,6 +12,28 @@ custom_fn(data)
 \description{
 Test function for format_plot(), custom_plot argument. Plots a ggplot where x = 1:10, y = 1:10.
 }
+\examples{
+
+dontrun{
+library(pmartRdata)
+library(pmartR)
+library(ggplot2)
+data("metab_object")
+mymetabData <- pmartR::edata_transform(metab_object, "log10")
+mymetabData <- pmartR::group_designation(metab_object, "Condition")
+mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+
+custom_fn <- function(data){
+ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+}
+
+pmartR:::format_plot(pmartR::as.trellData(mymetabData), custom_plot = "custom_fn")
+}
+
+}
+\seealso{
+\link[pmartR]{format_plot}
+}
 \author{
 Rachel Richardson
 }

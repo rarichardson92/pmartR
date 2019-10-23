@@ -12,6 +12,35 @@ custom_fn_cog(data)
 \description{
 Test function for data_cog(), custom_cog argument. Returns a tibble with one row and 3 columns.
 }
+\examples{
+
+dontrun{
+library(pmartRdata)
+library(pmartR)
+library(ggplot2)
+data("metab_object")
+mymetabData <- pmartR::edata_transform(metab_object, "log10")
+mymetabData <- pmartR::group_designation(metab_object, "Condition")
+mymetabData <- pmartR::normalize_global(metab_object, "all", "median", apply_norm = TRUE, backtransform = TRUE)
+
+custom_fn <- function(data){
+ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x = 1:10, y = 1:10))
+}
+
+custom_fn_cog <- function(data){
+tibble::tibble(test1 = 1, test2 = 2, test3 = 3)
+}
+
+format <- pmartR::as.trellData(mymetabData)
+plot <- pmartR:::format_plot(format, custom_plot = "custom_fn")
+pmartR:::data_cogs(plot, format, custom_cog = "custom_fn_cog")
+
+}
+
+}
+\seealso{
+\link[pmartR]{data_cogs}
+}
 \author{
 Rachel Richardson
 }
