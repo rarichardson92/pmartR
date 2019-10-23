@@ -3527,7 +3527,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
     tictoc::toc()
     
-    tictoc::tic("Generate auto cogs") 
+    tictoc::tic("Generate cogs") 
     
     # Generate default cognostics #
     nest_plot_cog_list <- purrr::pmap(
@@ -3769,7 +3769,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                    interactive = interactive)
         tictoc::toc()
         
-        tictoc::tic("Generate auto cogs")
+        tictoc::tic("Generate cogs")
         
         # Generate default cognostics #
         nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
@@ -3854,7 +3854,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                      interactive = interactive)
           tictoc::toc()
           
-          tictoc::tic("Generate auto cogs")
+          tictoc::tic("Generate cogs")
           
           # Generate default cognostics #
           nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
@@ -3922,7 +3922,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                  interactive = interactive)
       tictoc::toc()
       
-      tictoc::tic("Generate auto cogs")
+      tictoc::tic("Generate cogs")
       
       # Generate default cognostics #
       nest_plot_cog <- suppressWarnings(data_cogs(nested_plot = nested_plot, 
