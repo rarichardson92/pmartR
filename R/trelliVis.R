@@ -2772,22 +2772,22 @@ data_cogs <- function(nested_plot,
             cogs <- dplyr::mutate(
               cogs, 
               Sig_T_p_value = purrr::map_lgl(
-                cogs[["P_value_T"]],
+                as.numeric(cogs[["P_value_T"]]),
                 function(value) !(value > p_val) && !is.na(value)),
               Sig_G_p_value = purrr::map_lgl(
-                cogs[["P_value_G"]],
+                as.numeric(cogs[["P_value_G"]]),
                 function(value) !(value > p_val) && !is.na(value)))
           } else if (stat_test == "anova"){
             cogs <- dplyr::mutate(
               cogs, 
               Sig_T_p_value = purrr::map_lgl(
-                cogs[["P_value_T"]],
+                as.numeric(cogs[["P_value_T"]]),
                 function(value) !(value > p_val) && !is.na(value)))
           } else {
             cogs <- dplyr::mutate(
               cogs, 
               Sig_G_p_value = purrr::map_lgl(
-                cogs[["P_value_G"]],
+                as.numeric(cogs[["P_value_G"]]),
                 function(value) !(value > p_val) && !is.na(value)))
           }
         }
@@ -3054,7 +3054,7 @@ data_cogs <- function(nested_plot,
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
 #' @param display When FALSE, will return arguments to be passed into trelliscopejs::trelliscope() as a list without generating a display.
-#' @param ... Additional arguments for trelliscope() function; trelliVis supports arguments ncol, nrow, jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, and thumb are preset based on panel variable, data type, and TRUE respectively. Refer to ?trelliscopejs::trelliscope()
+#' @param ... Additional arguments for trelliscope() function; trelliVis supports arguments jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, ncol, nrow, and thumb are preset (display = FALSE is useful for modifying these). Refer to ?trelliscopejs::trelliscope()
 #'
 #' @details Descriptions of plot_type values and y-limits are as follows:
 #' \tabular{ll}{
@@ -3197,8 +3197,8 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
     )
   
   # Check user input for ... entry  
-  if (any(c("state", "self_contained", "path", "name", "panel_col", "group") %in% names(list(...)))) stop(
-    paste("The following trelliscopejs arguments are currently not supported for user input: ", toString(c("state", "self_contained", "path", "name", "panel_col", "group")))
+  if (any(c("state", "self_contained", "path", "name", "panel_col", "group", "ncol", "nrow") %in% names(list(...)))) stop(
+    paste("The following trelliscopejs arguments are currently not supported for user input: ", toString(c("ncol", "nrow", "state", "self_contained", "path", "name", "panel_col", "group")))
   )
   
   
@@ -3756,7 +3756,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
     
     if(!is.null(plot_type)){
       
-      displays <- purrr::map2(plot_type, trelli_name, function(types, names){
+      displays <- purrr::map2(plot_type, trelli_name[1:length(plot_type)], function(types, names){
         
         tictoc::tic("Generate plots")
         
