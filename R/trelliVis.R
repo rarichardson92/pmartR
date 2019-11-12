@@ -1710,12 +1710,6 @@ format_plot <- function(trellData,
       
       plotter <- trellData$comp_stats
       
-      # if(!is.null(panel_variable) && !(panel_variable %in% colnames(trellData$comp_stats))) stop(
-      #   paste(
-      #     c("Panel variable for foldchange_bar must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)), 
-      #     collapse = " "
-      #   ))
-      
       if(!is.null(lims$scale) && lims$scale == "fixed"){
         
         setter <- plotter[["Fold_change"]] +
@@ -2612,7 +2606,7 @@ set_ylimits <- function(yvalues,
 #' @param nested_plot A nested table generated from trellData using formatplot()
 #' @param trellData A nested table generated from trellData using formatplot()
 #' @param p_val Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.
-#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
+#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in specified col. Default is NULL.
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #'
 #' @seealso \link[pmartR]{as.trellData}
@@ -2646,7 +2640,7 @@ set_ylimits <- function(yvalues,
 data_cogs <- function(nested_plot,
                       trellData,
                       p_val = 0.05,
-                      try_URL = FALSE,
+                      try_URL = NULL,
                       custom_cog = NULL) {
   .data_cogs(nested_plot,
              trellData,
@@ -2658,7 +2652,7 @@ data_cogs <- function(nested_plot,
 .data_cogs <- function(nested_plot,
                        trellData,
                        p_val = 0.05,
-                       try_URL = FALSE,
+                       try_URL = NULL,
                        custom_cog = NULL){
   
   ## Variable checks, also checked at start of trelliVis
@@ -2670,9 +2664,9 @@ data_cogs <- function(nested_plot,
   if(!is.numeric(p_val) || length(p_val) != 1) stop(
     "p_val must be a numeric of length 1")  
   
-  # Check check if try_URL is boolean of length 1 #
-  if(!is.logical(try_URL) || length(try_URL) != 1) stop(
-    "try_URL must be a logical (TRUE/FALSE) of length 1")  
+  # Check check if try_URL is string of length 1 #
+  if(!is.null(try_URL) && (!is.character(try_URL) || length(try_URL) != 1)) stop(
+    "try_URL must be a string of length 1")  
   
   # Check check if nested_plot is dataframe from format_plot  #
   if(!is.data.frame(nested_plot) || ncol(nested_plot) != 2 || colnames(nested_plot)[2] != "panel") stop(
@@ -2738,9 +2732,6 @@ data_cogs <- function(nested_plot,
           panel_comp <- trell_comp[as.character(trell_comp[[panel_variable]]) == panel,]
           panel_summ <- trell_summ[as.character(trell_summ[[panel_variable]]) == panel,]
           
-          # byvc  <- colnames(panel_values)[colnames(panel_values) %in% colnames(panel_comp)]
-          # bycs  <- colnames(panel_comp)[colnames(panel_comp) %in% colnames(panel_summ)]
-          # 
           addOrigCogs <- dplyr::left_join(panel_values, 
                                           panel_comp, 
                                           by = intersect(colnames(panel_values),
@@ -2801,12 +2792,11 @@ data_cogs <- function(nested_plot,
                 function(peptide) peptide %in% degen))
           }
           
-          if(try_URL && 
-             !is.null(pmartR::get_emeta_cname(trellData))){
+          if(!is.null(try_URL)){
             cogs <- dplyr::mutate(
               cogs,
               Protein_URL = purrr::map_chr(
-                cogs[[pmartR::get_emeta_cname(trellData)]],
+                cogs[[try_URL]],
                 function(protein){
                   searchname <- stringr::str_extract(protein, "[A-Z0-9]+_[A-Z]+")
                   if (is.na(searchname)){
@@ -2822,11 +2812,11 @@ data_cogs <- function(nested_plot,
                 }))
           }
         } else if ("proData" %in% parent_dat){
-          if(try_URL){
+          if(!is.null(try_URL)){
             cogs <- dplyr::mutate(
               cogs,
               Protein_URL = purrr::map_chr(
-                cogs[[uniqueID]],
+                cogs[[try_URL]],
                 function(protein){
                   searchname <- stringr::str_extract(protein, "[A-Z0-9]+_[A-Z]+")
                   if (is.na(searchname)){
@@ -2842,11 +2832,11 @@ data_cogs <- function(nested_plot,
                 }))
           }
         } else if ("metabData" %in% parent_dat){
-          if(try_URL){
+          if(!is.null(try_URL)){
             cogs <- dplyr::mutate(
               cogs,
               Metabolite_URL = purrr::map_chr(
-                cogs[[uniqueID]],
+                cogs[[try_URL]],
                 function(metabolite){
                   searchlink <- paste(
                     "https://pubchem.ncbi.nlm.nih.gov/compound/", 
@@ -2858,11 +2848,11 @@ data_cogs <- function(nested_plot,
           
         } else if ("lipidData" %in% parent_dat){
           
-          if(try_URL){
+          if(!is.null(try_URL)){
             cogs <- dplyr::mutate(
               cogs,
               Lipid_Maps_Hits = purrr::map_chr(
-                cogs[[uniqueID]],
+                cogs[[try_URL]],
                 function(lipid){
                   searchname <- gsub(" ", "", lipid)
                   searchname <- gsub(":", " ", searchname)
@@ -3043,7 +3033,7 @@ data_cogs <- function(nested_plot,
 #' @param omicsFormat Output of as.trellData() function
 #' @param p_val Numeric that specifies p-value for significance calculations. Default is 0.05.
 #' @param panel_variable String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.
-#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.
+#' @param try_URL Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in specified column. Default is NULL.
 #' @param trelli_name String: name of display, or list of names where a list is provided for omicsData and omicsStats
 #' @param trelli_path_out String: path to where trelliscope is stored. Default is "./TrelliDisplay"
 #' @param interactive Should the plots be rendered as plotly objects?
@@ -3137,7 +3127,7 @@ data_cogs <- function(nested_plot,
 trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                       omicsFormat = NULL, p_val = 0.05,
                       panel_variable = NULL, 
-                      try_URL = FALSE, trelli_name = NULL,
+                      try_URL = NULL, trelli_name = NULL,
                       trelli_path_out = "TrelliDisplay", 
                       plot_text = FALSE, interactive = FALSE,
                       y_limits = NULL, plot_type = NULL,
@@ -3164,7 +3154,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
 .trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                        omicsFormat = NULL, p_val = 0.05,
                        panel_variable = NULL, 
-                       try_URL = FALSE, trelli_name = NULL,
+                       try_URL = NULL, trelli_name = NULL,
                        trelli_path_out = "TrelliDisplay", 
                        plot_text = FALSE, interactive = FALSE,
                        y_limits = NULL, plot_type = NULL,
@@ -3256,9 +3246,9 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
   
 }
   
-  # Check check if try_URL is boolean of length 1 #
-  if(!is.logical(try_URL) | (length(try_URL) != 1)) stop(
-    "try_URL must be a TRUE/FALSE of length 1")  
+  # Check check if try_URL is string of length 1 #
+  if(!is.null(try_URL) && (!is.character(try_URL) || length(try_URL) != 1)) stop(
+    "try_URL must be a string of length 1")  
   
   if (is.null(omicsFormat)){
     # Re-format objects for plotting #
@@ -3475,14 +3465,26 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
       if(!(all(panel_variable %in% c(colnames(trellData[[1]]$summary_stats),
                                colnames(trellData[[1]]$comp_stats),
                                colnames(trellData[[1]]$data_values))))) stop(
-                                 paste("Panel_variable input is not present in input data columns. Panel_variable =", toString(panel_variable))
+                                 paste("Panel_variable input is not present in input data columns (input list item 1). Panel_variable =", toString(panel_variable))
                                )
       if(!(all(panel_variable %in% c(colnames(trellData[[2]]$summary_stats),
                                  colnames(trellData[[2]]$comp_stats),
                                  colnames(trellData[[2]]$data_values))))) stop(
-                                   paste("Panel_variable input is not present in input data columns. Panel_variable =", toString(panel_variable))
+                                   paste("Panel_variable input is not present in input data columns (input list item 2). Panel_variable =", toString(panel_variable))
                                  )
     }
+    
+    if(!is.null(try_URL) && !(try_URL %in% c(colnames(trellData[[1]]$summary_stats),
+                                   colnames(trellData[[1]]$comp_stats),
+                                   colnames(trellData[[1]]$data_values)))) stop(
+                                     paste("try_URL input is not present in input data columns (input list item 1). try_URL =", toString(try_URL))
+                                   )
+    if(!is.null(try_URL) && !(try_URL %in% c(colnames(trellData[[2]]$summary_stats),
+                                   colnames(trellData[[2]]$comp_stats),
+                                   colnames(trellData[[2]]$data_values)))) stop(
+                                     paste("try_URL input is not present in input data columns (input list item 2). try_URL =", toString(try_URL))
+                                   )
+    
     
     # Nest data and generate trelliscope plots #
     
@@ -3637,6 +3639,13 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                colnames(trellData$data_values)))) stop(
                                  paste("Panel_variable input is not present in input data columns.  Panel_variable =", toString(panel_variable))
                                )
+    
+    #Check try_url
+    if(!is.null(try_URL) && !(try_URL %in% c(colnames(trellData$summary_stats),
+                                                           colnames(trellData$comp_stats),
+                                                           colnames(trellData$data_values)))) stop(
+                                                             paste("try_URL input is not present in input data columns.  try_URL =", toString(try_URL))
+                                                           )
 
     # Check custom cog
     if(!is.null(custom_cog)){

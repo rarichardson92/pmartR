@@ -4,7 +4,7 @@
 \alias{data_cogs}
 \title{Plot pairwise comparisons and data values in trellData object}
 \usage{
-data_cogs(nested_plot, trellData, p_val = 0.05, try_URL = FALSE,
+data_cogs(nested_plot, trellData, p_val = 0.05, try_URL = NULL,
   custom_cog = NULL)
 }
 \arguments{
@@ -14,7 +14,7 @@ data_cogs(nested_plot, trellData, p_val = 0.05, try_URL = FALSE,
 
 \item{p_val}{Numeric that specifies p-value for Boolean significance cognotic. Default is 0.05.}
 
-\item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.}
+\item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in specified col. Default is NULL.}
 
 \item{custom_cog}{The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).}
 }

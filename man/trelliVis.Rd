@@ -5,7 +5,7 @@
 \title{Automated trelliscopejs plotting from omicsData}
 \usage{
 trelliVis(omicsData = NULL, omicsStats = NULL, omicsFormat = NULL,
-  p_val = 0.05, panel_variable = NULL, try_URL = FALSE,
+  p_val = 0.05, panel_variable = NULL, try_URL = NULL,
   trelli_name = NULL, trelli_path_out = "TrelliDisplay",
   plot_text = FALSE, interactive = FALSE, y_limits = NULL,
   plot_type = NULL, self_contained = FALSE, custom_cog = NULL,
@@ -22,7 +22,7 @@ trelliVis(omicsData = NULL, omicsStats = NULL, omicsFormat = NULL,
 
 \item{panel_variable}{String: Name of column that plot panels are sorted by (e.g. each plotting arrangement has a unique identifier from panel variable). Default is emeta_cname if present, edata_cname where emeta_cname is not present.}
 
-\item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in edata_cname of omicsData or specified mapping_col for peptide data. Default is FALSE.}
+\item{try_URL}{Will attempt to link to PubChem, LipidMaps, or Uniprot based on information in specified column. Default is NULL.}
 
 \item{trelli_name}{String: name of display, or list of names where a list is provided for omicsData and omicsStats}
 
@@ -44,7 +44,7 @@ trelliVis(omicsData = NULL, omicsStats = NULL, omicsFormat = NULL,
 
 \item{display}{When FALSE, will return arguments to be passed into trelliscopejs::trelliscope() as a list without generating a display.}
 
-\item{...}{Additional arguments for trelliscope() function; trelliVis supports arguments ncol, nrow, jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, and thumb are preset based on panel variable, data type, and TRUE respectively. Refer to ?trelliscopejs::trelliscope()}
+\item{...}{Additional arguments for trelliscope() function; trelliVis supports arguments jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, ncol, nrow, and thumb are preset (display = FALSE is useful for modifying these). Refer to ?trelliscopejs::trelliscope()}
 }
 \description{
 Generates trelliscopejs displays using pairwise comparisons and data values of omicsData and omicsStats objects. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis.

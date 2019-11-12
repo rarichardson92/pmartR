@@ -1141,8 +1141,8 @@ testthat::test_that("Correct data_cogs error/warning throwing", {
     pmartR:::data_cogs(plot_lipobject, format_lipobject, "blah"), 
     "p_val must be a numeric of length 1")
   testthat::expect_error(
-    pmartR:::data_cogs(plot_lipobject, format_lipobject, try_URL = "blah"), 
-    "try_URL must be a logical")
+    pmartR:::data_cogs(plot_lipobject, format_lipobject, try_URL = 6), 
+    "try_URL must be")
   testthat::expect_error(
     pmartR:::data_cogs(plot_lipobject, badform), 
     "trellData must be class trellData.")
@@ -1458,8 +1458,11 @@ testthat::test_that("Validate error throwing", {
     trelliVis(list(isobaric_object, qpro1), list(isobaric_stats, qpro1_stats), panel_variable = "Peptide"), 
     "specified for each index")
   testthat::expect_error(
-    trelliVis(metab_object, metab_stats, try_URL = "blh"), 
+    trelliVis(metab_object, metab_stats, try_URL = 6), 
     "try_URL must be a")
+  testthat::expect_error(
+    trelliVis(metab_object, metab_stats, try_URL = "ble"), 
+    "try_URL input")
 
   x <- as.trellData(isobaric_object, isobaric_stats)
   attributes(x)$isobaric_info$norm_info$is_normalized <- FALSE
