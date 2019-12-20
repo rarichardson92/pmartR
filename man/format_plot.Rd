@@ -6,7 +6,7 @@
 \usage{
 format_plot(trellData, panel_variable = NULL, plot_type = NULL,
   p_val = 0.05, plot_text = FALSE, y_limits = NULL,
-  interactive = FALSE, custom_plot = NULL)
+  interactive = FALSE, custom_plot = NULL, points = TRUE)
 }
 \arguments{
 \item{trellData}{An object of class "trellData" generated from \code{\link{as.trellData}}.}
@@ -24,6 +24,8 @@ format_plot(trellData, panel_variable = NULL, plot_type = NULL,
 \item{interactive}{Should the plots be rendered as plotly objects?}
 
 \item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
+
+\item{points}{For abundance boxplot only: Defaults to TRUE to show all sample points. Set to FALSE for only boxplots.}
 }
 \description{
 Plot pairwise comparisons and data values in trellData object. Customizable for plot types, y axis limits, paneling variable (what overall group is plotted on each graph arrangement), as well as desired variables for the y and x axis. Run in main trelliVis function.

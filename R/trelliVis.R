@@ -855,6 +855,7 @@ custom_fn_cog <- function(data){
 #' @param plot_type Types of plots. Restricted to "abundance_boxplot", "abundance_global", "abundance_heatmap", "foldchange_bar", "foldchange_global", "foldchange_heatmap", "missing_bar", "presence_heatmap"
 #' @param y_limits y-limits for plots. Accepts scale, max, min, and range (see details and examples)
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
+#' @param points For abundance boxplot only: Defaults to TRUE to show all sample points. Set to FALSE for only boxplots.
 #'
 #' @seealso \link[pmartR]{as.trellData}
 #' @seealso \link[pmartR]{trelliVis}
@@ -942,7 +943,8 @@ format_plot <- function(trellData,
                         plot_text = FALSE, 
                         y_limits = NULL,
                         interactive = FALSE,
-                        custom_plot = NULL) {
+                        custom_plot = NULL,
+                        points = TRUE) {
   .format_plot(trellData, 
                panel_variable, 
                plot_type, 
@@ -950,7 +952,8 @@ format_plot <- function(trellData,
                plot_text, 
                y_limits,
                interactive,
-               custom_plot)
+               custom_plot,
+               points)
 }
 
 .format_plot <- function(trellData, 
@@ -960,7 +963,8 @@ format_plot <- function(trellData,
                          plot_text = FALSE, 
                          y_limits = NULL,
                          interactive = FALSE,
-                         custom_plot = NULL) {
+                         custom_plot = NULL,
+                         points = TRUE) {
  
   ## Input checks
  
@@ -979,7 +983,8 @@ format_plot <- function(trellData,
     p_val = p_val, 
     plot_text = plot_text, 
     interactive = interactive,
-    custom_plot = custom_plot
+    custom_plot = custom_plot,
+    points = points
   )
   
   # list_y_limits handles y_limits checks
@@ -992,7 +997,7 @@ format_plot <- function(trellData,
   }
   
   
-  generate_plots <- function(panel){
+  generate_plots <- function(panel, points){
     
     #### Custom Plot ####
     if(!is.null(custom_plot)){
@@ -1116,11 +1121,6 @@ format_plot <- function(trellData,
       
       data <- trellData$comp_stats
       
-      # if(!(panel_variable %in% colnames(trellData$comp_stats))) stop(
-      #   paste(
-      #     "Panel variable for foldchange_global must be selected from either edata or emeta columns. The following columns are valid:", colnames(trellData$comp_stats)
-      # ))
-      
         rows <- as.character(data[[panel_variable]]) == panel
         df2 <- data[rows,]
         
@@ -1171,22 +1171,6 @@ format_plot <- function(trellData,
     if("missing_bar" %in% plot_type){
       
       lims <- graphlims[["missing_bar"]]
-      
-      # if (!is.null(lims$scale) || !is.null(lims$range)) {
-      #   warning( 
-      #     "Scale options and range are not valid with missing_bar plots, scale will not be applied. Please use max and min or list(NULL) for missing_bar y_limits.  Refer to examples in ?trelliVis().")
-      # }
-      # 
-      # if (!is.null(lims$min) && (lims$min < 0 || lims$min > 1)) {
-      #   stop( 
-      #     "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
-      # }
-      # 
-      # if (!is.null(lims$max) && (lims$max < 0 || lims$max > 1)) {
-      #   stop( 
-      #     "Minimum and maximum for missing_bar is only supported for proportions; select values between 0 and 1.")
-      # }
-      
       
       if(!is.null(trellData$summary_stats)){
         
@@ -1669,21 +1653,36 @@ format_plot <- function(trellData,
                          axis.text.x = ggplot2::element_text(angle = 330, hjust = 0)) +
           ggplot2::xlab(group_df_name) + 
           ggplot2::ylab(abundance) +
-          ggplot2::labs(color = "", fill = "") +
+          ggplot2::labs(color = "", fill = "")
           
-          ggplot2::geom_point(
-            ggplot2::aes(
-              text = gsub(", ", "\n", nestedData_value[["text"]]),
-              x = as.character(nestedData_value[[group_df_name]]),
-              y = nestedData_value[[abundance]],
-              fill = nestedData_value[[group_df_name]]),
-            position = "jitter",
-            size = 2,
-            color = "black",
-            na.rm = TRUE, 
-            alpha = 0.7) +
+        if(points){
+          plot_out <- plot_out +
+            ggplot2::geom_point(
+              ggplot2::aes(
+                text = gsub(", ", "\n", nestedData_value[["text"]]),
+                x = as.character(nestedData_value[[group_df_name]]),
+                y = nestedData_value[[abundance]],
+                fill = nestedData_value[[group_df_name]]),
+              position = "jitter",
+              size = 2,
+              color = "black",
+              na.rm = TRUE, 
+              alpha = 0.7) +
+            ggplot2::geom_boxplot(
+              ggplot2::aes(
+                x = as.character(nestedData_value[[group_df_name]]),
+                y = nestedData_value[[abundance]],
+                fill = nestedData_value[[group_df_name]]),
+              alpha = 0.2,
+              position = "dodge2",
+              na.rm = TRUE,
+              outlier.size = 0) +
+            ggplot2::labs(x = NULL) + 
+            ggplot2::coord_cartesian(ylim = setlims4)
+        } else {
           
-          ggplot2::geom_boxplot(
+          plot_out <- plot_out +
+            ggplot2::geom_boxplot(
             ggplot2::aes(
               x = as.character(nestedData_value[[group_df_name]]),
               y = nestedData_value[[abundance]],
@@ -1691,9 +1690,10 @@ format_plot <- function(trellData,
             alpha = 0.2,
             position = "dodge2",
             na.rm = TRUE) +
-          ggplot2::labs(x = NULL) + 
+            ggplot2::labs(x = NULL) + 
+            ggplot2::coord_cartesian(ylim = setlims4)
           
-          ggplot2::coord_cartesian(ylim = setlims4)
+        }
     }
     
     
@@ -1822,32 +1822,13 @@ format_plot <- function(trellData,
       
       if(any(stringr::str_detect(plot_type, "heatmap"))) {
         
-        # plotnames <- c("abundance_boxplot", 
-        #                 "foldchange_bar", 
-        #                 "abundance_global", 
-        #                 "foldchange_global", 
-        #                 "missing_bar",
-        #                 "abundance_heatmap",
-        #                 "foldchange_heatmap",
-        #                 "presence_heatmap",
-        #                 "foldchange_bar",
-        #                 "abundance_boxplot")
-        # typenames <- plotnames[plotnames %in% plot_type]
-        # #Accounts for out of order input
-        # 
-        # if(stringr::str_detect(typenames[1], "heatmap")){
-
-          # plot_out <- plot_out + ggplot2::theme(legend.position = "none")
           plot_out <- plotly::ggplotly(plot_out, tooltip = c("text"))
           plot_out <- plot_out %>% plotly::layout(plot_bgcolor='grey',
                                                   xaxis = list(showgrid = F),
                                                   yaxis = list(showgrid = F)
                                                   )
-          
-        # }
 
       }
-      
         return(plotly::ggplotly(plot_out, tooltip = "text"))
       
     } else {
@@ -1868,7 +1849,7 @@ format_plot <- function(trellData,
   pvs <- dplyr::mutate(pvs, 
                        panel = trelliscopejs::map_plot(
                          pvs[[panel_variable]], 
-                         function(panel) suppressWarnings(generate_plots(panel))))
+                         function(panel) suppressWarnings(generate_plots(panel, points))))
   attr(pvs, "data_class") <- attr(trellData, "data_class")
   
   return(pvs)
@@ -1890,6 +1871,7 @@ format_plot <- function(trellData,
 #' @param plot_type types of plots, specified in format_plot
 #' @param y_limits y-limits, specified in format_plot
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
+#' @param points Determines if abundance_boxplot plot has points displayed per sample
 #'
 #' @seealso \link[pmartR]{format_plot}
 #'
@@ -1902,14 +1884,16 @@ validate_format_plot_input <- function(trellData,
                                        panel_variable,
                                        plot_text,
                                        custom_plot,
-                                       interactive){
+                                       interactive,
+                                       points){
   .validate_format_plot_input(trellData,
                               plot_type,
                               p_val,
                               panel_variable,
                               plot_text,
                               custom_plot,
-                              interactive)
+                              interactive,
+                              points)
 }
 
 .validate_format_plot_input <- function(
@@ -1919,7 +1903,8 @@ validate_format_plot_input <- function(trellData,
   panel_variable,
   plot_text,
   custom_plot,
-  interactive){
+  interactive,
+  points){
 
   ##### Initial checks #####
 
@@ -1935,6 +1920,10 @@ validate_format_plot_input <- function(trellData,
   # # Check if data is in trellData (as above) #
   # if(is.na(trellData$comp_stats) && is.na(trellData$data_values)) stop(
   #   "No data values or comparison statistics in trellData to plot")
+  
+  # Check if points is logical of length 1 #
+  if(!is.logical(points) || length(points) != 1) stop(
+    "p_val must be a logical of length 1")
   
   # Check if p_val is numeric of length 1 #
   if(!is.numeric(p_val) || length(p_val) != 1) stop(
@@ -2900,15 +2889,11 @@ data_cogs <- function(nested_plot,
                 desc = "Trend of foldchange difference, where 1 and -1 indicate positive or negative quantitative changes within a pairwise comparison and 2 and -2 indicate qualititative changes within a pairwise comparison."))
               
             } else if (column == "Count") {
-              x <- unique(cogs[[column]])
-              if (length(x) != length(unique(cogs[["Group"]]))){
-                x <- toString(rep(x, length(unique(cogs[["Group"]]))))
-              } else {
-                x <- toString(x)
-              }
+              x <- unique(cogs[c(column, "Group")])
+              x <- sum(x[[column]])
               return(trelliscopejs::cog(
                 x,
-                desc = "Number of sample observations in respective experimental groups."))
+                desc = "Number of total sample observations"))
               
             } else if (column == "Protein_URL") {
               if(toString(unique(cogs[[column]])) == "Could not extract protein name"){
@@ -2934,39 +2919,44 @@ data_cogs <- function(nested_plot,
                 default_label = TRUE))
             } else if (column == "peps_per_pro"){
               return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
                 desc = "Number of peptides mapped to a given protein (used in pmartR::protein_quant() rollup method). Average is computed where multiple proteins are in a panel. (Value of 0 == NA) ",
                 default_label = TRUE))
               
             } else if (column == "n_peps_used"){
               return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
                 desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
-              
+        
             } else if (column == "Mean"){
-              return(trelliscopejs::cog(
-                toString(unique(cogs[[column]])),
-                desc = "Mean of abundances/intensities for experimental groups where statistical tests could be performed."))
+              # x <- unique(cogs[c(column, "Group")])
+              # return(trelliscopejs::cog(
+              #   signif(mean(x[[column]], na.rm = TRUE), 6),
+              #   desc = "Mean of abundances/intensities where statistical tests could be performed."))
+              return(NULL)
               
             } else if (column == "Fold_change"){
-              return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
-                desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
+              # return(trelliscopejs::cog(
+              #   signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
+              #   desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
+              return(NULL)
+              
+            } else if (column == "P_value_G") {
+              # return(trelliscopejs::cog(
+              #   signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
+              #   desc = "Mean G-test p-values (per panel)."))
+              return(NULL)
+              
+            } else if (column == "P_value_T") {
+              # return(trelliscopejs::cog(
+              #   signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
+              #   desc = "Mean ANOVA p-values (per panel)."))
+              return(NULL)
               
             } else if (column == "Sig_T_p_value") {
               return(trelliscopejs::cog(
                 toString(any(cogs[[column]])),
                 desc = "Significant ANOVA results based on input p-value threshold (default == 0.05)."))
-              
-            } else if (column == "P_value_G") {
-              return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
-                desc = "Mean G-test p-values (per panel)."))
-              
-            } else if (column == "P_value_T") {
-              return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
-                desc = "Mean ANOVA p-values (per panel)."))
               
             } else if (column == "Sig_G_p_value") {
               return(trelliscopejs::cog(
@@ -2975,7 +2965,7 @@ data_cogs <- function(nested_plot,
               
             } else if (length(abundance) > 0 && column == abundance) {
               return(trelliscopejs::cog(
-                mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE),
+                signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
                 desc = "Average abundance/intensity of values."))
               
             } else {
@@ -3009,6 +2999,69 @@ data_cogs <- function(nested_plot,
         }
          
         cog_out[[panel_variable]] <- NULL
+        
+        group_cogs <- colnames(cogs) %in% c("Mean", "P_value_T", "P_value_G", "Fold_change", "Count")
+        
+        if(any(group_cogs)){
+          
+          countdf <- as.data.frame(t(group_by(cogs[c("Group", "Count")], Group) %>% 
+                                       summarize(count = unique(Count))), stringsAsFactors = FALSE)
+          colnames(countdf) <- paste0(countdf[1,], "_Count")
+          row.names(countdf) <-  NULL
+          countdf <- countdf[2,] 
+          
+          meandf <- as.data.frame(t(group_by(cogs[c("Group", "Mean")], Group) %>% 
+                                      summarize(count = unique(Mean))), stringsAsFactors = FALSE)
+          colnames(meandf) <- paste0(meandf[1,], "_Mean")
+          row.names(meandf) <-  NULL
+          meandf <- meandf[2,]
+          
+          grouper <- cbind(countdf, meandf)
+          
+          if("P_value_T" %in% colnames(cogs)){
+            
+            ptdf <- as.data.frame(t(group_by(cogs[c("Comparison", "P_value_T")], Comparison) %>% 
+                                        summarize(count = unique(P_value_T))), stringsAsFactors = FALSE)
+            ptnames <- paste0(as.character(ptdf[1,]), "_P_value_T")
+            row.names(ptdf) <-  NULL
+            ptdf <- ptdf[2,]
+            ptdf<- as.data.frame(ptdf, stringsAsFactors = FALSE)
+            colnames(ptdf) <- ptnames
+            grouper <- cbind(grouper, ptdf)
+            
+          }
+          
+          if("P_value_G" %in% colnames(cogs)){
+            
+            pgdf <- as.data.frame(t(group_by(cogs[c("Comparison", "P_value_G")], Comparison) %>% 
+                                      summarize(count = unique(P_value_G))), stringsAsFactors = FALSE)
+            pgnames <- paste0(pgdf[1,], "_P_value_G")
+            row.names(pgdf) <-  NULL
+            pgdf <- pgdf[2,]
+            pgdf <- as.data.frame(pgdf, stringsAsFactors = FALSE)
+            colnames(pgdf) <- pgnames
+            grouper <- cbind(grouper, pgdf)
+            
+          }
+          
+          if("Fold_change" %in% colnames(cogs)){
+            
+            fcdf <- as.data.frame(t(group_by(cogs[c("Comparison", "Fold_change")], Comparison) %>% 
+                                      summarize(count = unique(Fold_change))), stringsAsFactors = FALSE)
+            fcnames <- paste0(fcdf[1,], "_Fold_change")
+            row.names(fcdf) <-  NULL
+            fcdf <- fcdf[2,]
+            fcdf <- as.data.frame(fcdf, stringsAsFactors = FALSE)
+            colnames(fcdf) <- fcnames
+            grouper <- cbind(grouper, fcdf)
+            
+          }
+          
+          grouper <- lapply(grouper, as.numeric)
+          
+          cog_out <- cbind(cog_out, grouper)
+          
+        }
         
         if(!is.null(custom_cog)){ ## Run custom function on cogs using function name
          x <- eval(parse(text = paste0(custom_cog, "(cogs)")))
@@ -3044,6 +3097,7 @@ data_cogs <- function(nested_plot,
 #' @param custom_cog The name of a user generated function with cognostics. Function should act on a subset of data and output a dataframe (or tibble or equivelent) with one row (summary of rows).
 #' @param custom_plot User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.
 #' @param display When FALSE, will return arguments to be passed into trelliscopejs::trelliscope() as a list without generating a display.
+#' @param points Only for abundance_boxplot plot_type; should points be included with boxplots? Defaults to TRUE.
 #' @param ... Additional arguments for trelliscope() function; trelliVis supports arguments jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, ncol, nrow, and thumb are preset (display = FALSE is useful for modifying these). Refer to ?trelliscopejs::trelliscope()
 #'
 #' @details Descriptions of plot_type values and y-limits are as follows:
@@ -3135,6 +3189,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                       custom_cog = NULL,
                       custom_plot = NULL,
                       display = TRUE,
+                      points = TRUE,
                       ...) {
   
   .trelliVis(omicsData, omicsStats,
@@ -3148,6 +3203,7 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
              custom_cog,
              custom_plot,
              display,
+             points,
              ...)
 }
 
@@ -3161,7 +3217,8 @@ trelliVis <- function(omicsData = NULL, omicsStats = NULL,
                        self_contained = FALSE,
                        custom_cog = NULL,
                        custom_plot = NULL, 
-                       display = TRUE,
+                       display = TRUE, 
+                       points = TRUE,
                        ...) {
   
   
@@ -3323,7 +3380,7 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
         }
         
         x <- eval(parse(text = paste0(custom_plot, "(subset)")))
-        print(length(x))
+  
         if(!inherits(x, c("ggplot", "plotly", "rbokeh")))  stop(
           paste("Validation failed. Custom plot function on data subset is required to yield a single plot with class of ggplot, plotly, or rbokeh. Subset tested on:", tester, "==", name)
         )
@@ -3502,7 +3559,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                         plot_type = types,
                         plot_text = plot_text,
                         y_limits = y_limits,
-                        interactive = interactive)
+                        interactive = interactive,
+                        points = points)
           })
         
           if(!is.null(custom_plot)){
@@ -3512,7 +3570,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                                             custom_plot = custom_plot,
                                                             plot_text = plot_text,
                                                             y_limits = y_limits,
-                                                            interactive = interactive)
+                                                            interactive = interactive,
+                                                            points = points)
           }
         } else {
           nest_out <- list()
@@ -3522,7 +3581,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                        custom_plot = custom_plot,
                                        plot_text = plot_text,
                                        y_limits = y_limits,
-                                       interactive = interactive)
+                                       interactive = interactive,
+                                       points = points)
         }
         return(nest_out)
       })
@@ -3775,7 +3835,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                    plot_text = plot_text,
                                    y_limits = y_limits,
                                    panel_variable = panel_variable,
-                                   interactive = interactive)
+                                   interactive = interactive,
+                                   points = points)
         tictoc::toc()
         
         tictoc::tic("Generate cogs")
@@ -3860,7 +3921,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                      plot_text = plot_text,
                                      y_limits = y_limits,
                                      panel_variable = panel_variable,
-                                     interactive = interactive)
+                                     interactive = interactive,
+                                     points = points)
           tictoc::toc()
           
           tictoc::tic("Generate cogs")
@@ -3928,7 +3990,8 @@ if(!is.null(omicsData) || !is.null(omicsStats)){
                                  plot_text = plot_text,
                                  y_limits = y_limits,
                                  panel_variable = panel_variable,
-                                 interactive = interactive)
+                                 interactive = interactive,
+                                 points = points)
       tictoc::toc()
       
       tictoc::tic("Generate cogs")

@@ -9,7 +9,7 @@ trelliVis(omicsData = NULL, omicsStats = NULL, omicsFormat = NULL,
   trelli_name = NULL, trelli_path_out = "TrelliDisplay",
   plot_text = FALSE, interactive = FALSE, y_limits = NULL,
   plot_type = NULL, self_contained = FALSE, custom_cog = NULL,
-  custom_plot = NULL, display = TRUE, ...)
+  custom_plot = NULL, display = TRUE, points = TRUE, ...)
 }
 \arguments{
 \item{omicsData}{A pmartR object of class pepData, lipidData, metabData, or proData. Can use list(pepData, proData) for associated data.}
@@ -43,6 +43,8 @@ trelliVis(omicsData = NULL, omicsStats = NULL, omicsFormat = NULL,
 \item{custom_plot}{User defined plotting function to be executed on specified data subsets. Other format_plot specifications do not apply to this plot. Should return a single plot per function call. Veiwing the data using as.trellData is highly encouraged to facillitate function development.}
 
 \item{display}{When FALSE, will return arguments to be passed into trelliscopejs::trelliscope() as a list without generating a display.}
+
+\item{points}{Only for abundance_boxplot plot_type; should points be included with boxplots? Defaults to TRUE.}
 
 \item{...}{Additional arguments for trelliscope() function; trelliVis supports arguments jsonp, split_sig, auto_cog, height, width, desc, md_desc. Argument panel_col is currently not supported and may produce errors. Arguments state, group, ncol, nrow, and thumb are preset (display = FALSE is useful for modifying these). Refer to ?trelliscopejs::trelliscope()}
 }
