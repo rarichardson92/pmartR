@@ -3030,14 +3030,14 @@ data_cogs <- function(nested_plot,
         
         if(any(group_cogs)){
           
-          countdf <- as.data.frame(t(group_by(cogs[c("Group", "Count")], Group) %>% 
-                                       summarize(count = unique(Count))), stringsAsFactors = FALSE)
+          countdf <- as.data.frame(t(dplyr::group_by(cogs[c("Group", "Count")], Group) %>% 
+                                       dplyr::summarize(count = unique(Count))), stringsAsFactors = FALSE)
           colnames(countdf) <- paste0(countdf[1,], "_Count")
           row.names(countdf) <-  NULL
           countdf <- countdf[2,] 
           
-          meandf <- as.data.frame(t(group_by(cogs[c("Group", "Mean")], Group) %>% 
-                                      summarize(count = unique(Mean))), stringsAsFactors = FALSE)
+          meandf <- as.data.frame(t(dplyr::group_by(cogs[c("Group", "Mean")], Group) %>% 
+                                      dplyr::summarize(count = unique(Mean))), stringsAsFactors = FALSE)
           colnames(meandf) <- paste0(meandf[1,], "_Mean")
           row.names(meandf) <-  NULL
           meandf <- meandf[2,]
@@ -3046,8 +3046,8 @@ data_cogs <- function(nested_plot,
           
           if("P_value_T" %in% colnames(cogs)){
             
-            ptdf <- as.data.frame(t(group_by(cogs[c("Comparison", "P_value_T")], Comparison) %>% 
-                                        summarize(count = unique(P_value_T))), stringsAsFactors = FALSE)
+            ptdf <- as.data.frame(t(dplyr::group_by(cogs[c("Comparison", "P_value_T")], Comparison) %>% 
+                                      dplyr::summarize(count = unique(P_value_T))), stringsAsFactors = FALSE)
             ptnames <- paste0(as.character(ptdf[1,]), "_P_value_T")
             row.names(ptdf) <-  NULL
             ptdf <- ptdf[2,]
@@ -3059,8 +3059,8 @@ data_cogs <- function(nested_plot,
           
           if("P_value_G" %in% colnames(cogs)){
             
-            pgdf <- as.data.frame(t(group_by(cogs[c("Comparison", "P_value_G")], Comparison) %>% 
-                                      summarize(count = unique(P_value_G))), stringsAsFactors = FALSE)
+            pgdf <- as.data.frame(t(dplyr::group_by(cogs[c("Comparison", "P_value_G")], Comparison) %>% 
+                                      dplyr::summarize(count = unique(P_value_G))), stringsAsFactors = FALSE)
             pgnames <- paste0(pgdf[1,], "_P_value_G")
             row.names(pgdf) <-  NULL
             pgdf <- pgdf[2,]
@@ -3072,8 +3072,8 @@ data_cogs <- function(nested_plot,
           
           if("Fold_change" %in% colnames(cogs)){
             
-            fcdf <- as.data.frame(t(group_by(cogs[c("Comparison", "Fold_change")], Comparison) %>% 
-                                      summarize(count = unique(Fold_change))), stringsAsFactors = FALSE)
+            fcdf <- as.data.frame(t(dplyr::group_by(cogs[c("Comparison", "Fold_change")], Comparison) %>% 
+                                      dplyr::summarize(count = unique(Fold_change))), stringsAsFactors = FALSE)
             fcnames <- paste0(fcdf[1,], "_Fold_change")
             row.names(fcdf) <-  NULL
             fcdf <- fcdf[2,]
@@ -3085,8 +3085,8 @@ data_cogs <- function(nested_plot,
           
           if("Flag" %in% colnames(cogs)){
             
-            fgdf <- as.data.frame(t(group_by(cogs[c("Comparison", "Flag")], Comparison) %>% 
-                                      summarize(count = unique(Flag))), stringsAsFactors = FALSE)
+            fgdf <- as.data.frame(t(dplyr::group_by(cogs[c("Comparison", "Flag")], Comparison) %>% 
+                                      dplyr::summarize(count = unique(Flag))), stringsAsFactors = FALSE)
             fgnames <- paste0(fgdf[1,], "_Flag")
             row.names(fgdf) <-  NULL
             fgdf <- fgdf[2,]
