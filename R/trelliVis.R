@@ -252,6 +252,20 @@ as.trellData <- function(omicsData = NULL, omicsStats = NULL){
     inheritStatAtt <- NULL
   }
   
+  # Remove potential NA entries
+  if(!is.null(data_values) && any(is.na(data_values[[uniqedatId]]))){
+    data_values <- data_values[!is.na(data_values[[uniqedatId]]),]
+    warning("NA value detected in input edata_cname column. Corresponding rows have been removed for visualization.")
+  }
+  if(!is.null(comp_stats) && any(is.na(data_values[[uniqedatId]]))){
+    data_values <- data_values[!is.na(data_values[[uniqedatId]]),]
+    warning("NA value detected in input edata_cname column. Corresponding rows have been removed for visualization.")
+  }
+  if(!is.null(summary_stats) && any(is.na(data_values[[uniqedatId]]))){
+    data_values <- data_values[!is.na(data_values[[uniqedatId]]),]
+    warning("NA value detected in input edata_cname column. Corresponding rows have been removed for visualization.")
+  }
+  
   ## Store Results ##
   # Create object res from generated dataframes and inherited attributes
   # 1) Assign dataframes to res list
@@ -1030,6 +1044,9 @@ format_plot <- function(trellData,
       plot_data <- trellData$data_value[order(trellData$data_value[,group]),]
       plot_data[[sampID]] <- factor(plot_data[[sampID]], levels=unique(plot_data[[sampID]]), ordered=TRUE)
       
+      # Remove any Inf values if present
+      plot_data[abs(plot_data[[abundance]]) != Inf,]
+      
       plot_base <- ggplot2::ggplot() +
         ggplot2::theme_bw() +
         ggplot2::geom_boxplot(ggplot2::aes(
@@ -1042,12 +1059,10 @@ format_plot <- function(trellData,
         ggplot2::labs(x = group, y = abundance, fill = group, color = group) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
       
-      
-      data <- trellData$data_value
       data <- plot_data
 
-        rows <- as.character(data[[panel_variable]]) == panel
-        df1 <- data[rows,]
+        rows <- as.character(plot_data[[panel_variable]]) == panel
+        df1 <- plot_data[rows,]
         
         if(!is.null(lims$max) || 
            !is.null(lims$min) ||
@@ -1405,6 +1420,7 @@ format_plot <- function(trellData,
         pal <- grDevices::colorRampPalette(c("red", "yellow"))
         
           df4 <- trellData$data_values[as.character(trellData$data_values[[panel_variable]]) == panel,]
+          df4 <- df4[abs(df4[[abundance]]) != Inf,]
           
           df4[[pmartR::get_fdata_cname(trellData)]] <- ordered(
             df4[[pmartR::get_fdata_cname(trellData)]], 
@@ -1610,6 +1626,9 @@ format_plot <- function(trellData,
       
       plotter <- trellData$data_values
       
+      # Remove any Inf values if present
+      plotter <- plotter[abs(plotter[[abundance]]) != Inf,]
+      
       if(!is.null(lims$scale) && lims$scale == "fixed"){
         
         increment <- set_increment(plotter[[abundance]])
@@ -1634,6 +1653,8 @@ format_plot <- function(trellData,
         group_df_name,
         abundance,
         "text")])
+      
+      nestedData_value <- nestedData_value[!is.na(nestedData_value[[group_df_name]]),]
       
       # Make ggplots #
       if(!exists("setlims4")){
@@ -1820,15 +1841,29 @@ format_plot <- function(trellData,
     
     if(interactive && !is.null(plot_type)){
       
-      if(any(stringr::str_detect(plot_type, "heatmap"))) {
+      if(stringr::str_detect(plot_type, "heatmap")) {
         
           plot_out <- plotly::ggplotly(plot_out, tooltip = c("text"))
           plot_out <- plot_out %>% plotly::layout(plot_bgcolor='grey',
                                                   xaxis = list(showgrid = F),
                                                   yaxis = list(showgrid = F)
                                                   )
+          return(plot_out)
 
       }
+      
+      if(stringr::str_detect(plot_type, "abundance_boxplot") && points) {
+        
+        plot_out <- plotly::ggplotly(plot_out, tooltip = "text")
+          for(i in 1:length(plot_out$x$data)) {
+            if(plot_out$x$data[[i]]$type == "box"){
+              plot_out$x$data[[i]]$marker$opacity <-0
+            }
+          }
+        
+        return(plot_out)
+      }
+      
         return(plotly::ggplotly(plot_out, tooltip = "text"))
       
     } else {
@@ -2424,8 +2459,10 @@ set_increment <- function(yvalues, include_zero = TRUE){
 .set_increment <- function(yvalues, include_zero = TRUE){
   ## Initial Checks and Replacement ##
   
-  # Remove NA, duplicate values #
+  # Remove NA, duplicate values, Inf and -Inf #
   yvalues <- unique(yvalues[!is.na(yvalues)])
+  yvalues <- yvalues[yvalues != Inf]
+  yvalues <- yvalues[yvalues != -Inf]
   if (length(yvalues) == 0){
     yvalues <- 0
   }
@@ -2495,8 +2532,10 @@ set_ylimits <- function(yvalues,
                          include_zero = TRUE
                          ){
   
-  # Catch NAs #
+  # Catch NAs, Infs #
   yvalues <- yvalues[!is.na(yvalues)]
+  yvalues <- yvalues[yvalues != Inf]
+  yvalues <- yvalues[yvalues != -Inf]
   if (length(yvalues) == 0){
     yvalues <- 0
   }
@@ -2884,10 +2923,10 @@ data_cogs <- function(nested_plot,
                 desc = "Pairwise comparison(s)."))
               
             } else if (column == "Flag"){
-              return(trelliscopejs::cog(
-                toString(unique(cogs[[column]])),
-                desc = "Trend of foldchange difference, where 1 and -1 indicate positive or negative quantitative changes within a pairwise comparison and 2 and -2 indicate qualititative changes within a pairwise comparison."))
-              
+              # return(trelliscopejs::cog(
+              #   toString(unique(cogs[[column]])),
+              #   desc = "Trend of foldchange difference, where 1 and -1 indicate positive or negative quantitative changes within a pairwise comparison and 2 and -2 indicate qualititative changes within a pairwise comparison."))
+              return(NULL)
             } else if (column == "Count") {
               x <- unique(cogs[c(column, "Group")])
               x <- sum(x[[column]])
@@ -2929,28 +2968,15 @@ data_cogs <- function(nested_plot,
                 desc = "Number of peptides used in pmartR::protein_quant() rollup method. Average is computed where multiple proteins are in a panel. (Value of 0 == NA) "))
         
             } else if (column == "Mean"){
-              # x <- unique(cogs[c(column, "Group")])
-              # return(trelliscopejs::cog(
-              #   signif(mean(x[[column]], na.rm = TRUE), 6),
-              #   desc = "Mean of abundances/intensities where statistical tests could be performed."))
               return(NULL)
               
             } else if (column == "Fold_change"){
-              # return(trelliscopejs::cog(
-              #   signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
-              #   desc = "Mean of foldchange difference (per panel). (Value of 0 == NA) "))
               return(NULL)
               
             } else if (column == "P_value_G") {
-              # return(trelliscopejs::cog(
-              #   signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
-              #   desc = "Mean G-test p-values (per panel)."))
               return(NULL)
               
             } else if (column == "P_value_T") {
-              # return(trelliscopejs::cog(
-              #   signif(mean(suppressWarnings(as.numeric(cogs[[column]])), na.rm = TRUE), 6),
-              #   desc = "Mean ANOVA p-values (per panel)."))
               return(NULL)
               
             } else if (column == "Sig_T_p_value") {
@@ -3000,7 +3026,7 @@ data_cogs <- function(nested_plot,
          
         cog_out[[panel_variable]] <- NULL
         
-        group_cogs <- colnames(cogs) %in% c("Mean", "P_value_T", "P_value_G", "Fold_change", "Count")
+        group_cogs <- colnames(cogs) %in% c("Mean", "P_value_T", "P_value_G", "Fold_change", "Count", "Flag")
         
         if(any(group_cogs)){
           
@@ -3054,6 +3080,19 @@ data_cogs <- function(nested_plot,
             fcdf <- as.data.frame(fcdf, stringsAsFactors = FALSE)
             colnames(fcdf) <- fcnames
             grouper <- cbind(grouper, fcdf)
+            
+          }
+          
+          if("Flag" %in% colnames(cogs)){
+            
+            fgdf <- as.data.frame(t(group_by(cogs[c("Comparison", "Flag")], Comparison) %>% 
+                                      summarize(count = unique(Flag))), stringsAsFactors = FALSE)
+            fgnames <- paste0(fgdf[1,], "_Flag")
+            row.names(fgdf) <-  NULL
+            fgdf <- fgdf[2,]
+            fgdf <- as.data.frame(fgdf, stringsAsFactors = FALSE)
+            colnames(fgdf) <- fgnames
+            grouper <- cbind(grouper, fgdf)
             
           }
           
