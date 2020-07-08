@@ -14,3 +14,6 @@ src/*.so
 /tests/testthat/corRes_plot_1.html
 /tests/testthat/corRes_plot_3.html
 !tests/testthat/images/placeholder.txt
+.DS_Store
+tests/.DS_Store
+tests/testthat/.DS_Store
